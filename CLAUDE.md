@@ -161,3 +161,123 @@ docker compose up -d          # 全サービス起動
 
 ### フロントエンドでAPI接続エラーが出る場合
 → CORS設定を確認。バックエンドが :8080 で起動しているか確認。
+
+---
+
+## ブランチ戦略（Git Flow）
+
+### ブランチ構成
+```
+main      ← 完成・安定版のみ。直接コミット禁止
+develop   ← 開発の統合ブランチ。各Stepのマージ先
+ └── feature/step{番号}-{内容を英語で簡潔に}
+```
+
+### ブランチ命名規則
+```
+feature/step1-project-scaffold
+feature/step2-db-migration
+feature/step3-auth-api
+feature/step4-auth-frontend
+feature/step5-ledger
+...
+```
+
+### 運用フロー
+```
+1. develop から feature ブランチを切る
+   git checkout develop
+   git checkout -b feature/step{番号}-{内容}
+
+2. Claude Code で実装・テスト・動作確認を進める
+
+3. Gate 3（ブラウザ動作確認）完了後に develop へマージ
+   git checkout develop
+   git merge --no-ff feature/step{番号}-{内容}
+   git branch -d feature/step{番号}-{内容}
+   git push origin develop
+
+4. 複数Stepが安定したら main へマージしてタグを打つ
+   git checkout main
+   git merge --no-ff develop
+   git tag v0.x.0
+   git push origin main --tags
+```
+
+### main へのマージタイミング（目安）
+```
+v0.1.0 ← Step 1〜4 完了（認証・帳簿が動く状態）
+v0.2.0 ← Step 5〜7 完了（明細・ダッシュボードが動く状態）
+v0.3.0 ← Step 8〜10 完了（レポート・予算・CSVが動く状態）
+v1.0.0 ← Step 11〜14 完了（AI・設定・品質仕上げ）
+```
+
+### コミットメッセージの規則
+```
+feat: 新機能の追加
+fix: バグ修正
+test: テストの追加・修正
+refactor: リファクタリング
+docs: ドキュメントの更新
+chore: 設定ファイル・依存関係の更新
+
+例:
+feat: Add JWT authentication API
+fix: Fix ledger access control bug
+test: Add transaction service unit tests
+```
+
+---
+
+## カスタムコマンドの活用・連携フロー
+
+### Step 内の標準的な進め方
+```
+【Step 開始】feature ブランチを切る
+    │
+    ▼
+/design（アーキテクト）
+    設計書・ER図・API仕様を出力
+    │
+    ▼
+【Gate 1：設計を確認して「OK」と入力】
+    │
+    ├──→ バックエンドがある場合
+    │        /implement（バックエンドエンジニア）
+    │            Entity・Service・Controller・テストを実装
+    │            ./gradlew test を自動実行してグリーン確認
+    │
+    ├──→ フロントエンドがある場合
+    │        /frontend（フロントエンドエンジニア）
+    │            コンポーネント・ページ・APIクライアントを実装
+    │            npm test を自動実行してグリーン確認
+    │
+    ▼
+【Gate 2：テストがグリーンか確認】
+    │
+    ▼
+/review（シニアレビュアー）
+    Critical・Major・Minor の指摘リストを出力
+    │
+    ▼
+【Critical・Major があれば】
+    /refactor（リファクタエンジニア）
+        指摘箇所を修正・テスト再実行
+    │
+    ▼
+【Gate 3：ブラウザで動作確認】
+    seed.sh でリセットして再確認
+    │
+    ▼
+【人間が git commit & push → develop へマージ】
+    │
+    ▼
+【次の Step へ】
+```
+
+### その他のロールの使いどころ
+| コマンド | 使うタイミング |
+|---|---|
+| `/security` | Step 13（セキュリティ強化）または気になった時 |
+| `/test` | カバレッジが足りないと気づいた時 |
+| `/ops` | エラーが解決できない時・CI構築・ドキュメント生成時 |
