@@ -1,0 +1,24 @@
+# 環境変数（絶対にコミットしない）
+.env
+
+# Java / Spring Boot
+build/
+*.class
+*.jar
+*.war
+.gradle/
+target/
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
