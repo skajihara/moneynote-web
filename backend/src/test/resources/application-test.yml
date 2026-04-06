@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  mail:
+    host: localhost
+    port: 1025
+  ai:
+    anthropic:
+      api-key: test-key
+
+app:
+  jwt:
+    secret: test-secret-key-that-is-long-enough-for-hmac
+    access-token-expiration: 900
+    refresh-token-expiration: 604800
