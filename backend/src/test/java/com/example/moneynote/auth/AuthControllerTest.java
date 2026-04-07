@@ -1,0 +1,359 @@
+package com.example.moneynote.auth;
+
+import com.example.moneynote.common.security.JwtTokenProvider;
+import com.example.moneynote.domain.user.User;
+import com.example.moneynote.domain.user.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.MediaType;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
+@Testcontainers
+@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class AuthControllerTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("moneynote_test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @SuppressWarnings("resource")
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
+            .withExposedPorts(6379);
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+    }
+
+    @MockBean
+    JavaMailSender mailSender;
+
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper;
+    @Autowired UserRepository userRepository;
+    @Autowired PasswordEncoder passwordEncoder;
+    @Autowired JwtTokenProvider jwtTokenProvider;
+    @Autowired StringRedisTemplate redisTemplate;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void setUp() {
+        // FK 制約を CASCADE で全テーブルをリセット
+        jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
+        // Redis のレート制限・リセットトークンをクリア
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*"}) {
+            var keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        }
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/register
+    // =========================================================================
+
+    @Test
+    void register_success() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "test_user1",
+                                      "userName", "テストユーザー",
+                                      "email", "test1@example.com",
+                                      "password", "Password1")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data").isEmpty())
+                .andExpect(jsonPath("$.error").doesNotExist());
+
+        assertThat(userRepository.findById("test_user1")).isPresent();
+    }
+
+    @Test
+    void register_duplicateUserId_returns400() throws Exception {
+        createUser("dup_user", "dup@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "dup_user",
+                                      "userName", "重複ユーザー",
+                                      "email", "other@example.com",
+                                      "password", "Password1")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
+    void register_duplicateEmail_returns400() throws Exception {
+        createUser("user_a", "shared@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "user_b",
+                                      "userName", "別ユーザー",
+                                      "email", "shared@example.com",
+                                      "password", "Password1")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
+    void register_invalidUserId_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "ab",                   // 2文字: 短すぎ
+                                      "userName", "テスト",
+                                      "email", "val@example.com",
+                                      "password", "Password1")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
+    void register_weakPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "valid_user",
+                                      "userName", "テスト",
+                                      "email", "weak@example.com",
+                                      "password", "onlyletters")))    // 数字なし
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/login
+    // =========================================================================
+
+    @Test
+    void login_success() throws Exception {
+        createUser("login_user", "login@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "login_user", "password", "Password1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(header().exists("Set-Cookie"));
+    }
+
+    @Test
+    void login_wrongPassword_returns401() throws Exception {
+        createUser("auth_user", "auth@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "auth_user", "password", "WrongPass9")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("E401"));
+    }
+
+    @Test
+    void login_nonexistentUser_returns401() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "ghost_user", "password", "Password1")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("E401"));
+    }
+
+    @Test
+    void login_lockoutAfter5Failures_returns429() throws Exception {
+        createUser("lock_user", "lock@example.com");
+
+        // 5回失敗させる
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json("userId", "lock_user", "password", "WrongPass9")));
+        }
+
+        // 6回目: ロックされて 429
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "lock_user", "password", "WrongPass9")))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("E429"));
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/refresh
+    // =========================================================================
+
+    @Test
+    void refresh_success() throws Exception {
+        createUser("refresh_user", "refresh@example.com");
+
+        // ログインしてリフレッシュトークンを Cookie に取得
+        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "refresh_user", "password", "Password1")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String setCookieHeader = loginResult.getResponse().getHeader("Set-Cookie");
+        assertThat(setCookieHeader).contains("refreshToken=");
+
+        String refreshToken = extractCookieValue(setCookieHeader, "refreshToken");
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+    }
+
+    @Test
+    void refresh_withoutCookie_returns401() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("E401"));
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/logout
+    // =========================================================================
+
+    @Test
+    void logout_success() throws Exception {
+        createUser("logout_user", "logout@example.com");
+
+        // ログイン
+        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "logout_user", "password", "Password1")))
+                .andReturn();
+
+        String accessToken = objectMapper
+                .readTree(loginResult.getResponse().getContentAsString())
+                .at("/data/accessToken").asText();
+
+        // ログアウト（認証ヘッダー付き）
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        // ログアウト後のリフレッシュは失敗する
+        String setCookieHeader = loginResult.getResponse().getHeader("Set-Cookie");
+        String refreshToken = extractCookieValue(setCookieHeader, "refreshToken");
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("refreshToken", refreshToken)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/password-reset/request & confirm
+    // =========================================================================
+
+    @Test
+    void passwordReset_fullFlow() throws Exception {
+        createUser("reset_user", "reset@example.com");
+
+        // リセット申請（メールが存在しなくても 200 を返す）
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "reset@example.com")))
+                .andExpect(status().isOk());
+
+        // Redis からトークンを取得して確認（テスト専用）
+        var keys = redisTemplate.keys("password_reset:*");
+        assertThat(keys).isNotNull().isNotEmpty();
+        String resetToken = keys.iterator().next().replace("password_reset:", "");
+
+        // パスワードリセット確認
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", resetToken, "newPassword", "NewPass123")))
+                .andExpect(status().isOk());
+
+        // 新しいパスワードでログインできる
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "reset_user", "password", "NewPass123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+    }
+
+    @Test
+    void passwordReset_nonexistentEmail_returns200() throws Exception {
+        // ユーザー列挙攻撃対策: 存在しないメールアドレスでも 200 を返す
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "nobody@example.com")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void passwordReset_invalidToken_returns404() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", "invalid-token-xyz", "newPassword", "NewPass123")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("E404"));
+    }
+
+    // =========================================================================
+    // helpers
+    // =========================================================================
+
+    private void createUser(String userId, String email) throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", userId,
+                                      "userName", "テストユーザー",
+                                      "email", email,
+                                      "password", "Password1")))
+                .andExpect(status().isCreated());
+    }
+
+    private String json(String... kvPairs) throws Exception {
+        Map<String, String> map = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < kvPairs.length; i += 2) {
+            map.put(kvPairs[i], kvPairs[i + 1]);
+        }
+        return objectMapper.writeValueAsString(map);
+    }
+
+    private String extractCookieValue(String setCookieHeader, String cookieName) {
+        if (setCookieHeader == null) return "";
+        for (String part : setCookieHeader.split(";")) {
+            part = part.trim();
+            if (part.startsWith(cookieName + "=")) {
+                return part.substring(cookieName.length() + 1);
+            }
+        }
+        return "";
+    }
+}

@@ -1,4 +1,8 @@
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
   jpa:
     hibernate:
       ddl-auto: validate
@@ -8,19 +12,16 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: true
-  data:
-    redis:
-      host: localhost
-      port: 6379
+    locations: classpath:db/migration
   mail:
     host: localhost
     port: 1025
   ai:
     anthropic:
-      api-key: test-key
+      api-key: sk-ant-api03-test
 
 app:
   jwt:
-    secret: test-secret-key-that-is-long-enough-for-hmac
-    access-token-expiration: 900
-    refresh-token-expiration: 604800
+    secret: test-secret-key-that-is-at-least-32bytes!!
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000

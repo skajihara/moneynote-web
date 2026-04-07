@@ -1,0 +1,254 @@
+package com.example.moneynote.domain.auth;
+
+import com.example.moneynote.common.exception.RateLimitException;
+import com.example.moneynote.common.exception.ResourceNotFoundException;
+import com.example.moneynote.common.exception.UnauthorizedException;
+import com.example.moneynote.common.exception.ValidationException;
+import com.example.moneynote.common.security.JwtTokenProvider;
+import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.domain.auth.dto.*;
+import com.example.moneynote.domain.category.Category;
+import com.example.moneynote.domain.category.CategoryRepository;
+import com.example.moneynote.domain.category.CategoryType;
+import com.example.moneynote.domain.ledger.Ledger;
+import com.example.moneynote.domain.ledger.LedgerRepository;
+import com.example.moneynote.domain.ledgerpermission.LedgerPermission;
+import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
+import com.example.moneynote.domain.ledgerpermission.PermissionType;
+import com.example.moneynote.domain.user.User;
+import com.example.moneynote.domain.user.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private static final int MAX_LOGIN_FAILURES = 5;
+    private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
+    private static final Duration RESET_TOKEN_TTL = Duration.ofMinutes(30);
+    private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
+
+    private final UserRepository userRepository;
+    private final LedgerRepository ledgerRepository;
+    private final LedgerPermissionRepository ledgerPermissionRepository;
+    private final CategoryRepository categoryRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final StringRedisTemplate redisTemplate;
+    private final JavaMailSender mailSender;
+
+    @Value("${app.jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
+
+    // -------------------------------------------------------------------------
+    // register
+    // -------------------------------------------------------------------------
+
+    @Transactional
+    public void register(RegisterRequest request) {
+        if (userRepository.existsById(request.getUserId())) {
+            throw new ValidationException("このユーザーIDはすでに使用されています");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ValidationException("このメールアドレスはすでに登録されています");
+        }
+
+        User user = User.builder()
+                .userId(request.getUserId())
+                .userName(request.getUserName())
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .build();
+        userRepository.save(user);
+
+        Ledger ledger = Ledger.builder()
+                .ledgerId(IdGenerator.ledgerId())
+                .owner(user)
+                .ledgerName("マイ家計簿")
+                .build();
+        ledgerRepository.save(ledger);
+
+        ledgerPermissionRepository.save(LedgerPermission.builder()
+                .permissionId(IdGenerator.ledgerPermissionId())
+                .ledger(ledger)
+                .user(user)
+                .permissionType(PermissionType.ADMIN)
+                .build());
+
+        createDefaultCategories(ledger);
+    }
+
+    private void createDefaultCategories(Ledger ledger) {
+        List<String> expenseNames = List.of(
+                "食費", "交通費", "住居費", "光熱費", "通信費",
+                "医療費", "娯楽費", "衣服費", "その他支出");
+        List<String> incomeNames = List.of("給与", "副収入", "その他収入");
+
+        short order = 0;
+        for (String name : expenseNames) {
+            categoryRepository.save(Category.builder()
+                    .categoryId(IdGenerator.categoryId())
+                    .ledger(ledger)
+                    .categoryName(name)
+                    .categoryType(CategoryType.EXPENSE)
+                    .displayOrder(order++)
+                    .build());
+        }
+        order = 0;
+        for (String name : incomeNames) {
+            categoryRepository.save(Category.builder()
+                    .categoryId(IdGenerator.categoryId())
+                    .ledger(ledger)
+                    .categoryName(name)
+                    .categoryType(CategoryType.INCOME)
+                    .displayOrder(order++)
+                    .build());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // login
+    // -------------------------------------------------------------------------
+
+    public TokenResponse login(LoginRequest request, String ipAddress) {
+        String failKey = "login:fail:" + ipAddress;
+        checkRateLimit(failKey);
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseGet(() -> {
+                    incrementFailCount(failKey);
+                    throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
+                });
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            incrementFailCount(failKey);
+            throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
+        }
+
+        // 成功 → 失敗カウントをリセット
+        redisTemplate.delete(failKey);
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
+
+        // リフレッシュトークンを Redis に保存
+        redisTemplate.opsForValue().set(
+                refreshKey(user.getUserId()), refreshToken, REFRESH_TOKEN_TTL);
+
+        return new TokenResponse(accessToken);
+    }
+
+    public String getRefreshToken(String userId) {
+        return redisTemplate.opsForValue().get(refreshKey(userId));
+    }
+
+    private void checkRateLimit(String failKey) {
+        String countStr = redisTemplate.opsForValue().get(failKey);
+        int count = countStr == null ? 0 : Integer.parseInt(countStr);
+        if (count >= MAX_LOGIN_FAILURES) {
+            throw new RateLimitException("ログイン試行回数が上限に達しました。15分後に再試行してください");
+        }
+    }
+
+    private void incrementFailCount(String failKey) {
+        Long count = redisTemplate.opsForValue().increment(failKey);
+        if (count != null && count == 1) {
+            redisTemplate.expire(failKey, LOCK_DURATION);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // logout
+    // -------------------------------------------------------------------------
+
+    public void logout(String userId) {
+        redisTemplate.delete(refreshKey(userId));
+    }
+
+    // -------------------------------------------------------------------------
+    // refresh
+    // -------------------------------------------------------------------------
+
+    public String refreshAccessToken(String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new UnauthorizedException("リフレッシュトークンが無効です");
+        }
+
+        String userId = jwtTokenProvider.getUserId(refreshToken);
+        String stored = redisTemplate.opsForValue().get(refreshKey(userId));
+
+        if (!refreshToken.equals(stored)) {
+            throw new UnauthorizedException("リフレッシュトークンが一致しません");
+        }
+
+        return jwtTokenProvider.generateAccessToken(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // password reset
+    // -------------------------------------------------------------------------
+
+    public void requestPasswordReset(String email) {
+        // メールが存在しない場合も成功レスポンスを返す（ユーザー列挙攻撃対策）
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set(resetKey(token), user.getUserId(), RESET_TOKEN_TTL);
+            sendPasswordResetMail(user.getEmail(), token);
+        });
+    }
+
+    private void sendPasswordResetMail(String to, String token) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject("【MoneyNote】パスワードリセットのご案内");
+            message.setText(
+                    "以下のリンクよりパスワードをリセットしてください（有効期限：30分）\n\n" +
+                    "http://localhost:3000/password-reset?token=" + token);
+            mailSender.send(message);
+        } catch (Exception e) {
+            log.error("パスワードリセットメールの送信に失敗しました: {}", to, e);
+        }
+    }
+
+    @Transactional
+    public void confirmPasswordReset(String token, String newPassword) {
+        String userId = redisTemplate.opsForValue().get(resetKey(token));
+        if (userId == null) {
+            throw new ResourceNotFoundException("トークンが無効または期限切れです");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        redisTemplate.delete(resetKey(token));
+    }
+
+    // -------------------------------------------------------------------------
+    // helpers
+    // -------------------------------------------------------------------------
+
+    private String refreshKey(String userId) {
+        return "refresh:" + userId;
+    }
+
+    private String resetKey(String token) {
+        return "password_reset:" + token;
+    }
+}
