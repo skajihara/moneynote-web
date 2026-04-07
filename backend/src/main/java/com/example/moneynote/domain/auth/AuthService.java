@@ -53,6 +53,9 @@ public class AuthService {
     @Value("${app.jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     // -------------------------------------------------------------------------
     // register
     // -------------------------------------------------------------------------
@@ -217,7 +220,7 @@ public class AuthService {
             message.setSubject("【MoneyNote】パスワードリセットのご案内");
             message.setText(
                     "以下のリンクよりパスワードをリセットしてください（有効期限：30分）\n\n" +
-                    "http://localhost:3000/password-reset?token=" + token);
+                    frontendUrl + "/password-reset/confirm?token=" + token);
             mailSender.send(message);
         } catch (Exception e) {
             log.error("パスワードリセットメールの送信に失敗しました: {}", to, e);

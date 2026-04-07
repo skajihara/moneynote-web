@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { Toasts } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
   title: 'MoneyNote Web',
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toasts />
+      </body>
     </html>
   );
 };
