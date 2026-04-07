@@ -1,0 +1,30 @@
+# ===================================
+# 依存関係・ビルド成果物（大容量・変更しない）
+# ===================================
+frontend/node_modules/
+frontend/.next/
+frontend/package-lock.json
+backend/build/
+backend/.gradle/
+backend/gradlew
+backend/gradlew.bat
+
+# ===================================
+# 企画書（開発中は不要）
+# ===================================
+proposal/
+
+# ===================================
+# Docker・ログ・一時ファイル
+# ===================================
+*.log
+*.tmp
+docker-compose.override.yml
+
+# ===================================
+# OS・IDE
+# ===================================
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
