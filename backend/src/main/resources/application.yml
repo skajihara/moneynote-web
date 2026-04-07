@@ -15,7 +15,7 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
   mail:
-    host: localhost
+    host: mailhog
     port: 1025
   ai:
     anthropic:
@@ -30,3 +30,5 @@ app:
     secret: ${JWT_SECRET}
     access-token-expiration: 900000      # 15分（ミリ秒）
     refresh-token-expiration: 604800000  # 7日（ミリ秒）
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
