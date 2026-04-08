@@ -1,0 +1,124 @@
+package com.example.moneynote.domain.ledger;
+
+import com.example.moneynote.common.exception.ResourceNotFoundException;
+import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.common.validator.LedgerAccessValidator;
+import com.example.moneynote.domain.ledger.dto.LedgerRequest;
+import com.example.moneynote.domain.ledger.dto.LedgerResponse;
+import com.example.moneynote.domain.ledgerpermission.LedgerPermission;
+import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
+import com.example.moneynote.domain.ledgerpermission.PermissionType;
+import com.example.moneynote.domain.user.User;
+import com.example.moneynote.domain.user.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+// Lombok @Builder の戻り値に対する IDE の Null 型安全警告を抑制する（実行時は問題なし）
+@SuppressWarnings("null")
+@Service
+@RequiredArgsConstructor
+public class LedgerService {
+
+    private final LedgerRepository ledgerRepository;
+    private final LedgerPermissionRepository ledgerPermissionRepository;
+    private final UserRepository userRepository;
+    private final LedgerAccessValidator accessValidator;
+
+    /**
+     * ログインユーザーがアクセス可能な帳簿一覧を取得する（所有または権限あり）。
+     */
+    @Transactional(readOnly = true)
+    public List<LedgerResponse> getLedgers(String userId) {
+        return ledgerRepository.findAccessibleLedgers(userId)
+                .stream()
+                .map(LedgerResponse::from)
+                .toList();
+    }
+
+    /**
+     * 帳簿詳細を取得する。アクセス権限を検証する。
+     */
+    @Transactional(readOnly = true)
+    public LedgerResponse getLedger(String ledgerId, String userId) {
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        return LedgerResponse.from(ledger);
+    }
+
+    /**
+     * 帳簿を作成する。作成時にデフォルトカテゴリを自動生成する。
+     */
+    @Transactional
+    public LedgerResponse createLedger(LedgerRequest request, String userId) {
+        User owner = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
+
+        Ledger ledger = Ledger.builder()
+                .ledgerId(IdGenerator.ledgerId())
+                .owner(owner)
+                .ledgerName(request.getLedgerName())
+                .initialBalance(
+                        request.getInitialBalance() != null
+                                ? request.getInitialBalance()
+                                : BigDecimal.ZERO)
+                .startDayOfMonth(
+                        request.getStartDayOfMonth() != null
+                                ? request.getStartDayOfMonth().shortValue()
+                                : (short) 1)
+                .startMonthOfYear(
+                        request.getStartMonthOfYear() != null
+                                ? request.getStartMonthOfYear().shortValue()
+                                : (short) 1)
+                .build();
+        ledgerRepository.save(ledger);
+
+        // 作成者に ADMIN 権限を付与する
+        ledgerPermissionRepository.save(LedgerPermission.builder()
+                .permissionId(IdGenerator.ledgerPermissionId())
+                .ledger(ledger)
+                .user(owner)
+                .permissionType(PermissionType.ADMIN)
+                .build());
+
+        // 案B採用: POST /api/v1/ledgers ではカテゴリを自動生成しない。
+        // デフォルトカテゴリは register 時（AuthService）のみ生成する。
+        // 追加帳簿は用途が異なる場合が多く、設定画面から手動で追加する。
+
+        return LedgerResponse.from(ledger);
+    }
+
+    /**
+     * 帳簿情報を更新する。アクセス権限を検証する。
+     */
+    @Transactional
+    public LedgerResponse updateLedger(String ledgerId, LedgerRequest request, String userId) {
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+
+        ledger.setLedgerName(request.getLedgerName());
+        if (request.getInitialBalance() != null) {
+            ledger.setInitialBalance(request.getInitialBalance());
+        }
+        if (request.getStartDayOfMonth() != null) {
+            ledger.setStartDayOfMonth(request.getStartDayOfMonth().shortValue());
+        }
+        if (request.getStartMonthOfYear() != null) {
+            ledger.setStartMonthOfYear(request.getStartMonthOfYear().shortValue());
+        }
+
+        return LedgerResponse.from(ledgerRepository.save(ledger));
+    }
+
+    /**
+     * 帳簿を論理削除する（is_active を false に更新）。アクセス権限を検証する。
+     */
+    @Transactional
+    public void deleteLedger(String ledgerId, String userId) {
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        ledger.setActive(false);
+        ledgerRepository.save(ledger);
+    }
+
+}
