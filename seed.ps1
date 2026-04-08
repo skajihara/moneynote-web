@@ -1,9 +1,13 @@
-# ===========================================================
+﻿# ===========================================================
 # MoneyNote シードデータ投入スクリプト (PowerShell 版)
 # ===========================================================
 # 使用方法: .\seed.ps1
 # 前提: docker compose up -d でバックエンドが起動していること
 # ===========================================================
+
+# コンソール出力を UTF-8 に設定（日本語文字化け防止）
+$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Continue"
 $baseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "http://localhost:8080" }
@@ -60,7 +64,8 @@ function Get-LastDay {
 function Find-CategoryId {
     param($cats, $name)
     $found = $cats.data | Where-Object { $_.categoryName -eq $name } | Select-Object -First 1
-    return if ($found) { $found.categoryId } else { "" }
+    # PowerShell 5.1 では return if (...) は無効のため if-else で記述する
+    if ($found) { return $found.categoryId } else { return "" }
 }
 
 function Post-Transaction {
@@ -132,7 +137,8 @@ function Register-AndLogin {
     Invoke-Api "POST" "/api/v1/auth/register" $regBody | Out-Null
     $loginBody = @{ userId=$userId; password=$password } | ConvertTo-Json -Compress
     $resp = Invoke-Api "POST" "/api/v1/auth/login" $loginBody
-    return if ($resp -and $resp.data) { $resp.data.accessToken } else { "" }
+    # PowerShell 5.1 では return if (...) は無効のため if-else で記述する
+    if ($resp -and $resp.data) { return $resp.data.accessToken } else { return "" }
 }
 
 $tokenNormal = Register-AndLogin "user_normal"        "正常系ユーザー"           "normal@example.com"     "Password123"
@@ -172,8 +178,13 @@ function Update-Ledger {
 Update-Ledger $ledgerMainId  $tokenNormal "正常系メイン帳簿"                    500000
 Update-Ledger $ledgerOverId  $tokenOver   "予算超過確認帳簿"                    200000
 Update-Ledger $ledgerMinusId $tokenMinus  "残高マイナス確認帳簿"                 10000
-Update-Ledger $ledgerNodataId$tokenNodata "空帳簿（データなし確認用）"                 0
+Update-Ledger $ledgerNodataId $tokenNodata "空帳簿（データなし確認用）"                0
 Update-Ledger $ledgerOtherId $tokenOther  "別ユーザー帳簿（アクセス禁止確認用）" 300000
+
+# user_no_data の登録時に自動生成された帳簿を削除する
+# → 帳簿0件状態でログインすると LedgerCreateModal が表示されることを確認するためのユーザー
+$delResp = Invoke-Api "DELETE" "/api/v1/ledgers/$ledgerNodataId" $null $tokenNodata
+OkOrWarn $delResp "user_no_data デフォルト帳簿を削除（帳簿0件モーダル確認用）"
 
 # サブ帳簿を追加
 $subBody = @{ ledgerName="サブ帳簿（切替確認用）"; initialBalance=100000 } | ConvertTo-Json -Compress
