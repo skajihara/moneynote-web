@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 5 完了時点）
+2026年4月（Step 6 完了時点）
 
 ---
 
@@ -14,10 +14,11 @@
 | Step 3 | 認証 API | feature/step3-auth-api | 完了・develop マージ済み |
 | Step 4 | 認証画面 | feature/step4-auth-frontend | 完了・develop マージ済み |
 | Step 5 | 帳簿管理 API・フロントエンド | feature/step5-ledger | 完了・develop マージ済み |
+| Step 6 | 収支明細 API・カレンダー・一覧画面 | feature/step6-transaction | 完了・develop マージ済み |
 
 ## 現在の状態
-- 現在のブランチ: develop
-- 次の作業: Step 6（収支明細 API・カレンダー・一覧画面）
+- 現在のブランチ: feature/step6-transaction
+- 次の作業: Step 7（ダッシュボード完成）
 - リリース済み: v0.1.0（Step 1〜4）
 
 ---
@@ -37,6 +38,9 @@
 | CategoryType の変更は PUT /categories/{id} では不可 | 変更すると既存明細の分類が変わるため |
 | POST /api/v1/ledgers ではカテゴリを自動生成しない | 追加帳簿は用途が異なるケースが多いため。register 時のみ生成する |
 | seed.ps1 は UTF-8 BOM付きで保存 | PowerShell 5.1 での日本語文字化け対策 |
+| TransactionService.createTransaction では accessValidator.validate() の戻り値（Ledger）を再利用 | DB の二重アクセスを避けるため |
+| DELETE /transactions/{id} のリクエストボディに scope フィールドを設ける | SINGLE/ALL の切り替えを明示的に表現するため |
+| フロントエンドの通貨フォーマット `toLocaleString('ja-JP', {style:'currency'})` は JSDOM で全角円記号を出力する | テストでは `/3,000/` などの regex で検証する |
 
 ---
 
@@ -47,6 +51,7 @@
 - 認証 API: backend/src/main/java/com/example/moneynote/domain/auth/
 - 帳簿 API: backend/src/main/java/com/example/moneynote/domain/ledger/
 - カテゴリ API: backend/src/main/java/com/example/moneynote/domain/category/
+- 明細 API: backend/src/main/java/com/example/moneynote/domain/transaction/
 - アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
 - 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
 - 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
@@ -58,11 +63,15 @@
 
 - 認証画面: frontend/src/app/(auth)/
 - アプリ画面: frontend/src/app/(app)/
+- 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
 - API クライアント: frontend/src/lib/api/
+- 型定義: frontend/src/types/
 - Zustand ストア: frontend/src/stores/
 - 共通コンポーネント: frontend/src/components/
-  - レイアウト: frontend/src/components/layout/ （Header.tsx, SideMenu.tsx）
-  - 帳簿: frontend/src/components/ledger/ （LedgerCreateModal.tsx）
+  - レイアウト: frontend/src/components/layout/
+  - 帳簿: frontend/src/components/ledger/
+  - 明細: frontend/src/components/transaction/
+  - UI汎用: frontend/src/components/ui/ （SummaryCards.tsx, Toast.tsx）
 
 ---
 
@@ -71,8 +80,7 @@
 1. コード変更後は docker compose up -d --build が必要
    （docker compose up -d だけではイメージが更新されない）
 
-2. seed.ps1 は Step 5（帳簿管理 API）完了後に完全動作する
-   （現時点では帳簿・明細系 API が未実装のため途中で止まる）
+2. seed.ps1 は Step 6（収支明細 API）完了後に完全動作する
 
 3. DB リセットが必要な場合は docker compose down -v を使う
    （-v オプションでボリュームも削除される）
@@ -82,24 +90,27 @@
 5. PUT /api/v1/ledgers/{ledgerId}/categories/order はパス設計上、
    /{categoryId} より前に定義する必要がある（Spring MVC のルーティング順序）
 
+6. user_no_data はログイン後に帳簿0件でモーダルが表示されるユーザー。
+   seed.ps1 で register 後に自動生成された帳簿を DELETE で削除している。
+
 ---
 
 ## ブランチ戦略
 
 - main: v0.1.0 タグ済み
-- develop: Step 1〜4 マージ済み
-- feature/step5-ledger: Step 5 実装済み（テストグリーン）
+- develop: Step 1〜5 マージ済み
+- feature/step6-transaction: Step 6 実装済み（テストグリーン）
 
 ### 次回の作業手順
 ```bash
-# Step 5 を develop にマージ
+# Step 6 を develop にマージ
 git checkout develop
-git merge --no-ff feature/step5-ledger
+git merge --no-ff feature/step6-transaction
 git push origin develop
 
-# Step 6 の feature ブランチを作成
-git checkout -b feature/step6-transaction
-git push origin feature/step6-transaction
+# Step 7 の feature ブランチを作成
+git checkout -b feature/step7-fixed-transaction
+git push origin feature/step7-fixed-transaction
 ```
 
 ---
