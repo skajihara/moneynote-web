@@ -2,7 +2,7 @@ import { act } from 'react';
 import { useSubPanelStore } from '../subPanelStore';
 
 beforeEach(() => {
-  useSubPanelStore.setState({ isOpen: false, content: null });
+  useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
 });
 
 describe('subPanelStore', () => {
@@ -13,6 +13,18 @@ describe('subPanelStore', () => {
     const state = useSubPanelStore.getState();
     expect(state.isOpen).toBe(true);
     expect(state.content).toBe('テストコンテンツ');
+  });
+
+  it('open を複数回呼ぶたびに contentKey がインクリメントされる', () => {
+    act(() => {
+      useSubPanelStore.getState().open('コンテンツA');
+    });
+    expect(useSubPanelStore.getState().contentKey).toBe(1);
+
+    act(() => {
+      useSubPanelStore.getState().open('コンテンツB');
+    });
+    expect(useSubPanelStore.getState().contentKey).toBe(2);
   });
 
   it('close で isOpen=false になり content がクリアされる', () => {

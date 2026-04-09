@@ -23,24 +23,37 @@ function Warn { param($msg) Write-Host "  ✗ ERROR: $msg" -ForegroundColor Red 
 
 function Invoke-Api {
     param($method, $endpoint, $body = $null, $token = $null)
-    $headers = @{ "Content-Type" = "application/json; charset=utf-8" }
-    if ($token) { $headers["Authorization"] = "Bearer $token" }
-    $params = @{ Method = $method; Uri = "${baseUrl}${endpoint}"; Headers = $headers }
-    if ($body) { $params["Body"] = [System.Text.Encoding]::UTF8.GetBytes($body) }
+    $uri = "${baseUrl}${endpoint}"
+    $req = [System.Net.HttpWebRequest]::Create($uri)
+    $req.Method = $method
+    $req.ContentType = "application/json; charset=utf-8"
+    $req.Accept = "application/json"
+    if ($token) { $req.Headers["Authorization"] = "Bearer $token" }
+    if ($body) {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $req.ContentLength = $bytes.Length
+        $stream = $req.GetRequestStream()
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Close()
+    } else {
+        $req.ContentLength = 0
+    }
     try {
-        $resp = Invoke-RestMethod @params
-        return $resp
-    } catch {
-        # 4xx/5xx レスポンスボディを取得
-        try {
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = [System.IO.StreamReader]::new($stream)
+        $resp   = $req.GetResponse()
+        $reader = [System.IO.StreamReader]::new($resp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+        $text   = $reader.ReadToEnd()
+        $reader.Close()
+        return $text | ConvertFrom-Json
+    } catch [System.Net.WebException] {
+        $errResp = $_.Exception.Response
+        if ($errResp) {
+            $reader = [System.IO.StreamReader]::new($errResp.GetResponseStream(), [System.Text.Encoding]::UTF8)
             $text   = $reader.ReadToEnd()
+            $reader.Close()
             return $text | ConvertFrom-Json
-        } catch {
-            Write-Host "  ✗ Network error: $($_.Exception.Message)" -ForegroundColor Red
-            return $null
         }
+        Write-Host "  ✗ Network error: $($_.Exception.Message)" -ForegroundColor Red
+        return $null
     }
 }
 
@@ -203,6 +216,13 @@ Step-Print "Step4: カスタムカテゴリの追加中..."
 $catsMain  = Invoke-Api "GET" "/api/v1/ledgers/$ledgerMainId/categories" $null $tokenNormal
 $catsOver  = Invoke-Api "GET" "/api/v1/ledgers/$ledgerOverId/categories" $null $tokenOver
 $catsMinus = Invoke-Api "GET" "/api/v1/ledgers/$ledgerMinusId/categories" $null $tokenMinus
+# サブ帳簿はデフォルトカテゴリが生成されないため、明細投入前に必要なカテゴリを作成する
+$subExpBody = @{ categoryName="食費"; categoryType="EXPENSE" } | ConvertTo-Json -Compress
+$subExpResp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerSubId/categories" $subExpBody $tokenNormal
+OkOrWarn $subExpResp "サブ帳簿 食費カテゴリ作成"
+$subIncBody = @{ categoryName="給与"; categoryType="INCOME" } | ConvertTo-Json -Compress
+$subIncResp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerSubId/categories" $subIncBody $tokenNormal
+OkOrWarn $subIncResp "サブ帳簿 給与カテゴリ作成"
 $catsSub   = Invoke-Api "GET" "/api/v1/ledgers/$ledgerSubId/categories" $null $tokenNormal
 
 # user_normal メイン帳簿
@@ -242,6 +262,11 @@ OkOrWarn $customResp "カスタムカテゴリ 作成"
 
 Ok "カテゴリIDをすべて取得しました"
 
+# デバッグ: 主要カテゴリIDの確認（空の場合は Find-CategoryId が失敗している）
+Write-Host "  [DEBUG] catSalary=$catSalary catFood=$catFood catRent=$catRent" -ForegroundColor DarkGray
+Write-Host "  [DEBUG] catSubSalary=$catSubSalary catSubFood=$catSubFood" -ForegroundColor DarkGray
+if (-not $catSalary) { Warn "catSalary が空です。カテゴリIDの取得に失敗しています。処理を中断します。"; exit 1 }
+
 # ─── Step 5: 明細データ投入 ─────────────────────────────────
 Step-Print "Step5: 明細データ投入中... (13ヶ月分)"
 
@@ -269,7 +294,7 @@ for ($idx = 0; $idx -le 12; $idx++) {
             Post-Transaction $ledgerMainId $tokenNormal $catRent     "EXPENSE" 80000              "${ym}-01" "家賃（固定費・正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catComm     "EXPENSE" 5500               "${ym}-25" "スマホ代（固定費・正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catUtility  "EXPENSE" $utility[$idx]     "${ym}-05" "光熱費（季節変動確認用）"
-            Post-Transaction $ledgerMainId $tokenNormal $catTransport"EXPENSE" $transport[$idx]   "${ym}-10" "交通費（正常系）"
+            Post-Transaction $ledgerMainId $tokenNormal $catTransport "EXPENSE" $transport[$idx]   "${ym}-10" "交通費（正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catEnt      "EXPENSE" 8000               "${ym}-15" "娯楽費（予算内・正常系）"
         }
         Post-Transaction $ledgerMainId $tokenNormal $catFood "EXPENSE" $foodDay8[$idx] "${ym}-08" "食費週次（正常系）"
@@ -287,7 +312,7 @@ Post-Transaction $ledgerMainId $tokenNormal $catClothing "EXPENSE" 999999  "${cu
 Post-Transaction $ledgerMainId $tokenNormal $catOtherExp "EXPENSE" 15000   "${currYM}-${currLast}" "月末日付（境界値確認用）"
 Post-Transaction $ledgerMainId $tokenNormal $catSalary   "INCOME"  280000  "${currYM}-01"       "月初日付（境界値確認用）"
 Post-Transaction $ledgerMainId $tokenNormal $catFood     "EXPENSE" 5000    "${currYM}-15"       ",カンマ含むメモ（CSV確認用）,"
-Post-Transaction $ledgerMainId $tokenNormal $catTransport"EXPENSE" 3000    "${currYM}-16"       "日本語メモ（文字コード確認用）電車代"
+Post-Transaction $ledgerMainId $tokenNormal $catTransport "EXPENSE" 3000    "${currYM}-16"       "日本語メモ（文字コード確認用）電車代"
 Post-Transaction $ledgerMainId $tokenNormal $catOtherExp "EXPENSE" 1000    "${currYM}-17"       ""
 Post-Transaction $ledgerMainId $tokenNormal $catEnt      "EXPENSE" 500     "${currYM}-18"       $memo500
 Post-Transaction $ledgerMainId $tokenNormal $catMedical  "EXPENSE" 10000   "2024-02-29"         "うるう日（境界値確認用）"

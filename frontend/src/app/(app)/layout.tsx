@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import Header from '@/components/layout/Header';
@@ -18,13 +19,19 @@ type AppLayoutProps = {
 };
 
 const AppLayout = ({ children }: AppLayoutProps) => {
-  const { isOpen, content } = useSubPanelStore();
+  const { isOpen, content, contentKey, close } = useSubPanelStore();
   const { ledgers, fetchLedgers } = useLedgerStore();
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
 
   useEffect(() => {
     fetchLedgers().finally(() => setLoading(false));
   }, [fetchLedgers]);
+
+  // パス変更時にサブパネルを閉じる
+  useEffect(() => {
+    close();
+  }, [pathname, close]);
 
   // ローディング中はモーダル判定を保留する
   const showCreateModal = !loading && ledgers.length === 0;
@@ -35,7 +42,12 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="flex flex-1 overflow-hidden">
         <SideMenu />
         <main className="flex-1 overflow-auto bg-gray-50 p-4">{children}</main>
-        {isOpen && content && <SubPanel>{content}</SubPanel>}
+        {isOpen && content && (
+          <SubPanel>
+            {/* contentKey が変わるたびに div が再マウントされ、内部フォームも初期化される */}
+            <div key={contentKey}>{content}</div>
+          </SubPanel>
+        )}
       </div>
 
       {showCreateModal && (

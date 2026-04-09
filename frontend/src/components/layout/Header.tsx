@@ -1,17 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useSubPanelStore } from '@/stores/subPanelStore';
 import { logout as logoutApi } from '@/lib/api/auth';
 
 const Header = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { userName, logout: authLogout } = useAuthStore();
   const addToast = useToastStore((state) => state.add);
   const { ledgers, selectedLedgerId, selectLedger } = useLedgerStore();
+  const closePanel = useSubPanelStore((state) => state.close);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const selectedLedger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
@@ -27,9 +30,18 @@ const Header = () => {
     addToast('success', 'ログアウトしました');
   };
 
-  const handleSelectLedger = (ledgerId: string) => {
-    selectLedger(ledgerId);
+  const handleSelectLedger = (newLedgerId: string) => {
+    selectLedger(newLedgerId);
+    closePanel();
     setDropdownOpen(false);
+
+    // /ledgers/{ledgerId}/* にいる場合は新しい帳簿のパスへ遷移する
+    const ledgerPathMatch = pathname.match(/^(\/ledgers\/)([^/]+)(\/.*)?$/);
+    if (ledgerPathMatch) {
+      const prefix = ledgerPathMatch[1]; // '/ledgers/'
+      const suffix = ledgerPathMatch[3] ?? ''; // '/transactions' 等
+      router.push(`${prefix}${newLedgerId}${suffix}`);
+    }
   };
 
   return (

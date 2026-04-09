@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AppLayout from '../layout';
 import * as authApi from '@/lib/api/auth';
@@ -6,11 +6,13 @@ import * as ledgerApi from '@/lib/api/ledger';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useSubPanelStore } from '@/stores/subPanelStore';
 
 const mockPush = jest.fn();
+let mockPathname = '/dashboard';
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
-  usePathname: () => '/dashboard',
+  usePathname: () => mockPathname,
 }));
 
 jest.mock('@/lib/api/auth');
@@ -41,6 +43,7 @@ const ledgersResponse = {
 beforeEach(() => {
   mockPush.mockReset();
   mockLogout.mockReset();
+  mockPathname = '/dashboard';
   mockGetLedgers.mockResolvedValue(ledgersResponse);
   useAuthStore.setState({
     userId: 'test_user',
@@ -50,6 +53,7 @@ beforeEach(() => {
   });
   useToastStore.setState({ toasts: [] });
   useLedgerStore.setState({ ledgers: [], selectedLedgerId: null });
+  useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
 });
 
 describe('AppLayout ログアウト', () => {
@@ -136,6 +140,26 @@ describe('AppLayout 帳簿セレクター', () => {
 
     await waitFor(() => {
       expect(screen.getByText('テスト帳簿')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('AppLayout パス変更でサブパネルを閉じる', () => {
+  it('pathname が変わると isOpen が false になる', async () => {
+    // まずサブパネルを開いた状態にする
+    act(() => {
+      useSubPanelStore.getState().open(<div>パネルコンテンツ</div>);
+    });
+    expect(useSubPanelStore.getState().isOpen).toBe(true);
+
+    const { rerender } = render(<AppLayout><div>コンテンツ</div></AppLayout>);
+
+    // pathname を変更して再レンダー
+    mockPathname = '/settings';
+    rerender(<AppLayout><div>コンテンツ</div></AppLayout>);
+
+    await waitFor(() => {
+      expect(useSubPanelStore.getState().isOpen).toBe(false);
     });
   });
 });
