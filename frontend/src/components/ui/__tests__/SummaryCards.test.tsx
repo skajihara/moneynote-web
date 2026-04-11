@@ -29,4 +29,22 @@ describe('SummaryCards', () => {
     const cards = screen.getAllByText(/20,000/);
     expect(cards[0]).not.toHaveClass('text-red-600');
   });
+
+  it('currentBalance を渡すと残高カードが4枚目に追加される', () => {
+    render(
+      <SummaryCards
+        totalIncome={50000}
+        totalExpense={30000}
+        netBalance={20000}
+        currentBalance={120000}
+      />
+    );
+    expect(screen.getByText('残高')).toBeInTheDocument();
+    expect(screen.getByText(/120,000/)).toBeInTheDocument();
+  });
+
+  it('currentBalance がない場合は残高カードが表示されない', () => {
+    render(<SummaryCards totalIncome={50000} totalExpense={30000} netBalance={20000} />);
+    expect(screen.queryByText('残高')).not.toBeInTheDocument();
+  });
 });
