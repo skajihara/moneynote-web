@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { getTransactions } from '@/lib/api/transaction';
@@ -10,7 +10,7 @@ import TransactionCalendar from '@/components/transaction/TransactionCalendar';
 import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
 
-const TransactionsPage = () => {
+const TransactionsContent = () => {
   const params = useParams<{ ledgerId: string }>();
   const ledgerId = params.ledgerId;
   const searchParams = useSearchParams();
@@ -142,6 +142,14 @@ const TransactionsPage = () => {
         ＋
       </button>
     </div>
+  );
+};
+
+const TransactionsPage = () => {
+  return (
+    <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+      <TransactionsContent />
+    </Suspense>
   );
 };
 

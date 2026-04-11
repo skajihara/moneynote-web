@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 6 完了時点）
+2026年4月（Step 7 完了時点）
 
 ---
 
@@ -15,10 +15,11 @@
 | Step 4 | 認証画面 | feature/step4-auth-frontend | 完了・develop マージ済み |
 | Step 5 | 帳簿管理 API・フロントエンド | feature/step5-ledger | 完了・develop マージ済み |
 | Step 6 | 収支明細 API・カレンダー・一覧画面 | feature/step6-transaction | 完了・develop マージ済み |
+| Step 7 | ダッシュボード完成 | feature/step7-dashboard | 完了・develop マージ済み |
 
 ## 現在の状態
-- 現在のブランチ: feature/step6-transaction
-- 次の作業: Step 7（ダッシュボード完成）
+- 現在のブランチ: develop
+- 次の作業: Step 8（分析レポート・カテゴリ集計）
 - リリース済み: v0.1.0（Step 1〜4）
 
 ---
@@ -41,6 +42,8 @@
 | TransactionService.createTransaction では accessValidator.validate() の戻り値（Ledger）を再利用 | DB の二重アクセスを避けるため |
 | DELETE /transactions/{id} のリクエストボディに scope フィールドを設ける | SINGLE/ALL の切り替えを明示的に表現するため |
 | フロントエンドの通貨フォーマット `toLocaleString('ja-JP', {style:'currency'})` は JSDOM で全角円記号を出力する | テストでは `/3,000/` などの regex で検証する |
+| Recharts の ResponsiveContainer はテストで jsdom モック対象 | JSDOM は ResizeObserver を持たないため |
+| ダッシュボード API は GET /api/v1/ledgers/{ledgerId}/dashboard として TransactionController と分離し DashboardController に実装 | 責務分離のため |
 
 ---
 
@@ -52,6 +55,7 @@
 - 帳簿 API: backend/src/main/java/com/example/moneynote/domain/ledger/
 - カテゴリ API: backend/src/main/java/com/example/moneynote/domain/category/
 - 明細 API: backend/src/main/java/com/example/moneynote/domain/transaction/
+- ダッシュボード API: backend/src/main/java/com/example/moneynote/domain/dashboard/
 - アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
 - 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
 - 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
@@ -63,6 +67,7 @@
 
 - 認証画面: frontend/src/app/(auth)/
 - アプリ画面: frontend/src/app/(app)/
+- ダッシュボードページ: frontend/src/app/(app)/dashboard/
 - 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
 - API クライアント: frontend/src/lib/api/
 - 型定義: frontend/src/types/
@@ -71,6 +76,8 @@
   - レイアウト: frontend/src/components/layout/
   - 帳簿: frontend/src/components/ledger/
   - 明細: frontend/src/components/transaction/
+  - グラフ: frontend/src/components/charts/ （CategoryPieChart.tsx）
+  - 予算: frontend/src/components/budget/ （BudgetProgressList.tsx）
   - UI汎用: frontend/src/components/ui/ （SummaryCards.tsx, Toast.tsx）
 
 ---
@@ -99,18 +106,13 @@
 
 - main: v0.1.0 タグ済み
 - develop: Step 1〜5 マージ済み
-- feature/step6-transaction: Step 6 実装済み（テストグリーン）
+- feature/step6-transaction: Step 6・Step 7 実装済み（テストグリーン）
 
 ### 次回の作業手順
 ```bash
-# Step 6 を develop にマージ
 git checkout develop
-git merge --no-ff feature/step6-transaction
-git push origin develop
-
-# Step 7 の feature ブランチを作成
-git checkout -b feature/step7-fixed-transaction
-git push origin feature/step7-fixed-transaction
+git checkout -b feature/step8-reports
+git push origin feature/step8-reports
 ```
 
 ---
