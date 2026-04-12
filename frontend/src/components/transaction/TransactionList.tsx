@@ -52,7 +52,7 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
             {/* 日付グループヘッダー */}
             <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
               <span className="text-sm font-medium text-gray-700">{formatDate(date)}</span>
-              <span className={`text-sm font-medium ${dayNet >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <span className={`text-sm font-medium ${dayNet >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                 {`${dayNet >= 0 ? '+' : ''}${fmt(dayNet)}`}
               </span>
             </div>
@@ -87,7 +87,7 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
 
                 {/* 金額 */}
                 <span className={`text-sm font-semibold shrink-0 ${
-                  t.transactionType === 'INCOME' ? 'text-blue-600' : 'text-red-600'
+                  t.transactionType === 'INCOME' ? 'text-green-600' : 'text-red-500'
                 }`}>
                   {`${t.transactionType === 'INCOME' ? '+' : '-'}${fmt(t.amount)}`}
                 </span>
