@@ -27,11 +27,6 @@ const menuItems: MenuItem[] = [
     requiresLedger: true,
   },
   {
-    label: 'カテゴリ',
-    href: (id) => `/ledgers/${id}/categories`,
-    requiresLedger: true,
-  },
-  {
     label: '予算',
     href: (id) => `/ledgers/${id}/budget`,
     requiresLedger: true,

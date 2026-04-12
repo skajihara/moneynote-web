@@ -85,7 +85,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick }: Props
                     </p>
                   )}
                   {summary && summary.totalIncome > 0 && (
-                    <p className="text-blue-500 text-[10px] truncate">
+                    <p className="text-green-600 text-[10px] truncate">
                       +{fmt(summary.totalIncome)}
                     </p>
                   )}

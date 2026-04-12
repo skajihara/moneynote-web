@@ -45,6 +45,8 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
           outerRadius={size / 3}
           dataKey="value"
           label={false}
+          startAngle={90}
+          endAngle={-270}
         >
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />

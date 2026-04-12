@@ -20,14 +20,26 @@ describe('SummaryCards', () => {
   it('収支がマイナスの場合は赤色クラスが付く', () => {
     render(<SummaryCards totalIncome={10000} totalExpense={50000} netBalance={-40000} />);
     const netEl = screen.getByText(/40,000/);
-    expect(netEl).toHaveClass('text-red-600');
+    expect(netEl).toHaveClass('text-red-500');
   });
 
   it('収支がゼロ以上の場合は赤色クラスがつかない', () => {
     render(<SummaryCards totalIncome={50000} totalExpense={30000} netBalance={20000} />);
-    // 収支カードの金額だけ特定するため getByText を使い複数ヒット時は getAllByText で絞る
     const cards = screen.getAllByText(/20,000/);
-    expect(cards[0]).not.toHaveClass('text-red-600');
+    expect(cards[0]).not.toHaveClass('text-red-500');
+  });
+
+  it('carryOver を渡すと繰り越しカードが追加される', () => {
+    render(
+      <SummaryCards
+        totalIncome={50000}
+        totalExpense={30000}
+        netBalance={20000}
+        carryOver={300000}
+      />
+    );
+    expect(screen.getByText('繰り越し')).toBeInTheDocument();
+    expect(screen.getByText(/300,000/)).toBeInTheDocument();
   });
 
   it('currentBalance を渡すと残高カードが4枚目に追加される', () => {

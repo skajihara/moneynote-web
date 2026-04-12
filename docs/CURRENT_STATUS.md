@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 7 完了時点）
+2026年4月（Step 8 完了時点）
 
 ---
 
@@ -16,10 +16,11 @@
 | Step 5 | 帳簿管理 API・フロントエンド | feature/step5-ledger | 完了・develop マージ済み |
 | Step 6 | 収支明細 API・カレンダー・一覧画面 | feature/step6-transaction | 完了・develop マージ済み |
 | Step 7 | ダッシュボード完成 | feature/step7-dashboard | 完了・develop マージ済み |
+| Step 8 | 分析レポート・カテゴリ集計 | feature/step8-reports | 完了・develop マージ済み |
 
 ## 現在の状態
 - 現在のブランチ: develop
-- 次の作業: Step 8（分析レポート・カテゴリ集計）
+- 次の作業: Step 9（予算設定・固定費管理）
 - リリース済み: v0.1.0（Step 1〜4）
 
 ---
@@ -44,6 +45,18 @@
 | フロントエンドの通貨フォーマット `toLocaleString('ja-JP', {style:'currency'})` は JSDOM で全角円記号を出力する | テストでは `/3,000/` などの regex で検証する |
 | Recharts の ResponsiveContainer はテストで jsdom モック対象 | JSDOM は ResizeObserver を持たないため |
 | ダッシュボード API は GET /api/v1/ledgers/{ledgerId}/dashboard として TransactionController と分離し DashboardController に実装 | 責務分離のため |
+| CategoryReportController を CategoryController と別クラスで同じ base path に定義 | GET /summary と GET /{categoryId}/transactions が既存の PUT/DELETE と競合しないため Spring MVC が正しくルーティングできる |
+| CategoryType → TransactionType の変換は `TransactionType.valueOf(type.name())` | 両 Enum は同名の値 INCOME/EXPENSE を持つため |
+| CategorySummary（report.ts）と CategoryBreakdown（dashboard.ts）は同一形状 | CategoryPieChart の再利用のため `as unknown as CategoryBreakdown[]` でキャスト |
+| カテゴリ別集計はレポートページ（月別・年別タブ）に統合 | 独立したカテゴリページは削除。サイドメニューからも除去 |
+| 収入系カラーは text-green-600 / #16A34A、支出系は text-red-500 / #EF4444 に統一 | アプリ全体で緑=収入・赤=支出の配色に統一するため |
+| 年間カテゴリ別集計 API: GET /categories/summary/annual?year= | 月次集計メソッドをリファクタリングしてプライベートヘルパー buildCategorySummary を共用 |
+| SummaryCards に carryOver? prop を追加 | レポートページで繰り越しをサマリーカードと同じ行に表示するため |
+| カテゴリ別集計をレポートページに統合 | 月・年の切り替えと連動させるため |
+| 収入=緑・支出=赤でアプリ全体を統一 | 直感的な色識別のため |
+| 円グラフの開始点を12時に統一 | UI の一貫性のため || カテゴリ別集計をレポートページに統合 | 月・年の切り替えと連動させるため |
+| 収入=緑・支出=赤でアプリ全体を統一 | 直感的な色識別のため |
+| 円グラフの開始点を12時に統一 | UI の一貫性のため |
 
 ---
 
@@ -69,6 +82,8 @@
 - アプリ画面: frontend/src/app/(app)/
 - ダッシュボードページ: frontend/src/app/(app)/dashboard/
 - 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
+- レポートページ: frontend/src/app/(app)/ledgers/[ledgerId]/reports/
+- カテゴリ集計: レポートページに統合済み（独立ページ廃止）
 - API クライアント: frontend/src/lib/api/
 - 型定義: frontend/src/types/
 - Zustand ストア: frontend/src/stores/
@@ -76,7 +91,7 @@
   - レイアウト: frontend/src/components/layout/
   - 帳簿: frontend/src/components/ledger/
   - 明細: frontend/src/components/transaction/
-  - グラフ: frontend/src/components/charts/ （CategoryPieChart.tsx）
+  - グラフ: frontend/src/components/charts/ （CategoryPieChart.tsx, MonthlyBarChart.tsx, BalanceLineChart.tsx）
   - 予算: frontend/src/components/budget/ （BudgetProgressList.tsx）
   - UI汎用: frontend/src/components/ui/ （SummaryCards.tsx, Toast.tsx）
 
@@ -105,14 +120,14 @@
 ## ブランチ戦略
 
 - main: v0.1.0 タグ済み
-- develop: Step 1〜5 マージ済み
-- feature/step6-transaction: Step 6・Step 7 実装済み（テストグリーン）
+- develop: Step 1〜7 マージ済み
+- feature/step7-dashboard: Step 8 実装済み（テストグリーン）
 
-### 次回の作業手順
+### 次回の作業手順（Gate 3 完了後）
 ```bash
 git checkout develop
-git checkout -b feature/step8-reports
-git push origin feature/step8-reports
+git checkout -b feature/step9-budget-fixed
+git push origin feature/step9-budget-fixed
 ```
 
 ---
