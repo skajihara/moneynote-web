@@ -1,0 +1,72 @@
+import { apiClient } from './client';
+import type {
+  TransactionListResponse,
+  BalanceInfo,
+  Transaction,
+  CreateTransactionRequest,
+  UpdateTransactionRequest,
+  DeleteScope,
+} from '@/types/transaction';
+
+type ApiResponse<T> = {
+  data: T;
+  error: null;
+  timestamp: string;
+};
+
+export type { Transaction };
+
+export const getTransactions = (
+  ledgerId: string,
+  params: { year: number; month: number; categoryId?: string; type?: string }
+) => {
+  const query = new URLSearchParams({
+    year: String(params.year),
+    month: String(params.month),
+  });
+  if (params.categoryId) query.set('categoryId', params.categoryId);
+  if (params.type) query.set('type', params.type);
+  return apiClient<ApiResponse<TransactionListResponse>>(
+    `/api/v1/ledgers/${ledgerId}/transactions?${query.toString()}`
+  );
+};
+
+export const getBalance = (ledgerId: string) =>
+  apiClient<ApiResponse<BalanceInfo>>(
+    `/api/v1/ledgers/${ledgerId}/balance`
+  );
+
+export const createTransaction = (ledgerId: string, data: CreateTransactionRequest) =>
+  apiClient<ApiResponse<Transaction>>(`/api/v1/ledgers/${ledgerId}/transactions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+export const updateTransaction = (
+  ledgerId: string,
+  transactionId: string,
+  data: UpdateTransactionRequest
+) =>
+  apiClient<ApiResponse<Transaction>>(
+    `/api/v1/ledgers/${ledgerId}/transactions/${transactionId}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+
+export const deleteTransaction = (
+  ledgerId: string,
+  transactionId: string,
+  scope: DeleteScope
+) =>
+  apiClient<ApiResponse<null>>(
+    `/api/v1/ledgers/${ledgerId}/transactions/${transactionId}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scope }),
+    }
+  );

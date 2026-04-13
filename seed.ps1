@@ -1,9 +1,13 @@
-# ===========================================================
+﻿# ===========================================================
 # MoneyNote シードデータ投入スクリプト (PowerShell 版)
 # ===========================================================
 # 使用方法: .\seed.ps1
 # 前提: docker compose up -d でバックエンドが起動していること
 # ===========================================================
+
+# コンソール出力を UTF-8 に設定（日本語文字化け防止）
+$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Continue"
 $baseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "http://localhost:8080" }
@@ -19,24 +23,37 @@ function Warn { param($msg) Write-Host "  ✗ ERROR: $msg" -ForegroundColor Red 
 
 function Invoke-Api {
     param($method, $endpoint, $body = $null, $token = $null)
-    $headers = @{ "Content-Type" = "application/json; charset=utf-8" }
-    if ($token) { $headers["Authorization"] = "Bearer $token" }
-    $params = @{ Method = $method; Uri = "${baseUrl}${endpoint}"; Headers = $headers }
-    if ($body) { $params["Body"] = [System.Text.Encoding]::UTF8.GetBytes($body) }
+    $uri = "${baseUrl}${endpoint}"
+    $req = [System.Net.HttpWebRequest]::Create($uri)
+    $req.Method = $method
+    $req.ContentType = "application/json; charset=utf-8"
+    $req.Accept = "application/json"
+    if ($token) { $req.Headers["Authorization"] = "Bearer $token" }
+    if ($body) {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $req.ContentLength = $bytes.Length
+        $stream = $req.GetRequestStream()
+        $stream.Write($bytes, 0, $bytes.Length)
+        $stream.Close()
+    } else {
+        $req.ContentLength = 0
+    }
     try {
-        $resp = Invoke-RestMethod @params
-        return $resp
-    } catch {
-        # 4xx/5xx レスポンスボディを取得
-        try {
-            $stream = $_.Exception.Response.GetResponseStream()
-            $reader = [System.IO.StreamReader]::new($stream)
+        $resp   = $req.GetResponse()
+        $reader = [System.IO.StreamReader]::new($resp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+        $text   = $reader.ReadToEnd()
+        $reader.Close()
+        return $text | ConvertFrom-Json
+    } catch [System.Net.WebException] {
+        $errResp = $_.Exception.Response
+        if ($errResp) {
+            $reader = [System.IO.StreamReader]::new($errResp.GetResponseStream(), [System.Text.Encoding]::UTF8)
             $text   = $reader.ReadToEnd()
+            $reader.Close()
             return $text | ConvertFrom-Json
-        } catch {
-            Write-Host "  ✗ Network error: $($_.Exception.Message)" -ForegroundColor Red
-            return $null
         }
+        Write-Host "  ✗ Network error: $($_.Exception.Message)" -ForegroundColor Red
+        return $null
     }
 }
 
@@ -60,7 +77,8 @@ function Get-LastDay {
 function Find-CategoryId {
     param($cats, $name)
     $found = $cats.data | Where-Object { $_.categoryName -eq $name } | Select-Object -First 1
-    return if ($found) { $found.categoryId } else { "" }
+    # PowerShell 5.1 では return if (...) は無効のため if-else で記述する
+    if ($found) { return $found.categoryId } else { return "" }
 }
 
 function Post-Transaction {
@@ -79,8 +97,8 @@ function Post-Transaction {
 }
 
 function Post-FixedTransaction {
-    param($ledgerId, $token, $categoryId, $name, $txType, $amount, $dayOfMonth, $startDate, $endDate = $null)
-    $body = @{
+    param($ledgerId, $token, $categoryId, $name, $txType, $amount, $dayOfMonth, $startDate, $endDate = $null, $memo = $null)
+    $bodyObj = [ordered]@{
         categoryId      = $categoryId
         fixedName       = $name
         transactionType = $txType
@@ -88,7 +106,9 @@ function Post-FixedTransaction {
         dayOfMonth      = $dayOfMonth
         startDate       = $startDate
         endDate         = $endDate
-    } | ConvertTo-Json -Compress
+    }
+    if ($memo) { $bodyObj["memo"] = $memo }
+    $body = $bodyObj | ConvertTo-Json -Compress
     $resp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerId/fixed-transactions" $body $token
     OkOrWarn $resp "固定費: $name"
 }
@@ -132,7 +152,8 @@ function Register-AndLogin {
     Invoke-Api "POST" "/api/v1/auth/register" $regBody | Out-Null
     $loginBody = @{ userId=$userId; password=$password } | ConvertTo-Json -Compress
     $resp = Invoke-Api "POST" "/api/v1/auth/login" $loginBody
-    return if ($resp -and $resp.data) { $resp.data.accessToken } else { "" }
+    # PowerShell 5.1 では return if (...) は無効のため if-else で記述する
+    if ($resp -and $resp.data) { return $resp.data.accessToken } else { return "" }
 }
 
 $tokenNormal = Register-AndLogin "user_normal"        "正常系ユーザー"           "normal@example.com"     "Password123"
@@ -172,8 +193,13 @@ function Update-Ledger {
 Update-Ledger $ledgerMainId  $tokenNormal "正常系メイン帳簿"                    500000
 Update-Ledger $ledgerOverId  $tokenOver   "予算超過確認帳簿"                    200000
 Update-Ledger $ledgerMinusId $tokenMinus  "残高マイナス確認帳簿"                 10000
-Update-Ledger $ledgerNodataId$tokenNodata "空帳簿（データなし確認用）"                 0
+Update-Ledger $ledgerNodataId $tokenNodata "空帳簿（データなし確認用）"                0
 Update-Ledger $ledgerOtherId $tokenOther  "別ユーザー帳簿（アクセス禁止確認用）" 300000
+
+# user_no_data の登録時に自動生成された帳簿を削除する
+# → 帳簿0件状態でログインすると LedgerCreateModal が表示されることを確認するためのユーザー
+$delResp = Invoke-Api "DELETE" "/api/v1/ledgers/$ledgerNodataId" $null $tokenNodata
+OkOrWarn $delResp "user_no_data デフォルト帳簿を削除（帳簿0件モーダル確認用）"
 
 # サブ帳簿を追加
 $subBody = @{ ledgerName="サブ帳簿（切替確認用）"; initialBalance=100000 } | ConvertTo-Json -Compress
@@ -192,6 +218,13 @@ Step-Print "Step4: カスタムカテゴリの追加中..."
 $catsMain  = Invoke-Api "GET" "/api/v1/ledgers/$ledgerMainId/categories" $null $tokenNormal
 $catsOver  = Invoke-Api "GET" "/api/v1/ledgers/$ledgerOverId/categories" $null $tokenOver
 $catsMinus = Invoke-Api "GET" "/api/v1/ledgers/$ledgerMinusId/categories" $null $tokenMinus
+# サブ帳簿はデフォルトカテゴリが生成されないため、明細投入前に必要なカテゴリを作成する
+$subExpBody = @{ categoryName="食費"; categoryType="EXPENSE" } | ConvertTo-Json -Compress
+$subExpResp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerSubId/categories" $subExpBody $tokenNormal
+OkOrWarn $subExpResp "サブ帳簿 食費カテゴリ作成"
+$subIncBody = @{ categoryName="給与"; categoryType="INCOME" } | ConvertTo-Json -Compress
+$subIncResp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerSubId/categories" $subIncBody $tokenNormal
+OkOrWarn $subIncResp "サブ帳簿 給与カテゴリ作成"
 $catsSub   = Invoke-Api "GET" "/api/v1/ledgers/$ledgerSubId/categories" $null $tokenNormal
 
 # user_normal メイン帳簿
@@ -231,6 +264,11 @@ OkOrWarn $customResp "カスタムカテゴリ 作成"
 
 Ok "カテゴリIDをすべて取得しました"
 
+# デバッグ: 主要カテゴリIDの確認（空の場合は Find-CategoryId が失敗している）
+Write-Host "  [DEBUG] catSalary=$catSalary catFood=$catFood catRent=$catRent" -ForegroundColor DarkGray
+Write-Host "  [DEBUG] catSubSalary=$catSubSalary catSubFood=$catSubFood" -ForegroundColor DarkGray
+if (-not $catSalary) { Warn "catSalary が空です。カテゴリIDの取得に失敗しています。処理を中断します。"; exit 1 }
+
 # ─── Step 5: 明細データ投入 ─────────────────────────────────
 Step-Print "Step5: 明細データ投入中... (13ヶ月分)"
 
@@ -258,7 +296,7 @@ for ($idx = 0; $idx -le 12; $idx++) {
             Post-Transaction $ledgerMainId $tokenNormal $catRent     "EXPENSE" 80000              "${ym}-01" "家賃（固定費・正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catComm     "EXPENSE" 5500               "${ym}-25" "スマホ代（固定費・正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catUtility  "EXPENSE" $utility[$idx]     "${ym}-05" "光熱費（季節変動確認用）"
-            Post-Transaction $ledgerMainId $tokenNormal $catTransport"EXPENSE" $transport[$idx]   "${ym}-10" "交通費（正常系）"
+            Post-Transaction $ledgerMainId $tokenNormal $catTransport "EXPENSE" $transport[$idx]   "${ym}-10" "交通費（正常系）"
             Post-Transaction $ledgerMainId $tokenNormal $catEnt      "EXPENSE" 8000               "${ym}-15" "娯楽費（予算内・正常系）"
         }
         Post-Transaction $ledgerMainId $tokenNormal $catFood "EXPENSE" $foodDay8[$idx] "${ym}-08" "食費週次（正常系）"
@@ -276,7 +314,7 @@ Post-Transaction $ledgerMainId $tokenNormal $catClothing "EXPENSE" 999999  "${cu
 Post-Transaction $ledgerMainId $tokenNormal $catOtherExp "EXPENSE" 15000   "${currYM}-${currLast}" "月末日付（境界値確認用）"
 Post-Transaction $ledgerMainId $tokenNormal $catSalary   "INCOME"  280000  "${currYM}-01"       "月初日付（境界値確認用）"
 Post-Transaction $ledgerMainId $tokenNormal $catFood     "EXPENSE" 5000    "${currYM}-15"       ",カンマ含むメモ（CSV確認用）,"
-Post-Transaction $ledgerMainId $tokenNormal $catTransport"EXPENSE" 3000    "${currYM}-16"       "日本語メモ（文字コード確認用）電車代"
+Post-Transaction $ledgerMainId $tokenNormal $catTransport "EXPENSE" 3000    "${currYM}-16"       "日本語メモ（文字コード確認用）電車代"
 Post-Transaction $ledgerMainId $tokenNormal $catOtherExp "EXPENSE" 1000    "${currYM}-17"       ""
 Post-Transaction $ledgerMainId $tokenNormal $catEnt      "EXPENSE" 500     "${currYM}-18"       $memo500
 Post-Transaction $ledgerMainId $tokenNormal $catMedical  "EXPENSE" 10000   "2024-02-29"         "うるう日（境界値確認用）"
@@ -309,24 +347,41 @@ Step-Print "Step6: 固定費データ投入中..."
 $currM01   = "${currYM}-01"
 $currLast2 = "${currYM}-${currLast}"
 
-Post-FixedTransaction $ledgerMainId $tokenNormal $catRent      "家賃（有効・正常系）"        "EXPENSE" 80000  1  "2025-01-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catComm      "スマホ代（有効・正常系）"    "EXPENSE" 5500   25 "2025-04-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "今月開始の固定費（境界値）"  "EXPENSE" 3000   20 $currM01     $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catUtility   "28日発生の固定費（境界値）"  "EXPENSE" 2000   28 "2025-01-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "旧サブスク（終了済み）"      "EXPENSE" 1490   15 "2024-04-01" "2025-03-31"
+# 終了日（開始日から10年後）を計算する
+$endDate_2025_01_01 = ([DateTime]::Parse("2025-01-01")).AddYears(10).ToString("yyyy-MM-dd")  # 2035-01-01
+$endDate_2025_04_01 = ([DateTime]::Parse("2025-04-01")).AddYears(10).ToString("yyyy-MM-dd")  # 2035-04-01
+$endDate_currM01    = ([DateTime]::Parse($currM01)).AddYears(10).ToString("yyyy-MM-dd")
+
+Post-FixedTransaction $ledgerMainId $tokenNormal $catRent      "家賃（有効・正常系）"        "EXPENSE" 80000  1  "2025-01-01" $endDate_2025_01_01 "毎月1日引き落とし"
+Post-FixedTransaction $ledgerMainId $tokenNormal $catComm      "スマホ代（有効・正常系）"    "EXPENSE" 5500   25 "2025-04-01" $endDate_2025_04_01 "キャリア月額プラン"
+Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "今月開始の固定費（境界値）"  "EXPENSE" 3000   20 $currM01     $endDate_currM01
+Post-FixedTransaction $ledgerMainId $tokenNormal $catUtility   "28日発生の固定費（境界値）"  "EXPENSE" 2000   28 "2025-01-01" $endDate_2025_01_01
+Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "旧サブスク（終了済み）"      "EXPENSE" 1490   15 "2024-04-01" "2025-03-31"         "2025年3月解約済み"
 Post-FixedTransaction $ledgerMainId $tokenNormal $catTransport "今月終了の固定費（境界値）"  "EXPENSE" 1000   10 "2025-01-01" $currLast2
-Post-FixedTransaction $ledgerOverId $tokenOver   $catOverRent  "高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" $null
+Post-FixedTransaction $ledgerOverId $tokenOver   $catOverRent  "高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" $endDate_2025_01_01
 
 # ─── Step 7: 予算データ投入 ──────────────────────────────────
 Step-Print "Step7: 予算データ投入中..."
 
-# user_normal 正常系メイン帳簿
+# user_normal 正常系メイン帳簿（当月）
+# 食費:   ¥45,000（実績≒¥35,000+α・消化率約78%・🟢正常）
+# 交通費: ¥12,000（実績≒¥10,000・消化率約83%・🟡警告ライン）
+# 娯楽費: ¥10,000（実績≒¥8,000・消化率約80%・🟡警告境界値）
+# 衣服費: ¥20,000（実績≒¥0・消化率0%・🟢ゼロ確認）
+# 住居費: ¥90,000（実績≒¥80,000・消化率約89%・🟡警告）
+# 通信費: ¥6,000（実績≒¥5,500・消化率約92%・🟡警告）
 Post-Budget $ledgerMainId $tokenNormal $catFood      45000
 Post-Budget $ledgerMainId $tokenNormal $catTransport 12000
 Post-Budget $ledgerMainId $tokenNormal $catEnt       10000
 Post-Budget $ledgerMainId $tokenNormal $catClothing  20000
+Post-Budget $ledgerMainId $tokenNormal $catRent      90000
+Post-Budget $ledgerMainId $tokenNormal $catComm       6000
 
-# user_over_budget
+# user_over_budget 予算超過確認帳簿（当月）
+# 食費:   ¥40,000（実績¥48,000・消化率120%・🔴オーバー）
+# 娯楽費: ¥10,000（実績¥8,500・消化率85%・🟡警告）
+# 交通費: ¥10,000（実績¥5,000・消化率50%・🟢正常）
+# 衣服費: ¥30,000（実績¥100,000・消化率333%・🔴極端なオーバー）
 Post-Budget $ledgerOverId $tokenOver $catOverFood     40000
 Post-Budget $ledgerOverId $tokenOver $catOverEnt      10000
 Post-Budget $ledgerOverId $tokenOver $catOverTrans    10000

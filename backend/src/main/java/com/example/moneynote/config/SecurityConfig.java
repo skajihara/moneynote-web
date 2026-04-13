@@ -1,6 +1,7 @@
 package com.example.moneynote.config;
 
 import com.example.moneynote.common.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,6 +41,11 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 ).permitAll()
                 .anyRequest().authenticated()
+            )
+            // セキュリティ: 未認証リクエストは 403 ではなく 401 を返す
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, e) ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
