@@ -66,22 +66,30 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
                 aria-label={`${t.categoryName ?? '（カテゴリなし）'} ${t.amount}円`}
                 onClick={() => onEdit(t)}
                 onKeyDown={(e) => e.key === 'Enter' && onEdit(t)}
-                className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-100 cursor-pointer transition-colors"
+                title={t.isFixedOrigin ? '固定費から自動生成' : undefined}
+                className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-100 cursor-pointer transition-colors ${
+                  t.isFixedOrigin ? 'border-l-2 border-l-blue-400' : ''
+                }`}
               >
                 {/* カテゴリアイコン */}
-                <span className="text-xl w-8 text-center shrink-0">
-                  {t.categoryIcon ?? (t.transactionType === 'INCOME' ? '💰' : '💸')}
-                </span>
+                <div className="relative w-8 shrink-0 text-center">
+                  <span className="text-xl">
+                    {t.categoryIcon ?? (t.transactionType === 'INCOME' ? '💰' : '💸')}
+                  </span>
+                  {t.isFixedOrigin && (
+                    <span className="absolute -top-1 -right-1 text-xs leading-none" aria-hidden="true">
+                      🔁
+                    </span>
+                  )}
+                </div>
 
                 {/* カテゴリ名・メモ */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${t.isFixedOrigin ? 'text-blue-600' : 'text-gray-800'}`}>
+                  <p className="text-sm font-medium truncate text-gray-800">
                     {t.categoryName ?? '（カテゴリなし）'}
                   </p>
                   {t.memo && (
-                    <p className={`text-xs truncate ${t.isFixedOrigin ? 'text-blue-400' : 'text-gray-400'}`}>
-                      {t.memo}
-                    </p>
+                    <p className="text-xs truncate text-gray-400">{t.memo}</p>
                   )}
                 </div>
 

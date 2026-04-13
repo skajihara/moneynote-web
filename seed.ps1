@@ -97,8 +97,8 @@ function Post-Transaction {
 }
 
 function Post-FixedTransaction {
-    param($ledgerId, $token, $categoryId, $name, $txType, $amount, $dayOfMonth, $startDate, $endDate = $null)
-    $body = @{
+    param($ledgerId, $token, $categoryId, $name, $txType, $amount, $dayOfMonth, $startDate, $endDate = $null, $memo = $null)
+    $bodyObj = [ordered]@{
         categoryId      = $categoryId
         fixedName       = $name
         transactionType = $txType
@@ -106,7 +106,9 @@ function Post-FixedTransaction {
         dayOfMonth      = $dayOfMonth
         startDate       = $startDate
         endDate         = $endDate
-    } | ConvertTo-Json -Compress
+    }
+    if ($memo) { $bodyObj["memo"] = $memo }
+    $body = $bodyObj | ConvertTo-Json -Compress
     $resp = Invoke-Api "POST" "/api/v1/ledgers/$ledgerId/fixed-transactions" $body $token
     OkOrWarn $resp "固定費: $name"
 }
@@ -345,24 +347,41 @@ Step-Print "Step6: 固定費データ投入中..."
 $currM01   = "${currYM}-01"
 $currLast2 = "${currYM}-${currLast}"
 
-Post-FixedTransaction $ledgerMainId $tokenNormal $catRent      "家賃（有効・正常系）"        "EXPENSE" 80000  1  "2025-01-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catComm      "スマホ代（有効・正常系）"    "EXPENSE" 5500   25 "2025-04-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "今月開始の固定費（境界値）"  "EXPENSE" 3000   20 $currM01     $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catUtility   "28日発生の固定費（境界値）"  "EXPENSE" 2000   28 "2025-01-01" $null
-Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "旧サブスク（終了済み）"      "EXPENSE" 1490   15 "2024-04-01" "2025-03-31"
+# 終了日（開始日から10年後）を計算する
+$endDate_2025_01_01 = ([DateTime]::Parse("2025-01-01")).AddYears(10).ToString("yyyy-MM-dd")  # 2035-01-01
+$endDate_2025_04_01 = ([DateTime]::Parse("2025-04-01")).AddYears(10).ToString("yyyy-MM-dd")  # 2035-04-01
+$endDate_currM01    = ([DateTime]::Parse($currM01)).AddYears(10).ToString("yyyy-MM-dd")
+
+Post-FixedTransaction $ledgerMainId $tokenNormal $catRent      "家賃（有効・正常系）"        "EXPENSE" 80000  1  "2025-01-01" $endDate_2025_01_01 "毎月1日引き落とし"
+Post-FixedTransaction $ledgerMainId $tokenNormal $catComm      "スマホ代（有効・正常系）"    "EXPENSE" 5500   25 "2025-04-01" $endDate_2025_04_01 "キャリア月額プラン"
+Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "今月開始の固定費（境界値）"  "EXPENSE" 3000   20 $currM01     $endDate_currM01
+Post-FixedTransaction $ledgerMainId $tokenNormal $catUtility   "28日発生の固定費（境界値）"  "EXPENSE" 2000   28 "2025-01-01" $endDate_2025_01_01
+Post-FixedTransaction $ledgerMainId $tokenNormal $catEnt       "旧サブスク（終了済み）"      "EXPENSE" 1490   15 "2024-04-01" "2025-03-31"         "2025年3月解約済み"
 Post-FixedTransaction $ledgerMainId $tokenNormal $catTransport "今月終了の固定費（境界値）"  "EXPENSE" 1000   10 "2025-01-01" $currLast2
-Post-FixedTransaction $ledgerOverId $tokenOver   $catOverRent  "高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" $null
+Post-FixedTransaction $ledgerOverId $tokenOver   $catOverRent  "高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" $endDate_2025_01_01
 
 # ─── Step 7: 予算データ投入 ──────────────────────────────────
 Step-Print "Step7: 予算データ投入中..."
 
-# user_normal 正常系メイン帳簿
+# user_normal 正常系メイン帳簿（当月）
+# 食費:   ¥45,000（実績≒¥35,000+α・消化率約78%・🟢正常）
+# 交通費: ¥12,000（実績≒¥10,000・消化率約83%・🟡警告ライン）
+# 娯楽費: ¥10,000（実績≒¥8,000・消化率約80%・🟡警告境界値）
+# 衣服費: ¥20,000（実績≒¥0・消化率0%・🟢ゼロ確認）
+# 住居費: ¥90,000（実績≒¥80,000・消化率約89%・🟡警告）
+# 通信費: ¥6,000（実績≒¥5,500・消化率約92%・🟡警告）
 Post-Budget $ledgerMainId $tokenNormal $catFood      45000
 Post-Budget $ledgerMainId $tokenNormal $catTransport 12000
 Post-Budget $ledgerMainId $tokenNormal $catEnt       10000
 Post-Budget $ledgerMainId $tokenNormal $catClothing  20000
+Post-Budget $ledgerMainId $tokenNormal $catRent      90000
+Post-Budget $ledgerMainId $tokenNormal $catComm       6000
 
-# user_over_budget
+# user_over_budget 予算超過確認帳簿（当月）
+# 食費:   ¥40,000（実績¥48,000・消化率120%・🔴オーバー）
+# 娯楽費: ¥10,000（実績¥8,500・消化率85%・🟡警告）
+# 交通費: ¥10,000（実績¥5,000・消化率50%・🟢正常）
+# 衣服費: ¥30,000（実績¥100,000・消化率333%・🔴極端なオーバー）
 Post-Budget $ledgerOverId $tokenOver $catOverFood     40000
 Post-Budget $ledgerOverId $tokenOver $catOverEnt      10000
 Post-Budget $ledgerOverId $tokenOver $catOverTrans    10000

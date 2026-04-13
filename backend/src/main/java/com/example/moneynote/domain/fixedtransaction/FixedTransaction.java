@@ -51,6 +51,9 @@ public class FixedTransaction {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Column(name = "memo", length = 500)
+    private String memo;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean isActive = true;

@@ -77,4 +77,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
     @Modifying
     @Query("UPDATE Transaction t SET t.category = null WHERE t.category.categoryId = :categoryId")
     void nullifyCategoryId(@Param("categoryId") String categoryId);
+
+    /**
+     * 固定費由来の明細のうち指定期間内の既存月を確認するために全明細を返す。
+     * (isFixedOrigin=true かつ fixedTransactionId が一致する明細一覧)
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.fixedTransaction.fixedTransactionId = :fixedTransactionId")
+    List<Transaction> findByFixedTransactionId(@Param("fixedTransactionId") String fixedTransactionId);
 }

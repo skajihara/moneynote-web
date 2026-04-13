@@ -108,5 +108,10 @@ export async function apiClient<T = unknown>(
     );
   }
 
+  // 204 No Content はボディが空なので json() を呼ばない
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
