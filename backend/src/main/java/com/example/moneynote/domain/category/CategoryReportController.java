@@ -51,14 +51,15 @@ public class CategoryReportController {
 
     /**
      * GET /api/v1/ledgers/{ledgerId}/categories/{categoryId}/transactions
-     * カテゴリ別明細 + 直近12ヶ月推移。
+     * カテゴリ別明細 + 月別推移。
+     * month を省略した場合は year 全体（1〜12月）を対象とする。
      */
     @GetMapping("/{categoryId}/transactions")
     public ApiResponse<CategoryTransactionsResponse> getCategoryTransactions(
             @PathVariable String ledgerId,
             @PathVariable String categoryId,
             @RequestParam int year,
-            @RequestParam @Min(1) @Max(12) int month,
+            @RequestParam(required = false) @Min(1) @Max(12) Integer month,
             Principal principal) {
         return ApiResponse.success(
                 categoryReportService.getCategoryTransactions(

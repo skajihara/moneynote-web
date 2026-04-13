@@ -51,8 +51,11 @@ export const getCategoryTransactions = (
   ledgerId: string,
   categoryId: string,
   year: number,
-  month: number
-) =>
-  apiClient<ApiResponse<CategoryTransactions>>(
-    `/api/v1/ledgers/${ledgerId}/categories/${categoryId}/transactions?year=${year}&month=${month}`
+  month?: number
+) => {
+  const query = new URLSearchParams({ year: String(year) });
+  if (month != null) query.set('month', String(month));
+  return apiClient<ApiResponse<CategoryTransactions>>(
+    `/api/v1/ledgers/${ledgerId}/categories/${categoryId}/transactions?${query.toString()}`
   );
+};

@@ -118,7 +118,7 @@ public class CategoryReportService {
 
     @Transactional(readOnly = true)
     public CategoryTransactionsResponse getCategoryTransactions(
-            String ledgerId, String categoryId, int year, int month, String userId) {
+            String ledgerId, String categoryId, int year, Integer month, String userId) {
 
         accessValidator.validate(ledgerId, userId);
 
@@ -129,15 +129,26 @@ public class CategoryReportService {
             throw new ResourceNotFoundException("カテゴリが見つかりません");
         }
 
-        // 直近12ヶ月の範囲
-        YearMonth endYM   = YearMonth.of(year, month);
-        YearMonth startYM = endYM.minusMonths(11);
+        final boolean isAnnual = (month == null);
+
+        // 取得範囲
+        YearMonth startYM;
+        YearMonth endYM;
+        if (isAnnual) {
+            // 年間モード: その年の1月〜12月
+            startYM = YearMonth.of(year, 1);
+            endYM   = YearMonth.of(year, 12);
+        } else {
+            // 月次モード: 直近12ヶ月
+            endYM   = YearMonth.of(year, month);
+            startYM = endYM.minusMonths(11);
+        }
 
         List<Transaction> trendTx =
                 transactionRepository.findByLedgerIdAndDateRangeAndCategoryWithDetails(
                         ledgerId, startYM.atDay(1), endYM.atEndOfMonth(), categoryId);
 
-        // 月別集計（12ヶ月分・全月初期化）
+        // 月別集計（全月初期化）
         Map<String, BigDecimal> monthAmounts = new LinkedHashMap<>();
         for (YearMonth m = startYM; !m.isAfter(endYM); m = m.plusMonths(1)) {
             monthAmounts.put(m.toString(), BigDecimal.ZERO);
@@ -151,9 +162,9 @@ public class CategoryReportService {
                 .map(e -> new CategoryTrendDto(e.getKey(), e.getValue()))
                 .toList();
 
-        // 当月の明細一覧
+        // 年間モードは全明細、月次モードは当月のみ
         List<TransactionResponse> transactions = trendTx.stream()
-                .filter(t -> YearMonth.from(t.getTransactionDate()).equals(endYM))
+                .filter(t -> isAnnual || YearMonth.from(t.getTransactionDate()).equals(endYM))
                 .map(TransactionResponse::from)
                 .toList();
 

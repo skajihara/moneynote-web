@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 8 完了時点）
+2026年4月（Step 9 完了時点）
 
 ---
 
@@ -17,10 +17,11 @@
 | Step 6 | 収支明細 API・カレンダー・一覧画面 | feature/step6-transaction | 完了・develop マージ済み |
 | Step 7 | ダッシュボード完成 | feature/step7-dashboard | 完了・develop マージ済み |
 | Step 8 | 分析レポート・カテゴリ集計 | feature/step8-reports | 完了・develop マージ済み |
+| Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
 
 ## 現在の状態
 - 現在のブランチ: develop
-- 次の作業: Step 9（予算設定・固定費管理）
+- 次の作業: Step 10（CSVエクスポート・インポート）
 - リリース済み: v0.1.0（Step 1〜4）
 
 ---
@@ -52,11 +53,19 @@
 | 収入系カラーは text-green-600 / #16A34A、支出系は text-red-500 / #EF4444 に統一 | アプリ全体で緑=収入・赤=支出の配色に統一するため |
 | 年間カテゴリ別集計 API: GET /categories/summary/annual?year= | 月次集計メソッドをリファクタリングしてプライベートヘルパー buildCategorySummary を共用 |
 | SummaryCards に carryOver? prop を追加 | レポートページで繰り越しをサマリーカードと同じ行に表示するため |
-| カテゴリ別集計をレポートページに統合 | 月・年の切り替えと連動させるため |
-| 収入=緑・支出=赤でアプリ全体を統一 | 直感的な色識別のため |
-| 円グラフの開始点を12時に統一 | UI の一貫性のため || カテゴリ別集計をレポートページに統合 | 月・年の切り替えと連動させるため |
-| 収入=緑・支出=赤でアプリ全体を統一 | 直感的な色識別のため |
 | 円グラフの開始点を12時に統一 | UI の一貫性のため |
+| 予算の upsert は POST /budgets で実現（既存レコードがあれば更新、なければ作成） | EXPENSE カテゴリのみ対象。ステータスは NORMAL(<80%)・WARNING(80-99%)・OVER(>=100%) |
+| 固定費削除は transactionRepository.deleteByFixedTransactionId → fixedRepository.delete の順 | 参照整合性違反を防ぐため |
+| 固定費の明細生成は startDate〜endDate のループ（endDate は必須） | endDate が必須化されたため null チェック不要 |
+| dayOfMonth は max=28 に制限 | 月末日（28/29/30/31）の変動を避けるため。実際の日付は `Math.min(dayOfMonth, ym.lengthOfMonth())` で調整 |
+| FixedScopeDialog の「全件削除」を廃止し「設定ページへ誘導」に変更 | 誤操作による全件削除を防ぐため。固定費の変更は設定ページ（/settings?tab=fixed）で行う |
+| 設定ページ（/settings）を新規作成し固定費タブを実装 | FixedTransactionList と FixedTransactionForm を再利用可能コンポーネントとして実装 |
+| 固定費の endDate を必須化（@NotNull）・デフォルト10年後 | endDate=null 運用をやめ、seed.ps1 でも startDate+10年を明示設定。バリデーション: endDate > startDate |
+| V10 マイグレーションで既存レコードの end_date=NULL を start_date+10年に更新 | 必須化前の既存データを正規化するため |
+| 固定費の終了日を必須化・デフォルト10年後 | 期間不明の固定費も明細生成範囲を明確にするため |
+| 固定費編集=全明細削除→再生成 | データの一貫性を保つため |
+| 固定費のメモを明細にコピー | 固定費由来の明細の識別を容易にするため |
+| 固定費の登録間隔機能はTODO | 実装の複雑さからStep 9の範囲を超えるため |
 
 ---
 
@@ -69,6 +78,8 @@
 - カテゴリ API: backend/src/main/java/com/example/moneynote/domain/category/
 - 明細 API: backend/src/main/java/com/example/moneynote/domain/transaction/
 - ダッシュボード API: backend/src/main/java/com/example/moneynote/domain/dashboard/
+- 予算 API: backend/src/main/java/com/example/moneynote/domain/budget/
+- 固定費 API: backend/src/main/java/com/example/moneynote/domain/fixedtransaction/
 - アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
 - 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
 - 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
@@ -83,17 +94,20 @@
 - ダッシュボードページ: frontend/src/app/(app)/dashboard/
 - 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
 - レポートページ: frontend/src/app/(app)/ledgers/[ledgerId]/reports/
+- 予算ページ: frontend/src/app/(app)/ledgers/[ledgerId]/budget/
+- 設定ページ: frontend/src/app/(app)/settings/ （固定費タブあり）
 - カテゴリ集計: レポートページに統合済み（独立ページ廃止）
-- API クライアント: frontend/src/lib/api/
-- 型定義: frontend/src/types/
+- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts 追加）
+- 型定義: frontend/src/types/ （budget.ts, fixed.ts 追加）
 - Zustand ストア: frontend/src/stores/
 - 共通コンポーネント: frontend/src/components/
   - レイアウト: frontend/src/components/layout/
   - 帳簿: frontend/src/components/ledger/
   - 明細: frontend/src/components/transaction/
-  - グラフ: frontend/src/components/charts/ （CategoryPieChart.tsx, MonthlyBarChart.tsx, BalanceLineChart.tsx）
-  - 予算: frontend/src/components/budget/ （BudgetProgressList.tsx）
-  - UI汎用: frontend/src/components/ui/ （SummaryCards.tsx, Toast.tsx）
+  - グラフ: frontend/src/components/charts/
+  - 予算: frontend/src/components/budget/
+  - 固定費: frontend/src/components/fixed/ （FixedTransactionList.tsx, FixedTransactionForm.tsx）
+  - UI汎用: frontend/src/components/ui/
 
 ---
 
@@ -115,19 +129,27 @@
 6. user_no_data はログイン後に帳簿0件でモーダルが表示されるユーザー。
    seed.ps1 で register 後に自動生成された帳簿を DELETE で削除している。
 
+7. 固定費の明細生成は冪等ではない（既存月はスキップ）。
+   PUT /fixed-transactions/{id} では一旦全削除して再生成するため、
+   手動で編集した明細も上書きされる点に注意。
+
+8. 固定費の endDate は必須（@NotNull）。
+   フロントエンドのデフォルト値は登録日から10年後を設定することを推奨。
+   seed.ps1 では startDate + 10年を計算して設定している。
+
 ---
 
 ## ブランチ戦略
 
 - main: v0.1.0 タグ済み
-- develop: Step 1〜7 マージ済み
-- feature/step7-dashboard: Step 8 実装済み（テストグリーン）
+- develop: Step 1〜8 マージ済み
+- feature/step7-dashboard: Step 9 実装済み（テストグリーン）
 
 ### 次回の作業手順（Gate 3 完了後）
 ```bash
 git checkout develop
-git checkout -b feature/step9-budget-fixed
-git push origin feature/step9-budget-fixed
+git checkout -b feature/step10-csv
+git push origin feature/step10-csv
 ```
 
 ---

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Transaction, TransactionType, DeleteScope } from '@/types/transaction';
+import type { Transaction, TransactionType } from '@/types/transaction';
 import type { Category } from '@/lib/api/ledger';
 import { getCategories } from '@/lib/api/ledger';
 import {
@@ -48,7 +48,9 @@ const TransactionEditForm = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [showScopeDialog, setShowScopeDialog] = useState(false);
-  const [pendingDeleteScope, setPendingDeleteScope] = useState<'delete' | null>(null);
+  const [scopeMode, setScopeMode] = useState<'edit' | 'delete'>('delete');
+  // 保存確認ダイアログ表示前にフォームの値を一時保持する
+  const pendingValuesRef = useRef<FormValues | null>(null);
 
   const defaultType: TransactionType = transaction?.transactionType ?? 'EXPENSE';
   // 初回カテゴリロード済みかどうかを追跡する（2回目以降は先頭カテゴリにリセット）
@@ -100,7 +102,7 @@ const TransactionEditForm = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categories]);
 
-  const onSubmit = async (values: FormValues) => {
+  const execSave = async (values: FormValues) => {
     const payload = {
       transactionType: values.transactionType,
       amount: values.amount,
@@ -123,24 +125,35 @@ const TransactionEditForm = ({
     }
   };
 
-  const handleDelete = () => {
-    if (transaction?.isFixedOrigin) {
+  const onSubmit = async (values: FormValues) => {
+    // 固定費由来の明細を編集する場合はダイアログで確認
+    if (isEdit && transaction?.isFixedOrigin) {
+      pendingValuesRef.current = values;
+      setScopeMode('edit');
       setShowScopeDialog(true);
-      setPendingDeleteScope('delete');
-    } else {
-      execDelete('SINGLE');
+      return;
     }
+    await execSave(values);
   };
 
-  const execDelete = async (scope: DeleteScope) => {
+  const execDelete = async () => {
     if (!transaction) return;
     try {
-      await deleteTransaction(ledgerId, transaction.transactionId, scope);
+      await deleteTransaction(ledgerId, transaction.transactionId, 'SINGLE');
       addToast('success', '明細を削除しました');
       onSuccess();
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.error.message : '削除に失敗しました';
       addToast('error', msg);
+    }
+  };
+
+  const handleDelete = () => {
+    if (transaction?.isFixedOrigin) {
+      setScopeMode('delete');
+      setShowScopeDialog(true);
+    } else {
+      execDelete();
     }
   };
 
@@ -273,16 +286,21 @@ const TransactionEditForm = ({
       </div>
 
       {/* 固定費スコープ選択ダイアログ */}
-      {showScopeDialog && pendingDeleteScope === 'delete' && (
+      {showScopeDialog && (
         <FixedScopeDialog
-          onSelect={(scope) => {
+          mode={scopeMode}
+          onConfirm={() => {
             setShowScopeDialog(false);
-            setPendingDeleteScope(null);
-            execDelete(scope);
+            if (scopeMode === 'edit' && pendingValuesRef.current) {
+              execSave(pendingValuesRef.current);
+              pendingValuesRef.current = null;
+            } else {
+              execDelete();
+            }
           }}
           onCancel={() => {
             setShowScopeDialog(false);
-            setPendingDeleteScope(null);
+            pendingValuesRef.current = null;
           }}
         />
       )}

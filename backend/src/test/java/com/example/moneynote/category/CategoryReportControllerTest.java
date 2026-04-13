@@ -254,6 +254,25 @@ class CategoryReportControllerTest {
     }
 
     @Test
+    void getCategoryTransactions_noMonth_returnsFullYear() throws Exception {
+        // 年間モード: 1月・6月・12月の明細がすべて返る
+        createTx("EXPENSE", 10000, "2026-01-10", expCat1Id);
+        createTx("EXPENSE", 20000, "2026-06-15", expCat1Id);
+        createTx("EXPENSE", 30000, "2026-12-20", expCat1Id);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/" + expCat1Id + "/transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026"))
+                .andExpect(status().isOk())
+                // トレンドは12ヶ月（1月〜12月）
+                .andExpect(jsonPath("$.data.monthlyTrend", hasSize(12)))
+                .andExpect(jsonPath("$.data.monthlyTrend[0].month").value("2026-01"))
+                .andExpect(jsonPath("$.data.monthlyTrend[11].month").value("2026-12"))
+                // 全月の明細が返る
+                .andExpect(jsonPath("$.data.transactions", hasSize(3)));
+    }
+
+    @Test
     void getCategoryTransactions_otherUser_returns403() throws Exception {
         mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/" + expCat1Id + "/transactions")
                         .header("Authorization", "Bearer " + token2)

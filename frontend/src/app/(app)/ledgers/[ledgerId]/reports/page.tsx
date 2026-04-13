@@ -77,7 +77,7 @@ type CategoryDetailProps = {
   categoryId: string;
   categoryName: string;
   year: number;
-  month: number;
+  month?: number;
 };
 
 const CategoryDetailPanel = ({
@@ -117,15 +117,18 @@ const CategoryDetailPanel = ({
     expense: detail.category.categoryType === 'EXPENSE' ? t.amount : 0,
   }));
 
+  const txLabel = month != null ? `${year}年${month}月の明細` : `${year}年の明細`;
+  const trendLabel = month != null ? '月別推移（過去12ヶ月）' : '月別推移（年間）';
+
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-base font-semibold text-gray-800">{categoryName}</h2>
       <div>
-        <p className="text-xs text-gray-500 mb-2">月別推移（過去12ヶ月）</p>
+        <p className="text-xs text-gray-500 mb-2">{trendLabel}</p>
         <MonthlyBarChart data={barData} height={200} />
       </div>
       <div>
-        <p className="text-xs text-gray-500 mb-2">{year}年{month}月の明細</p>
+        <p className="text-xs text-gray-500 mb-2">{txLabel}</p>
         <TransactionList transactions={detail.transactions} onEdit={openEdit} />
       </div>
     </div>
@@ -347,14 +350,12 @@ const ReportsContent = () => {
 
   const handleAnnualCategoryClick = (item: CategorySummary) => {
     setSelectedAnnualCategoryId(item.categoryId);
-    // 年間カテゴリはサブパネルに12ヶ月推移（当月=12月として取得）
     openPanel(
       <CategoryDetailPanel
         ledgerId={ledgerId}
         categoryId={item.categoryId}
         categoryName={item.categoryName}
         year={year}
-        month={12}
       />
     );
   };

@@ -1,34 +1,59 @@
 'use client';
 
-import type { DeleteScope } from '@/types/transaction';
+import { useRouter } from 'next/navigation';
 
 type Props = {
-  onSelect: (scope: DeleteScope) => void;
+  mode: 'edit' | 'delete';
+  onConfirm: () => void;
   onCancel: () => void;
 };
 
-const FixedScopeDialog = ({ onSelect, onCancel }: Props) => {
+const FixedScopeDialog = ({ mode, onConfirm, onCancel }: Props) => {
+  const router = useRouter();
+
+  const isEdit = mode === 'edit';
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-        <h3 className="text-base font-semibold text-gray-800 mb-2">固定費明細の変更対象</h3>
+        <h3 className="text-base font-semibold text-gray-800 mb-2">
+          {isEdit ? '固定費明細の編集' : '固定費明細の削除'}
+        </h3>
         <p className="text-sm text-gray-500 mb-5">
-          この明細は固定費から生成されています。変更の対象範囲を選択してください。
+          この明細は固定費から自動生成されています。
+          {isEdit
+            ? 'この1件だけを編集しますか？'
+            : 'どのように削除しますか？'}
         </p>
         <div className="flex flex-col gap-2">
           <button
-            onClick={() => onSelect('SINGLE')}
-            className="w-full text-left px-4 py-3 rounded-md border border-gray-300 text-sm hover:bg-gray-50 transition-colors"
+            onClick={onConfirm}
+            className={`w-full text-left px-4 py-3 rounded-md border text-sm transition-colors ${
+              isEdit
+                ? 'border-blue-300 hover:bg-blue-50'
+                : 'border-gray-300 hover:bg-gray-50'
+            }`}
           >
-            <span className="font-medium text-gray-800">この1件のみ対象にする</span>
-            <p className="text-xs text-gray-500 mt-0.5">この明細だけを変更します</p>
+            <span className={`font-medium ${isEdit ? 'text-blue-700' : 'text-gray-800'}`}>
+              {isEdit ? 'この1件のみ編集する' : 'この1件のみ削除する'}
+            </span>
+            <p className={`text-xs mt-0.5 ${isEdit ? 'text-blue-400' : 'text-gray-500'}`}>
+              {isEdit
+                ? '他の月の明細には影響しません'
+                : 'この明細だけを削除します'}
+            </p>
           </button>
           <button
-            onClick={() => onSelect('ALL')}
-            className="w-full text-left px-4 py-3 rounded-md border border-red-200 text-sm hover:bg-red-50 transition-colors"
+            onClick={() => {
+              onCancel();
+              router.push('/settings?tab=fixed');
+            }}
+            className="w-full text-left px-4 py-3 rounded-md border border-gray-200 text-sm hover:bg-gray-50 transition-colors"
           >
-            <span className="font-medium text-red-700">全件を対象にする（過去も含む）</span>
-            <p className="text-xs text-red-400 mt-0.5">同じ固定費から生成された全明細が対象になります</p>
+            <span className="font-medium text-gray-700">固定費設定を変更する</span>
+            <p className="text-xs text-gray-400 mt-0.5">
+              設定ページで固定費の変更・削除ができます
+            </p>
           </button>
           <button
             onClick={onCancel}

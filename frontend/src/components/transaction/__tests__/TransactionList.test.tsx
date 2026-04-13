@@ -44,15 +44,18 @@ describe('TransactionList', () => {
     expect(amounts.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('固定費由来の明細はテキストが青色クラスを持つ', () => {
+  it('固定費由来の明細は🔁アイコンと青いボーダーを持つ', () => {
     render(
       <TransactionList
         transactions={[makeTx({ isFixedOrigin: true, categoryName: '家賃' })]}
         onEdit={jest.fn()}
       />
     );
-    const catName = screen.getByText('家賃');
-    expect(catName).toHaveClass('text-blue-600');
+    // 🔁 アイコンが表示される
+    expect(screen.getByText('🔁')).toBeInTheDocument();
+    // 行要素が青いボーダークラスを持つ
+    const row = screen.getByRole('button', { name: /家賃/ });
+    expect(row).toHaveClass('border-l-blue-400');
   });
 
   it('メモが表示される', () => {
