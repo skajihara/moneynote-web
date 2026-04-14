@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 9 完了時点）
+2026年4月（Step 10 完了時点）
 
 ---
 
@@ -18,11 +18,12 @@
 | Step 7 | ダッシュボード完成 | feature/step7-dashboard | 完了・develop マージ済み |
 | Step 8 | 分析レポート・カテゴリ集計 | feature/step8-reports | 完了・develop マージ済み |
 | Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
+| Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
 
 ## 現在の状態
 - 現在のブランチ: develop
-- 次の作業: Step 10（CSVエクスポート・インポート）
-- リリース済み: v0.1.0（Step 1〜4）
+- 次の作業: Step 11（AI支出分析・アドバイス）
+- リリース済み: v0.2.0（Step 1〜9）
 
 ---
 
@@ -66,6 +67,17 @@
 | 固定費編集=全明細削除→再生成 | データの一貫性を保つため |
 | 固定費のメモを明細にコピー | 固定費由来の明細の識別を容易にするため |
 | 固定費の登録間隔機能はTODO | 実装の複雑さからStep 9の範囲を超えるため |
+| CSV エクスポートは BOM（0xEF 0xBB 0xBF）付き UTF-8 で出力 | Excel での文字化け防止。Apache Commons CSV 1.11.0 を使用 |
+| CSV インポートは PushbackInputStream でBOM検出・スキップ | エクスポートしたCSVをそのまま再インポートできるラウンドトリップ対応 |
+| CSV エクスポート/インポートのエンドポイントを CsvController に分離 | TransactionController との責務分離のため |
+| CSV インポートは行単位でバリデーション（RowValidationException） | 不正行をスキップして正常行のみ保存し errorRows で詳細を返す |
+| CSV インポートのカテゴリ照合は category_name + category_type の組み合わせで行う | category_id は異なる帳簿間で不一致になるため。存在しない場合は自動作成 |
+| CSV エクスポートの categoryIds は複数指定可能（?categoryIds=X&categoryIds=Y） | マルチセレクト対応のためリスト型パラメータ |
+| CSV エクスポートに includeFixed=false で固定費明細を除外できる | デフォルト true |
+| 設定ページの CSV タブは「CSV」（旧:「データ管理」） |
+| CSVインポート時に存在しないカテゴリは自動作成 | 他アプリからの移行を容易にするため |
+| CSVエクスポートはBOM付きUTF-8 | Excelでの文字化けを防ぐため |
+| 固定費明細はインポート時に通常明細として登録 | データの一貫性を保つため |
 
 ---
 
@@ -80,6 +92,7 @@
 - ダッシュボード API: backend/src/main/java/com/example/moneynote/domain/dashboard/
 - 予算 API: backend/src/main/java/com/example/moneynote/domain/budget/
 - 固定費 API: backend/src/main/java/com/example/moneynote/domain/fixedtransaction/
+- CSV API: backend/src/main/java/com/example/moneynote/domain/csv/
 - アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
 - 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
 - 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
@@ -95,9 +108,9 @@
 - 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
 - レポートページ: frontend/src/app/(app)/ledgers/[ledgerId]/reports/
 - 予算ページ: frontend/src/app/(app)/ledgers/[ledgerId]/budget/
-- 設定ページ: frontend/src/app/(app)/settings/ （固定費タブあり）
+- 設定ページ: frontend/src/app/(app)/settings/ （固定費タブ・データ管理タブあり）
 - カテゴリ集計: レポートページに統合済み（独立ページ廃止）
-- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts 追加）
+- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts, csv.ts 追加）
 - 型定義: frontend/src/types/ （budget.ts, fixed.ts 追加）
 - Zustand ストア: frontend/src/stores/
 - 共通コンポーネント: frontend/src/components/
@@ -107,6 +120,7 @@
   - グラフ: frontend/src/components/charts/
   - 予算: frontend/src/components/budget/
   - 固定費: frontend/src/components/fixed/ （FixedTransactionList.tsx, FixedTransactionForm.tsx）
+  - CSV: frontend/src/components/csv/ （CsvExport.tsx, CsvImport.tsx）
   - UI汎用: frontend/src/components/ui/
 
 ---
@@ -143,16 +157,16 @@
 
 - main: v0.1.0 タグ済み
 - develop: Step 1〜8 マージ済み
-- feature/step7-dashboard: Step 9 実装済み（テストグリーン）
+- feature/step10-csv: Step 10 実装済み（テストグリーン）
+
+---
 
 ### 次回の作業手順（Gate 3 完了後）
 ```bash
 git checkout develop
-git checkout -b feature/step10-csv
-git push origin feature/step10-csv
+git checkout -b feature/step11-ai
+git push origin feature/step11-ai
 ```
-
----
 
 ## Step 完了時の更新ルール
 

@@ -4,8 +4,10 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import FixedTransactionList from '@/components/fixed/FixedTransactionList';
+import CsvExport from '@/components/csv/CsvExport';
+import CsvImport from '@/components/csv/CsvImport';
 
-type Tab = 'fixed' | 'general';
+type Tab = 'fixed' | 'data' | 'general';
 
 const SettingsContent = () => {
   const searchParams = useSearchParams();
@@ -23,7 +25,7 @@ const SettingsContent = () => {
 
       {/* タブ */}
       <div className="flex border-b border-gray-200 gap-1">
-        {([['fixed', '固定費'], ['general', '一般']] as const).map(([key, label]) => (
+        {([['fixed', '固定費'], ['data', 'CSV'], ['general', '一般']] as const).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -43,6 +45,26 @@ const SettingsContent = () => {
         <div>
           {selectedLedgerId ? (
             <FixedTransactionList ledgerId={selectedLedgerId} />
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <p className="text-gray-400 text-sm">帳簿を選択してください</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* データ管理タブ */}
+      {tab === 'data' && (
+        <div className="space-y-8">
+          {selectedLedgerId ? (
+            <>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <CsvExport ledgerId={selectedLedgerId} />
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <CsvImport ledgerId={selectedLedgerId} />
+              </div>
+            </>
           ) : (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
               <p className="text-gray-400 text-sm">帳簿を選択してください</p>
