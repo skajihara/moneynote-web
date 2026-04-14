@@ -1,0 +1,4 @@
+transaction_id,ledger_id,transaction_date,transaction_type,amount,category_id,category_type,category_name,memo,is_fixed_origin,fixed_transaction_id,created_at
+txn_test000001,ldg_test001,2026-04-01,EXPENSE,3500,,EXPENSE,食費,スーパーマーケット,false,,2026-04-01T10:00:00
+txn_test000002,ldg_test001,2026-04-10,INCOME,250000,,INCOME,給与,4月分給与,false,,2026-04-10T09:00:00
+txn_test000003,ldg_test001,2026-04-15,EXPENSE,1200,,EXPENSE,交通費,電車定期,false,,2026-04-15T08:30:00
