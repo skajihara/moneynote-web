@@ -459,6 +459,105 @@ class TransactionControllerTest {
     }
 
     // =========================================================================
+    // GET /api/v1/ledgers/{ledgerId}/transactions/search
+    // =========================================================================
+
+    @Test
+    void searchTransactions_noParams_returnsAll() throws Exception {
+        createTx("EXPENSE", 1000, "2026-03-01", expCategoryId);
+        createTx("INCOME",  5000, "2026-04-15", incCategoryId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2));
+    }
+
+    @Test
+    void searchTransactions_withStartDate_filtersCorrectly() throws Exception {
+        createTx("EXPENSE", 1000, "2026-03-01", expCategoryId); // 範囲外
+        createTx("EXPENSE", 2000, "2026-04-10", expCategoryId); // 範囲内
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .param("startDate", "2026-04-01")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].amount").value(2000));
+    }
+
+    @Test
+    void searchTransactions_withEndDate_filtersCorrectly() throws Exception {
+        createTx("EXPENSE", 1000, "2026-03-01", expCategoryId); // 範囲内
+        createTx("EXPENSE", 2000, "2026-05-01", expCategoryId); // 範囲外
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .param("endDate", "2026-04-30")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].amount").value(1000));
+    }
+
+    @Test
+    void searchTransactions_withDateRange_filtersCorrectly() throws Exception {
+        createTx("EXPENSE", 1000, "2026-03-31", expCategoryId); // 範囲外（前）
+        createTx("EXPENSE", 2000, "2026-04-10", expCategoryId); // 範囲内
+        createTx("EXPENSE", 3000, "2026-04-30", expCategoryId); // 範囲内
+        createTx("EXPENSE", 4000, "2026-05-01", expCategoryId); // 範囲外（後）
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .param("startDate", "2026-04-01")
+                        .param("endDate", "2026-04-30")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2));
+    }
+
+    @Test
+    void searchTransactions_withKeyword_filtersCorrectly() throws Exception {
+        // memo 付き明細を直接 DB に登録する
+        jdbcTemplate.execute(
+                "INSERT INTO transactions (transaction_id, ledger_id, category_id, transaction_type, " +
+                "amount, transaction_date, memo, is_fixed_origin) VALUES " +
+                "('" + IdGenerator.transactionId() + "', '" + ledgerId1 + "', '" + expCategoryId + "', " +
+                "'EXPENSE', 800, '2026-04-05', 'スーパー買い物', false)");
+        jdbcTemplate.execute(
+                "INSERT INTO transactions (transaction_id, ledger_id, category_id, transaction_type, " +
+                "amount, transaction_date, memo, is_fixed_origin) VALUES " +
+                "('" + IdGenerator.transactionId() + "', '" + ledgerId1 + "', '" + expCategoryId + "', " +
+                "'EXPENSE', 500, '2026-04-06', 'コンビニ', false)");
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .param("keyword", "スーパー")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].amount").value(800));
+    }
+
+    @Test
+    void searchTransactions_withCategory_filtersCorrectly() throws Exception {
+        createTx("EXPENSE", 1000, "2026-04-01", expCategoryId);
+        createTx("INCOME",  5000, "2026-04-01", incCategoryId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .param("categoryId", expCategoryId)
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].transactionType").value("EXPENSE"));
+    }
+
+    @Test
+    void searchTransactions_otherUser_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/search")
+                        .header("Authorization", "Bearer " + token2))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
     // helpers
     // =========================================================================
 

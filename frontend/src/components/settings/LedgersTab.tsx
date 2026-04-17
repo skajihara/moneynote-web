@@ -1,0 +1,502 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { KeyboardSensor } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  getLedgers,
+  createLedger,
+  updateLedger,
+  deleteLedger,
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  updateCategoryOrder,
+  type Ledger,
+  type Category,
+} from '@/lib/api/ledger';
+import { useLedgerStore } from '@/stores/ledgerStore';
+import { useToastStore } from '@/stores/toastStore';
+import { ApiClientError } from '@/lib/api/client';
+
+// ─── schemas ───────────────────────────────────────────────────────────────
+
+const ledgerSchema = z.object({
+  ledgerName: z.string().min(1, '必須').max(100),
+  initialBalance: z.coerce.number().default(0),
+  startDayOfMonth: z.coerce.number().min(1).max(28).default(1),
+  startMonthOfYear: z.coerce.number().min(1).max(12).default(1),
+});
+type LedgerForm = z.infer<typeof ledgerSchema>;
+
+const categorySchema = z.object({
+  categoryName: z.string().min(1, '必須').max(50),
+  categoryType: z.enum(['INCOME', 'EXPENSE']),
+});
+type CategoryForm = z.infer<typeof categorySchema>;
+
+// ─── SortableCategory ──────────────────────────────────────────────────────
+
+type SortableCategoryProps = {
+  category: Category;
+  onEdit: (c: Category) => void;
+  onDelete: (c: Category) => void;
+};
+
+const SortableCategory = ({ category, onEdit, onDelete }: SortableCategoryProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: category.categoryId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-md mb-1"
+    >
+      <div className="flex items-center gap-2">
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-gray-300 hover:text-gray-500 select-none"
+          aria-label="ドラッグして並び替え"
+        >
+          ⠿
+        </span>
+        <span className="text-sm text-gray-700">{category.categoryName}</span>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(category)}
+          className="text-xs text-blue-500 hover:underline"
+        >
+          編集
+        </button>
+        <button
+          onClick={() => onDelete(category)}
+          className="text-xs text-red-400 hover:underline"
+        >
+          削除
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── CategorySection ───────────────────────────────────────────────────────
+
+type CategorySectionProps = {
+  ledgerId: string;
+  type: 'EXPENSE' | 'INCOME';
+  label: string;
+};
+
+const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
+  const addToast = useToastStore((s) => s.add);
+  const [items, setItems] = useState<Category[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+
+  const form = useForm<CategoryForm>({ resolver: zodResolver(categorySchema) });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const load = useCallback(async () => {
+    try {
+      const res = await getCategories(ledgerId, type);
+      setItems(res.data);
+    } catch {
+      addToast('error', 'カテゴリの取得に失敗しました');
+    }
+  }, [ledgerId, type, addToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((c) => c.categoryId === active.id);
+    const newIndex = items.findIndex((c) => c.categoryId === over.id);
+    const reordered = arrayMove(items, oldIndex, newIndex);
+    setItems(reordered);
+
+    try {
+      await updateCategoryOrder(
+        ledgerId,
+        reordered.map((c, i) => ({ categoryId: c.categoryId, displayOrder: i }))
+      );
+    } catch {
+      addToast('error', '並び替えの保存に失敗しました');
+      load();
+    }
+  };
+
+  const startAdd = () => {
+    setEditingId(null);
+    form.reset({ categoryName: '', categoryType: type });
+    setShowAdd(true);
+  };
+
+  const startEdit = (c: Category) => {
+    setShowAdd(false);
+    setEditingId(c.categoryId);
+    form.reset({ categoryName: c.categoryName, categoryType: type });
+  };
+
+  const handleDelete = async (c: Category) => {
+    if (!confirm(`「${c.categoryName}」を削除しますか？\n関連する明細のカテゴリが未設定になります。`)) return;
+    try {
+      await deleteCategory(ledgerId, c.categoryId);
+      addToast('success', '削除しました');
+      load();
+    } catch (e) {
+      const msg = e instanceof ApiClientError ? e.error.message : '削除に失敗しました';
+      addToast('error', msg);
+    }
+  };
+
+  const onSubmit = form.handleSubmit(async (data) => {
+    try {
+      if (editingId) {
+        await updateCategory(ledgerId, editingId, { categoryName: data.categoryName });
+        addToast('success', '更新しました');
+        setEditingId(null);
+      } else {
+        await createCategory(ledgerId, { categoryName: data.categoryName, categoryType: type });
+        addToast('success', '追加しました');
+        setShowAdd(false);
+      }
+      load();
+      form.reset();
+    } catch (e) {
+      const msg = e instanceof ApiClientError ? e.error.message : '保存に失敗しました';
+      addToast('error', msg);
+    }
+  });
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</h4>
+        <button onClick={startAdd} className="text-xs text-blue-600 hover:underline">+ 追加</button>
+      </div>
+
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map((c) => c.categoryId)} strategy={verticalListSortingStrategy}>
+          {items.map((c) => (
+            editingId === c.categoryId ? (
+              <form key={c.categoryId} onSubmit={onSubmit} className="flex gap-2 mb-1">
+                <input
+                  {...form.register('categoryName')}
+                  className="flex-1 border border-blue-400 rounded-md px-2 py-1 text-sm focus:outline-none"
+                  autoFocus
+                />
+                <button type="submit" className="text-xs bg-blue-600 text-white px-3 py-1 rounded">保存</button>
+                <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 px-2">×</button>
+              </form>
+            ) : (
+              <SortableCategory
+                key={c.categoryId}
+                category={c}
+                onEdit={startEdit}
+                onDelete={handleDelete}
+              />
+            )
+          ))}
+        </SortableContext>
+      </DndContext>
+
+      {showAdd && (
+        <form onSubmit={onSubmit} className="flex gap-2 mt-2">
+          <input
+            {...form.register('categoryName')}
+            placeholder="カテゴリ名"
+            className="flex-1 border border-blue-400 rounded-md px-2 py-1 text-sm focus:outline-none"
+            autoFocus
+          />
+          <button type="submit" className="text-xs bg-blue-600 text-white px-3 py-1 rounded">追加</button>
+          <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-gray-400 px-2">×</button>
+        </form>
+      )}
+    </div>
+  );
+};
+
+// ─── LedgerSettingsView ────────────────────────────────────────────────────
+
+type LedgerSettingsViewProps = {
+  ledger: Ledger;
+  onBack: () => void;
+  onUpdated: () => void;
+  onDeleted: () => void;
+};
+
+const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSettingsViewProps) => {
+  const addToast = useToastStore((s) => s.add);
+
+  const form = useForm<LedgerForm>({
+    resolver: zodResolver(ledgerSchema),
+    defaultValues: {
+      ledgerName: ledger.ledgerName,
+      initialBalance: ledger.initialBalance,
+      startDayOfMonth: ledger.startDayOfMonth,
+      startMonthOfYear: ledger.startMonthOfYear,
+    },
+  });
+
+  const onSave = form.handleSubmit(async (data) => {
+    try {
+      await updateLedger(ledger.ledgerId, data);
+      addToast('success', '帳簿を更新しました');
+      onUpdated();
+    } catch (e) {
+      const msg = e instanceof ApiClientError ? e.error.message : '更新に失敗しました';
+      addToast('error', msg);
+    }
+  });
+
+  const handleDelete = async () => {
+    if (!confirm('帳簿内の全データ（明細・予算・カテゴリ）が削除されます。よろしいですか？')) return;
+    try {
+      await deleteLedger(ledger.ledgerId);
+      addToast('success', '帳簿を削除しました');
+      onDeleted();
+    } catch (e) {
+      const msg = e instanceof ApiClientError ? e.error.message : '削除に失敗しました';
+      addToast('error', msg);
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={onBack} className="text-sm text-blue-600 hover:underline mb-4 block">
+        ← 帳簿一覧
+      </button>
+
+      <h2 className="text-base font-semibold text-gray-800 mb-4">{ledger.ledgerName} の設定</h2>
+
+      {/* 基本設定 */}
+      <section className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+        <h3 className="text-sm font-semibold text-gray-600 mb-4">基本情報</h3>
+        <form onSubmit={onSave} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">帳簿名</label>
+            <input
+              {...form.register('ledgerName')}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {form.formState.errors.ledgerName && (
+              <p className="text-red-500 text-xs mt-1">{form.formState.errors.ledgerName.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">初期残高（円）</label>
+            <input
+              {...form.register('initialBalance')}
+              type="number"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm text-gray-600 mb-1">月度開始日</label>
+              <select
+                {...form.register('startDayOfMonth')}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>{d}日</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm text-gray-600 mb-1">年度開始月</label>
+              <select
+                {...form.register('startMonthOfYear')}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>{m}月</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            保存
+          </button>
+        </form>
+      </section>
+
+      {/* カテゴリ管理 */}
+      <section className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
+        <h3 className="text-sm font-semibold text-gray-600 mb-4">カテゴリ管理</h3>
+        <CategorySection ledgerId={ledger.ledgerId} type="EXPENSE" label="支出カテゴリ" />
+        <CategorySection ledgerId={ledger.ledgerId} type="INCOME" label="収入カテゴリ" />
+      </section>
+
+      {/* 帳簿削除 */}
+      <section className="bg-white rounded-lg border border-red-200 p-5">
+        <h3 className="text-sm font-semibold text-red-500 mb-2">帳簿の削除</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          帳簿内の全データ（明細・予算・カテゴリ）が削除されます。この操作は取り消せません。
+        </p>
+        <button
+          onClick={handleDelete}
+          className="px-4 py-2 border border-red-400 text-red-500 text-sm rounded-md hover:bg-red-50"
+        >
+          この帳簿を削除する
+        </button>
+      </section>
+    </div>
+  );
+};
+
+// ─── LedgerListView ────────────────────────────────────────────────────────
+
+type LedgerListViewProps = {
+  onSelect: (ledger: Ledger) => void;
+};
+
+const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
+  const addToast = useToastStore((s) => s.add);
+  const storeCreate = useLedgerStore((s) => s.createLedger);
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const res = await getLedgers();
+      setLedgers(res.data);
+    } catch {
+      addToast('error', '帳簿一覧の取得に失敗しました');
+    }
+  }, [addToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      await storeCreate({ ledgerName: newName.trim() });
+      setNewName('');
+      setShowAddForm(false);
+      load();
+      addToast('success', '帳簿を作成しました');
+    } catch (e) {
+      const msg = e instanceof ApiClientError ? e.error.message : '作成に失敗しました';
+      addToast('error', msg);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-800">帳簿一覧</h2>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+        >
+          ＋ 新しい帳簿
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex gap-2">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="帳簿名"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none"
+            autoFocus
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+          />
+          <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md">作成</button>
+          <button onClick={() => setShowAddForm(false)} className="text-sm text-gray-400">×</button>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {ledgers.map((l) => (
+          <button
+            key={l.ledgerId}
+            onClick={() => onSelect(l)}
+            className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="font-medium text-gray-800 text-sm">{l.ledgerName}</div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              初期残高: {l.initialBalance.toLocaleString('ja-JP')}円
+              作成日: {l.createdAt.slice(0, 10)}
+            </div>
+          </button>
+        ))}
+        {ledgers.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-6">帳簿がありません</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── LedgersTab ────────────────────────────────────────────────────────────
+
+const LedgersTab = () => {
+  const [selectedLedger, setSelectedLedger] = useState<Ledger | null>(null);
+  const fetchLedgers = useLedgerStore((s) => s.fetchLedgers);
+
+  const handleDeleted = () => {
+    fetchLedgers();
+    setSelectedLedger(null);
+  };
+
+  const handleUpdated = () => {
+    fetchLedgers();
+  };
+
+  if (selectedLedger) {
+    return (
+      <LedgerSettingsView
+        ledger={selectedLedger}
+        onBack={() => setSelectedLedger(null)}
+        onUpdated={handleUpdated}
+        onDeleted={handleDeleted}
+      />
+    );
+  }
+
+  return <LedgerListView onSelect={setSelectedLedger} />;
+};
+
+export default LedgersTab;

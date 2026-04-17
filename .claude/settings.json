@@ -55,6 +55,9 @@
       "Bash(npm publish*)",
       "Bash(npx create-*)",
       "Bash(* > /dev/null 2>&1 &)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\components"
     ]
   },
   "rules": [

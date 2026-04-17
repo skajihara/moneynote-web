@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.category;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,4 +22,8 @@ public interface CategoryRepository extends JpaRepository<Category, String> {
     /** インポート時の display_order 最大値取得用 */
     @Query("SELECT MAX(c.displayOrder) FROM Category c WHERE c.ledger.ledgerId = :ledgerId")
     Optional<Integer> findMaxDisplayOrderByLedgerId(@Param("ledgerId") String ledgerId);
+
+    @Modifying
+    @Query("DELETE FROM Category c WHERE c.ledger.ledgerId = :ledgerId")
+    void deleteByLedgerLedgerId(@Param("ledgerId") String ledgerId);
 }

@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 // Lombok @Builder の戻り値に対する IDE の Null 型安全警告を抑制する（実行時は問題なし）
 @SuppressWarnings("null")
@@ -219,6 +220,30 @@ public class TransactionService {
         } else {
             transactionRepository.delete(t);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // 検索
+    // -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> searchTransactions(
+            String ledgerId, String keyword, String categoryId,
+            String startDate, String endDate, String userId) {
+
+        accessValidator.validate(ledgerId, userId);
+
+        // Hibernate 6 は LocalDate 型パラメータに null を渡すと型解決できないため
+        // null の代わりにセンチネル値を渡して BETWEEN で範囲を表現する
+        LocalDate from = (startDate != null && !startDate.isBlank())
+                ? LocalDate.parse(startDate) : LocalDate.of(1900, 1, 1);
+        LocalDate to   = (endDate != null && !endDate.isBlank())
+                ? LocalDate.parse(endDate) : LocalDate.of(9999, 12, 31);
+        String kw    = (keyword == null || keyword.isBlank()) ? "" : keyword.trim();
+        String catId = (categoryId == null || categoryId.isBlank()) ? "" : categoryId;
+
+        return transactionRepository.searchTransactions(ledgerId, kw, catId, from, to)
+                .stream().map(TransactionResponse::from).toList();
     }
 
     // -------------------------------------------------------------------------
