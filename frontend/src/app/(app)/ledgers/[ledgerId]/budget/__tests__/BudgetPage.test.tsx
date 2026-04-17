@@ -4,6 +4,7 @@ import BudgetPage from '../page';
 import * as budgetApi from '@/lib/api/budget';
 import * as ledgerApi from '@/lib/api/ledger';
 import type { Budget } from '@/types/budget';
+import type { BudgetHeatmapMonth } from '@/types/budget';
 
 jest.mock('@/lib/api/budget');
 jest.mock('@/lib/api/ledger');
@@ -11,10 +12,27 @@ jest.mock('next/navigation', () => ({
   useParams: () => ({ ledgerId: 'ldg_1' }),
 }));
 
+jest.mock('recharts', () => {
+  const original = jest.requireActual('recharts');
+  return {
+    ...original,
+    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+  };
+});
+
 const mockGetBudgets = jest.mocked(budgetApi.getBudgets);
+const mockGetBudgetHeatmap = jest.mocked(budgetApi.getBudgetHeatmap);
 const mockUpsertBudget = jest.mocked(budgetApi.upsertBudget);
 const mockDeleteBudget = jest.mocked(budgetApi.deleteBudget);
 const mockGetCategories = jest.mocked(ledgerApi.getCategories);
+
+const emptyHeatmapResponse: { data: BudgetHeatmapMonth[]; error: null; timestamp: string } = {
+  data: [],
+  error: null,
+  timestamp: '',
+};
 
 const expCategories = {
   data: [
@@ -47,9 +65,12 @@ const makeBudget = (overrides: Partial<Budget> = {}): Budget => ({
   ...overrides,
 });
 
+const emptyResponse = { data: [], error: null, timestamp: '' };
+
 beforeEach(() => {
   jest.clearAllMocks();
-  mockGetBudgets.mockResolvedValue({ data: [], error: null, timestamp: '' });
+  mockGetBudgets.mockResolvedValue(emptyResponse);
+  mockGetBudgetHeatmap.mockResolvedValue(emptyHeatmapResponse);
   mockGetCategories.mockResolvedValue(expCategories);
   mockUpsertBudget.mockResolvedValue({
     data: makeBudget(),
@@ -74,7 +95,10 @@ describe('BudgetPage', () => {
       timestamp: '',
     });
     render(<BudgetPage />);
-    expect(await screen.findByText('食費')).toBeInTheDocument();
+    // 食費はBudgetRowとヒートマップの両方に表示される可能性があるため getAllByText を使用
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
     expect(screen.getByText('正常')).toBeInTheDocument();
   });
 
@@ -127,5 +151,19 @@ describe('BudgetPage', () => {
     expect(
       await screen.findByText(`${expectedYear}年${expectedMonth}月`)
     ).toBeInTheDocument();
+  });
+
+  it('ヒートマップセクションが表示される', async () => {
+    render(<BudgetPage />);
+    await waitFor(() => {
+      expect(screen.getByText('予算達成率ヒートマップ（過去12ヶ月）')).toBeInTheDocument();
+    });
+  });
+
+  it('余剰・超過グラフセクションが表示される', async () => {
+    render(<BudgetPage />);
+    await waitFor(() => {
+      expect(screen.getByText('予算余剰・超過（直近6ヶ月）')).toBeInTheDocument();
+    });
   });
 });
