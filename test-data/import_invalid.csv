@@ -1,0 +1,6 @@
+transaction_id,ledger_id,transaction_date,transaction_type,amount,category_id,category_type,category_name,memo,is_fixed_origin,fixed_transaction_id,created_at
+txn_err000001,ldg_test001,2026/04/01,EXPENSE,1000,,EXPENSE,食費,不正な日付形式,false,,2026-04-01T10:00:00
+txn_err000002,ldg_test001,2026-04-02,EXPENSE,-500,,EXPENSE,食費,負の金額,false,,2026-04-02T10:00:00
+txn_err000003,ldg_test001,2026-04-03,EXPENSE,abc,,EXPENSE,食費,数値でない金額,false,,2026-04-03T10:00:00
+txn_err000004,ldg_test001,2026-04-04,INVALID_TYPE,1000,,EXPENSE,食費,不正なtransaction_type,false,,2026-04-04T10:00:00
+txn_valid00001,ldg_test001,2026-04-05,EXPENSE,2000,,EXPENSE,食費,正常行,false,,2026-04-05T10:00:00

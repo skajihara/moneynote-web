@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DashboardPage from '../page';
 import * as dashboardApi from '@/lib/api/dashboard';
+import * as aiApi from '@/lib/api/ai';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import type { DashboardResponse } from '@/types/dashboard';
 
@@ -11,6 +12,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@/lib/api/dashboard');
+jest.mock('@/lib/api/ai');
 
 // Recharts ResizeObserver mock
 jest.mock('recharts', () => {
@@ -27,6 +29,8 @@ const mockReplace = jest.fn();
 let mockSearchParams = new URLSearchParams();
 
 const mockGetDashboard = jest.mocked(dashboardApi.getDashboard);
+const mockAnalyzeAi   = jest.mocked(aiApi.analyzeAi);
+const mockGetAiScore  = jest.mocked(aiApi.getAiScore);
 
 const emptyDashboard: { data: DashboardResponse; error: null; timestamp: string } = {
   data: {
@@ -93,6 +97,29 @@ const richDashboard: { data: DashboardResponse; error: null; timestamp: string }
 beforeEach(() => {
   mockGetDashboard.mockReset();
   mockGetDashboard.mockResolvedValue(emptyDashboard);
+  mockAnalyzeAi.mockReset();
+  mockAnalyzeAi.mockResolvedValue({
+    data: {
+      adviceType: 'INSIGHT',
+      adviceText: '【モック】収支分析結果',
+      generatedAt: '2026-04-14T10:00:00',
+      fromCache: false,
+    },
+    error: null,
+    timestamp: '',
+  });
+  mockGetAiScore.mockReset();
+  mockGetAiScore.mockResolvedValue({
+    data: {
+      totalScore: 75,
+      grade: 'GOOD',
+      breakdown: { balanceScore: 25, budgetScore: 25, savingsScore: 25, stabilityScore: 0 },
+      prevMonthScore: 70,
+      scoreDiff: 5,
+    },
+    error: null,
+    timestamp: '',
+  });
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
   useLedgerStore.setState({ ledgers: [], selectedLedgerId: 'ldg_test01' });
@@ -135,10 +162,28 @@ describe('DashboardPage', () => {
     });
   });
 
-  it('AIプレースホルダーが表示される', async () => {
+  it('AIセクションの「今月を分析する」ボタンが表示される', async () => {
     render(<DashboardPage />);
     await waitFor(() => {
-      expect(screen.getByText(/AI分析は Step 11 で実装予定です/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '今月を分析する' })).toBeInTheDocument();
+    });
+  });
+
+  it('「今月を分析する」ボタンクリックで AI 結果が表示される', async () => {
+    mockGetDashboard.mockResolvedValue(richDashboard);
+    render(<DashboardPage />);
+    const btn = await screen.findByRole('button', { name: '今月を分析する' });
+    await userEvent.click(btn);
+    await waitFor(() => {
+      expect(screen.getByText(/【モック】収支分析結果/)).toBeInTheDocument();
+    });
+  });
+
+  it('スコアカードがコンパクト表示される', async () => {
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(screen.getByText('75点')).toBeInTheDocument();
+      expect(screen.getByText(/良好/)).toBeInTheDocument();
     });
   });
 

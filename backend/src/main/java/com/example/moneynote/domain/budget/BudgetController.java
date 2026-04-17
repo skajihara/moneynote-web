@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.budget;
 
 import com.example.moneynote.common.response.ApiResponse;
+import com.example.moneynote.domain.budget.dto.BudgetHeatmapMonthDto;
 import com.example.moneynote.domain.budget.dto.BudgetRequest;
 import com.example.moneynote.domain.budget.dto.BudgetResponse;
 import jakarta.validation.Valid;
@@ -40,6 +41,16 @@ public class BudgetController {
             Principal principal) {
         return ApiResponse.success(
                 budgetService.upsertBudget(ledgerId, request, principal.getName()));
+    }
+
+    /** GET /api/v1/ledgers/{ledgerId}/budgets/heatmap?months=12 */
+    @GetMapping("/heatmap")
+    public ApiResponse<List<BudgetHeatmapMonthDto>> getBudgetHeatmap(
+            @PathVariable String ledgerId,
+            @RequestParam(defaultValue = "12") @Min(1) @Max(24) int months,
+            Principal principal) {
+        return ApiResponse.success(
+                budgetService.getBudgetHeatmap(ledgerId, months, principal.getName()));
     }
 
     /** DELETE /api/v1/ledgers/{ledgerId}/budgets/{budgetId} */
