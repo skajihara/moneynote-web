@@ -41,8 +41,8 @@ const MonthlyBarChart = ({ data, height = 280 }: Props) => {
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-        <YAxis tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} tick={{ fontSize: 11 }} />
+        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+        <YAxis tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} tick={{ fontSize: 12 }} />
         <Tooltip formatter={(value: number) => fmt(value)} />
         <Legend />
         <Bar dataKey="income" name="収入" fill="#16A34A" radius={[2, 2, 0, 0]} />

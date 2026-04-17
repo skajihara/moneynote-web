@@ -5,7 +5,8 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -File seed.ps1)",
       "Bash(mkdir -p /c/Users/ruri3/git/moneynote-web/frontend/src/app/\\\\\\(app\\\\\\)/ledgers/\\\\[ledgerId\\\\]/reports/__tests__)",
       "Bash(mkdir -p /c/Users/ruri3/git/moneynote-web/frontend/src/app/\\\\\\(app\\\\\\)/ledgers/\\\\[ledgerId\\\\]/categories/__tests__)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(powershell.exe -File /c/Users/ruri3/git/moneynote-web/seed.ps1)"
     ]
   }
 }

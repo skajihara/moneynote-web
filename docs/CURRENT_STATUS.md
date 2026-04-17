@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 10 完了時点）
+2026年4月（Step 11 UI改善・ヒートマップAPI追加・seed充実）
 
 ---
 
@@ -19,10 +19,11 @@
 | Step 8 | 分析レポート・カテゴリ集計 | feature/step8-reports | 完了・develop マージ済み |
 | Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
 | Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
+| Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
 
 ## 現在の状態
 - 現在のブランチ: develop
-- 次の作業: Step 11（AI支出分析・アドバイス）
+- 次の作業: Step 12（設定・管理画面）
 - リリース済み: v0.2.0（Step 1〜9）
 
 ---
@@ -78,6 +79,16 @@
 | CSVインポート時に存在しないカテゴリは自動作成 | 他アプリからの移行を容易にするため |
 | CSVエクスポートはBOM付きUTF-8 | Excelでの文字化けを防ぐため |
 | 固定費明細はインポート時に通常明細として登録 | データの一貫性を保つため |
+| スコア計算: balanceScore(25pt) + budgetScore(25pt) + savingsScore(25pt) + stabilityScore(25pt) = 100pt | 四項目均等配点。EXCELLENT≥80 / GOOD≥60 / CAUTION≥40 / POOR<40 |
+| stabilityScore はCV（変動係数）で算出（3ヶ月分のデータが必要） | データが1ヶ月しかない場合はCV=高になりスコア=0になるため注意 |
+| AiService.getScore() は Spring AI の呼び出しを行わない（DBデータのみで計算） | AI コスト節約・高速化のため |
+| ダッシュボードの getAiScore 呼び出しは fire-and-forget（失敗しても継続） | スコア取得失敗でダッシュボード全体が壊れないようにするため |
+| AI分析ページの期間切り替えは getAiSummary のみ再呼び出し（スコアは再呼び出ししない） | スコアは期間非依存（直近1ヶ月固定）のため |
+| 予算ヒートマップは GET /budgets/heatmap?months=N の単一 API で取得 | 12並列呼び出しから1回に変更。フロントは受け取ったデータを reverse() して左→右=古→新に表示 |
+| AiService スコアのエッジケース: income=0 かつ expense=0 → savingsScore=12（中立） | データ未入力月に 0 点がつくと全体スコアが不当に低くなるため |
+| AiService スコアのエッジケース: 非ゼロ支出月が2ヶ月未満 → stabilityScore=12（中立） | CV(変動係数)は2サンプル以上必要。1ヶ月しかないと CV=高になり不当に 0 点になるため |
+| seed.ps1 の当月予算から衣服費を除外 | 境界値データ 999999 円の支出があるが予算を設定しない場合は budgetScore に影響しないため |
+| フォントは next/font/google で Noto Sans JP を読み込み（subsets: latin） | CJK サブセットは別途 preload 不要 |
 
 ---
 
@@ -93,6 +104,7 @@
 - 予算 API: backend/src/main/java/com/example/moneynote/domain/budget/
 - 固定費 API: backend/src/main/java/com/example/moneynote/domain/fixedtransaction/
 - CSV API: backend/src/main/java/com/example/moneynote/domain/csv/
+- AI API: backend/src/main/java/com/example/moneynote/domain/ai/
 - アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
 - 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
 - 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
@@ -110,8 +122,9 @@
 - 予算ページ: frontend/src/app/(app)/ledgers/[ledgerId]/budget/
 - 設定ページ: frontend/src/app/(app)/settings/ （固定費タブ・データ管理タブあり）
 - カテゴリ集計: レポートページに統合済み（独立ページ廃止）
-- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts, csv.ts 追加）
-- 型定義: frontend/src/types/ （budget.ts, fixed.ts 追加）
+- AI分析ページ: frontend/src/app/(app)/ledgers/[ledgerId]/ai/
+- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts, csv.ts, ai.ts 追加）
+- 型定義: frontend/src/types/ （budget.ts, fixed.ts, ai.ts 追加）
 - Zustand ストア: frontend/src/stores/
 - 共通コンポーネント: frontend/src/components/
   - レイアウト: frontend/src/components/layout/
@@ -131,6 +144,9 @@
    （docker compose up -d だけではイメージが更新されない）
 
 2. seed.ps1 は Step 6（収支明細 API）完了後に完全動作する
+
+3. seed.ps1 は実行時に自動で `docker compose down -v && docker compose up -d` を実行して DB をリセットしてからデータを投入する。
+   既存データはすべて削除されるため、手動で DB をリセットする必要はない
 
 3. DB リセットが必要な場合は docker compose down -v を使う
    （-v オプションでボリュームも削除される）
@@ -156,16 +172,16 @@
 ## ブランチ戦略
 
 - main: v0.1.0 タグ済み
-- develop: Step 1〜8 マージ済み
-- feature/step10-csv: Step 10 実装済み（テストグリーン）
+- develop: Step 1〜10 マージ済み
+- feature/step11-ai-analysis: Step 11 実装済み（テストグリーン）
 
 ---
 
 ### 次回の作業手順（Gate 3 完了後）
 ```bash
 git checkout develop
-git checkout -b feature/step11-ai
-git push origin feature/step11-ai
+git checkout -b feature/step12-settings
+git push origin feature/step12-settings
 ```
 
 ## Step 完了時の更新ルール

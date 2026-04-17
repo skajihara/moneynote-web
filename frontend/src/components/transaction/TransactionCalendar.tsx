@@ -80,12 +80,12 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick }: Props
                     {cell.day}
                   </span>
                   {summary && summary.totalExpense > 0 && (
-                    <p className="text-red-500 text-[10px] mt-0.5 truncate">
+                    <p className="text-red-500 text-xs mt-0.5 truncate">
                       -{fmt(summary.totalExpense)}
                     </p>
                   )}
                   {summary && summary.totalIncome > 0 && (
-                    <p className="text-green-600 text-[10px] truncate">
+                    <p className="text-green-600 text-xs truncate">
                       +{fmt(summary.totalIncome)}
                     </p>
                   )}

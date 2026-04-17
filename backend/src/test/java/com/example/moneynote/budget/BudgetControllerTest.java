@@ -290,6 +290,64 @@ class BudgetControllerTest {
     }
 
     // =========================================================================
+    // GET /budgets/heatmap
+    // =========================================================================
+
+    @Test
+    void getHeatmap_returnsMonthsDescending() throws Exception {
+        // 当月と先月に予算を設定
+        createBudget(expCatId, 2026, 4, 30000);
+        createBudget(expCatId, 2026, 3, 25000);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets/heatmap")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("months", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(3)))  // 3ヶ月分
+                .andExpect(jsonPath("$.data[0].yearMonth").exists())   // 最新月が先頭
+                .andExpect(jsonPath("$.data[0].budgets").isArray());
+    }
+
+    @Test
+    void getHeatmap_statusReflectsActual() throws Exception {
+        java.time.YearMonth ym = java.time.YearMonth.now();
+        createBudget(expCatId, ym.getYear(), ym.getMonthValue(), 10000);
+        createTx("EXPENSE", 12000, ym.atDay(10).toString(), expCatId); // 120% → OVER
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets/heatmap")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("months", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].budgets[0].status").value("OVER"))
+                .andExpect(jsonPath("$.data[0].budgets[0].actualAmount").value(12000));
+    }
+
+    @Test
+    void getHeatmap_emptyMonth_returnsEmptyBudgets() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets/heatmap")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("months", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].budgets", hasSize(0)));
+    }
+
+    @Test
+    void getHeatmap_defaultMonths_returns12() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets/heatmap")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(12)));
+    }
+
+    @Test
+    void getHeatmap_otherUser_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets/heatmap")
+                        .header("Authorization", "Bearer " + token2))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
     // helpers
     // =========================================================================
 

@@ -1,11 +1,16 @@
 'use client';
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { getDashboard } from '@/lib/api/dashboard';
+import { analyzeAi, getAiScore } from '@/lib/api/ai';
+import { useToastStore } from '@/stores/toastStore';
+import { ApiClientError } from '@/lib/api/client';
 import type { DashboardResponse } from '@/types/dashboard';
 import type { Transaction } from '@/types/transaction';
+import type { AiAnalysisResult, AiScore } from '@/types/ai';
 import SummaryCards from '@/components/ui/SummaryCards';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import BudgetProgressList from '@/components/budget/BudgetProgressList';
@@ -28,6 +33,10 @@ const DashboardContent = () => {
   const [recentCount, setRecentCount] = useState(10);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiResult, setAiResult] = useState<AiAnalysisResult | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiScore, setAiScore] = useState<AiScore | null>(null);
+  const { add: addToast } = useToastStore();
 
   const updateYearMonth = useCallback(
     (y: number, m: number) => {
@@ -57,11 +66,26 @@ const DashboardContent = () => {
     } finally {
       setLoading(false);
     }
+    // スコアは独立取得（失敗しても継続）
+    getAiScore(selectedLedgerId).then((r) => setAiScore(r.data)).catch(() => {});
   }, [selectedLedgerId, year, month, recentCount]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const handleAiAnalyze = async () => {
+    if (!selectedLedgerId) return;
+    setAiLoading(true);
+    try {
+      const res = await analyzeAi(selectedLedgerId, 'ONE_MONTH', 'INSIGHT');
+      setAiResult(res.data);
+    } catch (e) {
+      addToast('error', e instanceof ApiClientError ? e.error.message : 'AI分析に失敗しました');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // TransactionList の onEdit は dashboard では編集不要（no-op）
   const handleEdit = (_tx: Transaction) => {};
@@ -103,25 +127,74 @@ const DashboardContent = () => {
 
           {/* カテゴリ別円グラフ */}
           <section className="bg-white rounded-lg border border-gray-200 p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">カテゴリ別支出</h2>
+            <h2 className="text-base font-semibold text-gray-700 mb-3">カテゴリ別支出</h2>
             <CategoryPieChart data={data.categoryBreakdown} />
           </section>
 
           {/* 予算消化率 */}
           <section>
-            <h2 className="text-sm font-semibold text-gray-700 mb-2">予算消化率</h2>
+            <h2 className="text-base font-semibold text-gray-700 mb-2">予算消化率</h2>
             <BudgetProgressList budgetStatus={data.budgetStatus} />
           </section>
 
-          {/* AI サマリー（プレースホルダー） */}
-          <section className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-600">
-            AI分析は Step 11 で実装予定です
+          {/* AI サマリー */}
+          <section className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-blue-700">AI分析</h2>
+              {selectedLedgerId && (
+                <Link
+                  href={`/ledgers/${selectedLedgerId}/ai`}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  詳細を見る →
+                </Link>
+              )}
+            </div>
+            {/* スコアコンパクト表示 */}
+            {aiScore && (() => {
+              const GRADE: Record<string, { emoji: string; label: string }> = {
+                EXCELLENT: { emoji: '🟢', label: '優秀' },
+                GOOD:      { emoji: '🟡', label: '良好' },
+                CAUTION:   { emoji: '🟠', label: '要注意' },
+                POOR:      { emoji: '🔴', label: '改善が必要' },
+              };
+              const g = GRADE[aiScore.grade] ?? { emoji: '●', label: aiScore.grade };
+              return (
+                <div className="flex items-center gap-2 bg-white rounded-md px-3 py-2 border border-blue-100">
+                  <span className="text-sm font-bold text-gray-800">{aiScore.totalScore}点</span>
+                  <span className="text-xs">{g.emoji} {g.label}</span>
+                  {aiScore.scoreDiff !== null && (
+                    <span className={`text-xs ml-auto ${aiScore.scoreDiff >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      先月比 {aiScore.scoreDiff >= 0 ? '+' : ''}{aiScore.scoreDiff}点
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+            <button
+              onClick={handleAiAnalyze}
+              disabled={aiLoading || !selectedLedgerId}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              aria-label="今月を分析する"
+            >
+              {aiLoading ? '分析中...' : '今月を分析する'}
+            </button>
+            {aiResult && (
+              <div className="space-y-1">
+                {aiResult.fromCache && (
+                  <p className="text-xs text-blue-400">キャッシュから取得</p>
+                )}
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  {aiResult.adviceText}
+                </p>
+              </div>
+            )}
           </section>
 
           {/* 最近の明細 */}
           <section>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-gray-700">最近の明細</h2>
+              <h2 className="text-base font-semibold text-gray-700">最近の明細</h2>
               <select
                 value={recentCount}
                 onChange={(e) => setRecentCount(Number(e.target.value))}
