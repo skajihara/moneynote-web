@@ -109,9 +109,9 @@ const TransactionsContent = () => {
               ▶
             </button>
           </div>
-          {startDayOfMonth > 1 && (
-            <span className="text-xs text-gray-400">{period.label.match(/\(.*\)/)?.[0]}</span>
-          )}
+          <span className="text-xs text-gray-400">
+            （{period.from.getMonth() + 1}/{period.from.getDate()}〜{period.to.getMonth() + 1}/{period.to.getDate()}）
+          </span>
         </div>
 
         {loading || !data ? (
@@ -131,6 +131,7 @@ const TransactionsContent = () => {
               month={month}
               dailySummaries={data.dailySummaries}
               onDateClick={(date) => openAddForm(date)}
+              startDayOfMonth={startDayOfMonth}
             />
 
             {/* 明細一覧 */}

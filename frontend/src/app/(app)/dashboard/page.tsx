@@ -116,9 +116,9 @@ const DashboardContent = () => {
             ▶
           </button>
         </div>
-        {startDayOfMonth > 1 && (
-          <span className="text-xs text-gray-400">{period.label.replace(`${year}年${month}月 `, '')}</span>
-        )}
+        <span className="text-xs text-gray-400">
+          （{period.from.getMonth() + 1}/{period.from.getDate()}〜{period.to.getMonth() + 1}/{period.to.getDate()}）
+        </span>
       </div>
 
       {loading || !data ? (

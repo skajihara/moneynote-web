@@ -403,9 +403,14 @@ const ReportsContent = () => {
               <span className="text-lg font-semibold text-gray-800 w-40 text-center">{year}年{month}月</span>
               <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="翌月">▶</button>
             </div>
-            {startDayOfMonth > 1 && (
-              <span className="text-xs text-gray-400">{getPeriodRange(year, month, startDayOfMonth).label.match(/\(.*\)/)?.[0]}</span>
-            )}
+            {(() => {
+              const p = getPeriodRange(year, month, startDayOfMonth);
+              return (
+                <span className="text-xs text-gray-400">
+                  （{p.from.getMonth() + 1}/{p.from.getDate()}〜{p.to.getMonth() + 1}/{p.to.getDate()}）
+                </span>
+              );
+            })()}
           </div>
 
           {reportLoading || !monthlyData ? (

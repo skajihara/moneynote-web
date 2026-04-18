@@ -30,7 +30,8 @@
       "Bash(awk -F'\"' '{sum+=$2} END{print \"Total tests: \"sum}')",
       "Bash(git -C /c/Users/ruri3/git/moneynote-web branch)",
       "Bash(git -C /c/Users/ruri3/git/moneynote-web log --oneline -5)",
-      "Read(//c/Users/ruri3/AppData/Local/Temp/claude/c--Users-ruri3-git-moneynote-web/6bc293f7-a1a9-4b71-a020-43b1ccc9e363/tasks/**)"
+      "Read(//c/Users/ruri3/AppData/Local/Temp/claude/c--Users-ruri3-git-moneynote-web/6bc293f7-a1a9-4b71-a020-43b1ccc9e363/tasks/**)",
+      "Bash(npx tsc *)"
     ],
     "deny": [
       "Bash(git commit*)",
