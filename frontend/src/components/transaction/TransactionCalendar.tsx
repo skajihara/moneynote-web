@@ -15,7 +15,7 @@ const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土'];
 const fmt = (n: number) =>
   n === 0 ? '' : n.toLocaleString('ja-JP');
 
-type Cell = { day: number; date: string; isCurrentMonth: boolean } | { day: null; date: null; isCurrentMonth: boolean };
+type Cell = { day: number; date: string } | { day: null; date: null };
 
 function buildCells(year: number, month: number, startDayOfMonth: number): Cell[] {
   const cells: Cell[] = [];
@@ -25,11 +25,11 @@ function buildCells(year: number, month: number, startDayOfMonth: number): Cell[
     const daysInMonth = new Date(year, month, 0).getDate();
     const startDow = firstDay.getDay();
 
-    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null, isCurrentMonth: true });
+    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null });
     for (let d = 1; d <= daysInMonth; d++) {
       const mm = String(month).padStart(2, '0');
       const dd = String(d).padStart(2, '0');
-      cells.push({ day: d, date: `${year}-${mm}-${dd}`, isCurrentMonth: true });
+      cells.push({ day: d, date: `${year}-${mm}-${dd}` });
     }
   } else {
     // 月度期間: prevMonth/startDay 〜 month/(startDay-1)
@@ -43,25 +43,25 @@ function buildCells(year: number, month: number, startDayOfMonth: number): Cell[
     const fromDate = new Date(prevYear, prevMonth - 1, fromDay);
     const startDow = fromDate.getDay();
 
-    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null, isCurrentMonth: true });
+    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null });
 
     // 前月分: fromDay〜prevMonthDays
     for (let d = fromDay; d <= prevMonthDays; d++) {
       const yy = String(prevYear);
       const mm = String(prevMonth).padStart(2, '0');
       const dd = String(d).padStart(2, '0');
-      cells.push({ day: d, date: `${yy}-${mm}-${dd}`, isCurrentMonth: false });
+      cells.push({ day: d, date: `${yy}-${mm}-${dd}` });
     }
 
     // 当月分: 1〜toDay
     for (let d = 1; d <= toDay; d++) {
       const mm = String(month).padStart(2, '0');
       const dd = String(d).padStart(2, '0');
-      cells.push({ day: d, date: `${year}-${mm}-${dd}`, isCurrentMonth: true });
+      cells.push({ day: d, date: `${year}-${mm}-${dd}` });
     }
   }
 
-  while (cells.length % 7 !== 0) cells.push({ day: null, date: null, isCurrentMonth: true });
+  while (cells.length % 7 !== 0) cells.push({ day: null, date: null });
 
   return cells;
 }
@@ -92,15 +92,13 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
           const isToday = cell.date === today;
           const summary = cell.date ? summaryMap.get(cell.date) : undefined;
           const dow = idx % 7;
-          const muted = cell.day !== null && !cell.isCurrentMonth;
 
           return (
             <div
               key={idx}
               className={`min-h-[72px] border-b border-r border-gray-100 p-1 text-xs
                 ${cell.day ? 'cursor-pointer hover:bg-gray-50' : ''}
-                ${isToday ? 'bg-blue-50' : ''}
-                ${muted ? 'bg-gray-50' : ''}`}
+                ${isToday ? 'bg-blue-50' : ''}`}
               onClick={() => cell.date && onDateClick(cell.date)}
             >
               {cell.day && (
@@ -108,19 +106,19 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
                   <span
                     className={`inline-block w-6 h-6 flex items-center justify-center rounded-full font-medium
                       ${isToday ? 'bg-blue-600 text-white' : ''}
-                      ${!isToday && dow === 0 ? muted ? 'text-red-300' : 'text-red-500' : ''}
-                      ${!isToday && dow === 6 ? muted ? 'text-blue-300' : 'text-blue-500' : ''}
-                      ${!isToday && dow > 0 && dow < 6 ? muted ? 'text-gray-400' : 'text-gray-700' : ''}`}
+                      ${!isToday && dow === 0 ? 'text-red-500' : ''}
+                      ${!isToday && dow === 6 ? 'text-blue-500' : ''}
+                      ${!isToday && dow > 0 && dow < 6 ? 'text-gray-700' : ''}`}
                   >
                     {cell.day}
                   </span>
                   {summary && summary.totalExpense > 0 && (
-                    <p className={`text-xs mt-0.5 truncate ${muted ? 'text-red-300' : 'text-red-500'}`}>
+                    <p className="text-red-500 text-xs mt-0.5 truncate">
                       -{fmt(summary.totalExpense)}
                     </p>
                   )}
                   {summary && summary.totalIncome > 0 && (
-                    <p className={`text-xs truncate ${muted ? 'text-green-300' : 'text-green-600'}`}>
+                    <p className="text-green-600 text-xs truncate">
                       +{fmt(summary.totalIncome)}
                     </p>
                   )}
