@@ -1,8 +1,11 @@
 package com.example.moneynote.domain.category;
 
 import com.example.moneynote.common.exception.ResourceNotFoundException;
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.category.dto.*;
+import com.example.moneynote.domain.ledger.Ledger;
 import com.example.moneynote.domain.transaction.Transaction;
 import com.example.moneynote.domain.transaction.TransactionRepository;
 import com.example.moneynote.domain.transaction.TransactionType;
@@ -34,10 +37,10 @@ public class CategoryReportService {
     public List<CategorySummaryDto> getCategorySummary(
             String ledgerId, int year, int month, CategoryType type, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
-
-        YearMonth ym = YearMonth.of(year, month);
-        List<Transaction> transactions = fetchTransactions(ledgerId, ym.atDay(1), ym.atEndOfMonth(), type);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                year, month, ledger.getStartDayOfMonth());
+        List<Transaction> transactions = fetchTransactions(ledgerId, period.from(), period.to(), type);
         return buildCategorySummary(transactions);
     }
 
@@ -45,11 +48,10 @@ public class CategoryReportService {
     public List<CategorySummaryDto> getAnnualCategorySummary(
             String ledgerId, int year, CategoryType type, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
-
-        LocalDate start = LocalDate.of(year, 1, 1);
-        LocalDate end   = LocalDate.of(year, 12, 31);
-        List<Transaction> transactions = fetchTransactions(ledgerId, start, end, type);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        LocalDateRange annual = LedgerPeriodCalculator.getAnnualPeriod(
+                year, ledger.getStartMonthOfYear(), ledger.getStartDayOfMonth());
+        List<Transaction> transactions = fetchTransactions(ledgerId, annual.from(), annual.to(), type);
         return buildCategorySummary(transactions);
     }
 
@@ -120,7 +122,8 @@ public class CategoryReportService {
     public CategoryTransactionsResponse getCategoryTransactions(
             String ledgerId, String categoryId, int year, Integer month, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        int startDay = ledger.getStartDayOfMonth();
 
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("カテゴリが見つかりません"));
@@ -135,27 +138,33 @@ public class CategoryReportService {
         YearMonth startYM;
         YearMonth endYM;
         if (isAnnual) {
-            // 年間モード: その年の1月〜12月
-            startYM = YearMonth.of(year, 1);
-            endYM   = YearMonth.of(year, 12);
+            startYM = YearMonth.of(year, ledger.getStartMonthOfYear());
+            endYM   = startYM.plusMonths(11);
         } else {
-            // 月次モード: 直近12ヶ月
             endYM   = YearMonth.of(year, month);
             startYM = endYM.minusMonths(11);
         }
 
+        LocalDateRange startRange = LedgerPeriodCalculator.getMonthPeriod(
+                startYM.getYear(), startYM.getMonthValue(), startDay);
+        LocalDateRange endRange = LedgerPeriodCalculator.getMonthPeriod(
+                endYM.getYear(), endYM.getMonthValue(), startDay);
+
         List<Transaction> trendTx =
                 transactionRepository.findByLedgerIdAndDateRangeAndCategoryWithDetails(
-                        ledgerId, startYM.atDay(1), endYM.atEndOfMonth(), categoryId);
+                        ledgerId, startRange.from(), endRange.to(), categoryId);
 
         // 月別集計（全月初期化）
         Map<String, BigDecimal> monthAmounts = new LinkedHashMap<>();
-        for (YearMonth m = startYM; !m.isAfter(endYM); m = m.plusMonths(1)) {
-            monthAmounts.put(m.toString(), BigDecimal.ZERO);
+        for (YearMonth ym = startYM; !ym.isAfter(endYM); ym = ym.plusMonths(1)) {
+            monthAmounts.put(ym.toString(), BigDecimal.ZERO);
         }
         for (Transaction t : trendTx) {
-            String key = YearMonth.from(t.getTransactionDate()).toString();
-            monthAmounts.merge(key, t.getAmount(), BigDecimal::add);
+            // 取引日がどの月度に属するか判定する（月度開始日を考慮）
+            String key = resolveMonthKey(t.getTransactionDate(), startYM, endYM, startDay);
+            if (key != null) {
+                monthAmounts.merge(key, t.getAmount(), BigDecimal::add);
+            }
         }
 
         List<CategoryTrendDto> monthlyTrend = monthAmounts.entrySet().stream()
@@ -163,8 +172,16 @@ public class CategoryReportService {
                 .toList();
 
         // 年間モードは全明細、月次モードは当月のみ
+        final YearMonth fEndYM = endYM;
+        final int fStartDay = startDay;
         List<TransactionResponse> transactions = trendTx.stream()
-                .filter(t -> isAnnual || YearMonth.from(t.getTransactionDate()).equals(endYM))
+                .filter(t -> {
+                    if (isAnnual) return true;
+                    LocalDateRange p = LedgerPeriodCalculator.getMonthPeriod(
+                            fEndYM.getYear(), fEndYM.getMonthValue(), fStartDay);
+                    return !t.getTransactionDate().isBefore(p.from())
+                            && !t.getTransactionDate().isAfter(p.to());
+                })
                 .map(TransactionResponse::from)
                 .toList();
 
@@ -173,5 +190,19 @@ public class CategoryReportService {
                 monthlyTrend,
                 transactions
         );
+    }
+
+    /**
+     * 取引日がどの月度（年月）に属するかを月度開始日を考慮して解決する。
+     */
+    private String resolveMonthKey(LocalDate date, YearMonth startYM, YearMonth endYM, int startDay) {
+        for (YearMonth ym = startYM; !ym.isAfter(endYM); ym = ym.plusMonths(1)) {
+            LocalDateRange p = LedgerPeriodCalculator.getMonthPeriod(
+                    ym.getYear(), ym.getMonthValue(), startDay);
+            if (!date.isBefore(p.from()) && !date.isAfter(p.to())) {
+                return ym.toString();
+            }
+        }
+        return null;
     }
 }

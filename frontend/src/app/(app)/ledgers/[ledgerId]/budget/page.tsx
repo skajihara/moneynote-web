@@ -19,6 +19,8 @@ import type { Budget, BudgetHeatmapMonth } from '@/types/budget';
 import type { Category } from '@/lib/api/ledger';
 import { getCategories } from '@/lib/api/ledger';
 import { getBudgets, getBudgetHeatmap, upsertBudget, deleteBudget } from '@/lib/api/budget';
+import { getCurrentYearMonth } from '@/lib/periodUtils';
+import { useLedgerStore } from '@/stores/ledgerStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
 
@@ -430,10 +432,11 @@ const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
 
 const BudgetPage = () => {
   const { ledgerId } = useParams<{ ledgerId: string }>();
-
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
+  const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
+  const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
+  const { year: initYear, month: initMonth } = getCurrentYearMonth(startDayOfMonth);
+  const [year, setYear] = useState(initYear);
+  const [month, setMonth] = useState(initMonth);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [expCategories, setExpCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);

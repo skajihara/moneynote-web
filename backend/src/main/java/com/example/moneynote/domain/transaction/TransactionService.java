@@ -3,6 +3,8 @@ package com.example.moneynote.domain.transaction;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.ValidationException;
 import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.category.Category;
 import com.example.moneynote.domain.category.CategoryRepository;
@@ -24,7 +26,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 // Lombok @Builder の戻り値に対する IDE の Null 型安全警告を抑制する（実行時は問題なし）
 @SuppressWarnings("null")
@@ -42,29 +43,16 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public TransactionListResponse getTransactions(
-            String ledgerId, int year, int month, int startDayOfMonth,
+            String ledgerId, int year, int month,
             String categoryId, TransactionType type, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
 
-        // startDayOfMonth = 1 の場合はカレンダー月をそのまま使う
-        // startDayOfMonth = 25 の場合、"4月" = 3/25〜4/24
-        LocalDate from;
-        LocalDate to;
-        if (startDayOfMonth <= 1) {
-            YearMonth ym = YearMonth.of(year, month);
-            from = ym.atDay(1);
-            to   = ym.atEndOfMonth();
-        } else {
-            // from: 前月の startDayOfMonth 日
-            YearMonth prevYm = YearMonth.of(year, month).minusMonths(1);
-            int clampedDay = Math.min(startDayOfMonth, prevYm.lengthOfMonth());
-            from = prevYm.atDay(clampedDay);
-            // to: 当月の startDayOfMonth - 1 日
-            YearMonth curYm = YearMonth.of(year, month);
-            int toDay = Math.min(startDayOfMonth - 1, curYm.lengthOfMonth());
-            to = curYm.atDay(toDay);
-        }
+        // 帳簿の月度開始日を使って集計期間を算出する
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                year, month, ledger.getStartDayOfMonth());
+        LocalDate from = period.from();
+        LocalDate to   = period.to();
 
         List<Transaction> transactions = fetchFiltered(ledgerId, from, to, categoryId, type);
 
@@ -148,9 +136,12 @@ public class TransactionService {
         BigDecimal initialBalance = ledger.getInitialBalance();
         BigDecimal currentBalance = initialBalance.add(totalIncome).subtract(totalExpense);
 
-        // carryOver: 今月1日より前の残高
-        LocalDate firstOfMonth = LocalDate.now().withDayOfMonth(1);
-        List<Transaction> prevTx = transactionRepository.findByLedgerIdBeforeDate(ledgerId, firstOfMonth);
+        // carryOver: 現在の月度開始日より前の残高
+        YearMonth currentYM = LedgerPeriodCalculator.getCurrentMonth(ledger.getStartDayOfMonth());
+        LocalDateRange currentPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                currentYM.getYear(), currentYM.getMonthValue(), ledger.getStartDayOfMonth());
+        List<Transaction> prevTx = transactionRepository.findByLedgerIdBeforeDate(
+                ledgerId, currentPeriod.from());
         BigDecimal prevIncome  = BigDecimal.ZERO;
         BigDecimal prevExpense = BigDecimal.ZERO;
         for (Transaction t : prevTx) {

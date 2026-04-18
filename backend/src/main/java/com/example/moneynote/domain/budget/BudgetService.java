@@ -4,6 +4,8 @@ import com.example.moneynote.common.exception.AccessDeniedException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.ValidationException;
 import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.budget.dto.BudgetHeatmapItemDto;
 import com.example.moneynote.domain.budget.dto.BudgetHeatmapMonthDto;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,17 +44,17 @@ public class BudgetService {
 
     @Transactional(readOnly = true)
     public List<BudgetResponse> getBudgets(String ledgerId, int year, int month, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
 
         List<Budget> budgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                 ledgerId, (short) year, (short) month);
 
-        // 当月の実績を取得
-        YearMonth ym = YearMonth.of(year, month);
+        // 帳簿の月度開始日を使って集計期間を算出する
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                year, month, ledger.getStartDayOfMonth());
         List<Transaction> transactions = transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                ledgerId, ym.atDay(1), ym.atEndOfMonth());
+                ledgerId, period.from(), period.to());
 
-        // カテゴリ別の実績金額をマップ化
         Map<String, BigDecimal> actualMap = transactions.stream()
                 .filter(t -> t.getCategory() != null && t.getTransactionType() == TransactionType.EXPENSE)
                 .collect(Collectors.groupingBy(
@@ -70,11 +73,9 @@ public class BudgetService {
         Category category = categoryRepository.findById(req.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("カテゴリが見つかりません"));
 
-        // 対象帳簿のカテゴリであること
         if (!category.getLedger().getLedgerId().equals(ledgerId)) {
             throw new ValidationException("指定されたカテゴリはこの帳簿に属していません");
         }
-        // EXPENSE カテゴリのみ対象
         if (category.getCategoryType() != CategoryType.EXPENSE) {
             throw new ValidationException("予算は支出カテゴリにのみ設定できます");
         }
@@ -94,9 +95,10 @@ public class BudgetService {
         Budget saved = budgetRepository.save(budget);
 
         // 実績取得
-        YearMonth ym = YearMonth.of(req.year(), req.month());
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                req.year(), req.month(), ledger.getStartDayOfMonth());
         List<Transaction> transactions = transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                ledgerId, ym.atDay(1), ym.atEndOfMonth());
+                ledgerId, period.from(), period.to());
         BigDecimal actual = transactions.stream()
                 .filter(t -> t.getCategory() != null
                         && t.getCategory().getCategoryId().equals(req.categoryId())
@@ -109,17 +111,17 @@ public class BudgetService {
 
     /**
      * GET /budgets/heatmap - 過去 N ヶ月分の月別予算達成状況を一括取得する
-     * 新しい月が先頭になるよう降順で返す
      */
     @Transactional(readOnly = true)
     public List<BudgetHeatmapMonthDto> getBudgetHeatmap(String ledgerId, int months, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        int startDay = ledger.getStartDayOfMonth();
 
-        YearMonth current = YearMonth.now();
+        YearMonth current = LedgerPeriodCalculator.getCurrentMonth(startDay);
         List<BudgetHeatmapMonthDto> result = new ArrayList<>();
 
         for (int i = 0; i < months; i++) {
-            YearMonth ym = current.minusMonths(i); // 新しい月が先頭
+            YearMonth ym = current.minusMonths(i);
             List<Budget> budgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                     ledgerId, (short) ym.getYear(), (short) ym.getMonthValue());
 
@@ -128,9 +130,11 @@ public class BudgetService {
                 continue;
             }
 
-            // 当月の実績
+            // 月度期間の実績を取得する
+            LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                    ym.getYear(), ym.getMonthValue(), startDay);
             List<Transaction> txList = transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                    ledgerId, ym.atDay(1), ym.atEndOfMonth());
+                    ledgerId, period.from(), period.to());
             Map<String, BigDecimal> actualMap = txList.stream()
                     .filter(t -> t.getCategory() != null
                             && t.getTransactionType() == TransactionType.EXPENSE)

@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 12 バグ修正・検証完了）
+2026年4月（Step 12 月度開始日・年度開始月の全 API 反映完了）
 
 ---
 
@@ -25,7 +25,7 @@
 ## 現在の状態
 - 現在のブランチ: feature/step12-settings
 - 次の作業: Gate 3（ブラウザ動作確認）→ develop マージ
-- バックエンド: 206テスト全グリーン / フロントエンド: 185テスト全グリーン
+- バックエンド: 全テストグリーン（BUILD SUCCESSFUL） / フロントエンド: 185テスト全グリーン
 - リリース済み: v0.2.0（Step 1〜9）
 
 ---
@@ -91,6 +91,10 @@
 | AiService スコアのエッジケース: 非ゼロ支出月が2ヶ月未満 → stabilityScore=12（中立） | CV(変動係数)は2サンプル以上必要。1ヶ月しかないと CV=高になり不当に 0 点になるため |
 | seed.ps1 の当月予算から衣服費を除外 | 境界値データ 999999 円の支出があるが予算を設定しない場合は budgetScore に影響しないため |
 | フォントは next/font/google で Noto Sans JP を読み込み（subsets: latin） | CJK サブセットは別途 preload 不要 |
+| Docker ビルド時は next/font/google を使用しない（CSS システムフォントで代替） | Docker ビルド環境は外部ネットワーク（Google Fonts）にアクセスできないため |
+| LedgerPeriodCalculator（共通ユーティリティ）で月度・年度期間を一元計算 | startDayOfMonth=20 なら「4月」=3/20〜4/19、startMonthOfYear=4 なら「2026年度」=2026/4〜2027/3 |
+| 帳簿一覧は created_at ASC でソート固定 | UI で帳簿の表示順が毎回変わらないようにするため |
+| TransactionController から startDayOfMonth リクエストパラメータを削除 | バックエンドが Ledger エンティティから直接取得するため。フロント API クライアントも同様に削除 |
 | ユーザー API は PUT /api/v1/users/me・/password・/theme、DELETE /api/v1/users/me | アカウント削除は FK 順 (ai_cache→budgets→transactions→fixed→categories→perms→ledgers→user) で一括削除 |
 | 取引検索 GET /api/v1/ledgers/{id}/transactions/search | keyword（memo LIKE）・categoryId・startDate・endDate の任意組み合わせフィルター |
 | 設定ページのタブ: account/ledgers/fixed/search/csv | 帳簿管理は一覧↔帳簿設定の2段階ビュー。カテゴリ並び替えは @dnd-kit/sortable で実装 |

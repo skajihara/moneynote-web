@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
-import { getPeriodRange } from '@/lib/periodUtils';
+import { getPeriodRange, getCurrentYearMonth } from '@/lib/periodUtils';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import {
   getMonthlyReport,
@@ -235,10 +235,9 @@ const ReportsContent = () => {
   const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
   const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
 
-  const today = new Date();
   const [tab, setTab] = useState<Tab>(() => (searchParams.get('tab') as Tab) ?? 'monthly');
-  const [year, setYear] = useState(() => Number(searchParams.get('year')) || today.getFullYear());
-  const [month, setMonth] = useState(() => Number(searchParams.get('month')) || today.getMonth() + 1);
+  const [year, setYear] = useState(() => Number(searchParams.get('year')) || getCurrentYearMonth(startDayOfMonth).year);
+  const [month, setMonth] = useState(() => Number(searchParams.get('month')) || getCurrentYearMonth(startDayOfMonth).month);
   const [categoryTab, setCategoryTab] = useState<CategoryTab>('EXPENSE');
   const [annualCategoryTab, setAnnualCategoryTab] = useState<CategoryTab>('EXPENSE');
 

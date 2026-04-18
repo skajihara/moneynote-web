@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { getDashboard } from '@/lib/api/dashboard';
-import { getPeriodRange, prevYearMonth, nextYearMonth } from '@/lib/periodUtils';
+import { getPeriodRange, prevYearMonth, nextYearMonth, getCurrentYearMonth } from '@/lib/periodUtils';
 import { analyzeAi, getAiScore } from '@/lib/api/ai';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
@@ -25,12 +25,11 @@ const DashboardContent = () => {
   const { selectedLedgerId, getSelectedLedger } = useLedgerStore();
   const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
 
-  const today = new Date();
   const [year, setYear] = useState(
-    () => Number(searchParams.get('year')) || today.getFullYear()
+    () => Number(searchParams.get('year')) || getCurrentYearMonth(startDayOfMonth).year
   );
   const [month, setMonth] = useState(
-    () => Number(searchParams.get('month')) || today.getMonth() + 1
+    () => Number(searchParams.get('month')) || getCurrentYearMonth(startDayOfMonth).month
   );
   const [recentCount, setRecentCount] = useState(10);
   const [data, setData] = useState<DashboardResponse | null>(null);

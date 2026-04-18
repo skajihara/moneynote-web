@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { getTransactions } from '@/lib/api/transaction';
-import { getPeriodRange, prevYearMonth, nextYearMonth } from '@/lib/periodUtils';
+import { getPeriodRange, prevYearMonth, nextYearMonth, getCurrentYearMonth } from '@/lib/periodUtils';
 import type { TransactionListResponse, Transaction } from '@/types/transaction';
 import SummaryCards from '@/components/ui/SummaryCards';
 import TransactionCalendar from '@/components/transaction/TransactionCalendar';
@@ -20,19 +20,18 @@ const TransactionsContent = () => {
   const { open: openPanel, close: closePanel } = useSubPanelStore();
   const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
 
-  const today = new Date();
-  const [year, setYear] = useState(() => Number(searchParams.get('year')) || today.getFullYear());
-  const [month, setMonth] = useState(() => Number(searchParams.get('month')) || today.getMonth() + 1);
+  const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
+  const [year, setYear] = useState(() => Number(searchParams.get('year')) || getCurrentYearMonth(startDayOfMonth).year);
+  const [month, setMonth] = useState(() => Number(searchParams.get('month')) || getCurrentYearMonth(startDayOfMonth).month);
   const [data, setData] = useState<TransactionListResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
   const period = getPeriodRange(year, month, startDayOfMonth);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getTransactions(ledgerId, { year, month, startDayOfMonth });
+      const res = await getTransactions(ledgerId, { year, month });
       setData(res.data);
     } finally {
       setLoading(false);

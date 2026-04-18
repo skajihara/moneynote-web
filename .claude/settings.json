@@ -27,7 +27,10 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -File /c/Users/ruri3/git/moneynote-web/seed.ps1)",
       "Bash(python3 -m json.tool)",
       "Bash(npx jest *)",
-      "Bash(awk -F'\"' '{sum+=$2} END{print \"Total tests: \"sum}')"
+      "Bash(awk -F'\"' '{sum+=$2} END{print \"Total tests: \"sum}')",
+      "Bash(git -C /c/Users/ruri3/git/moneynote-web branch)",
+      "Bash(git -C /c/Users/ruri3/git/moneynote-web log --oneline -5)",
+      "Read(//c/Users/ruri3/AppData/Local/Temp/claude/c--Users-ruri3-git-moneynote-web/6bc293f7-a1a9-4b71-a020-43b1ccc9e363/tasks/**)"
     ],
     "deny": [
       "Bash(git commit*)",

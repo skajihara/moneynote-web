@@ -57,3 +57,16 @@ export function prevYearMonth(year: number, month: number): { year: number; mont
 export function nextYearMonth(year: number, month: number): { year: number; month: number } {
   return month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
 }
+
+/**
+ * startDayOfMonth を考慮した「現在の月度」を返す。
+ * 今日の日付 < startDayOfMonth の場合は前月を返す。
+ */
+export function getCurrentYearMonth(startDayOfMonth: number): { year: number; month: number } {
+  const today = new Date();
+  if (startDayOfMonth > 1 && today.getDate() < startDayOfMonth) {
+    const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    return { year: prev.getFullYear(), month: prev.getMonth() + 1 };
+  }
+  return { year: today.getFullYear(), month: today.getMonth() + 1 };
+}
