@@ -2,6 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useLedgerStore } from '@/stores/ledgerStore';
+import { getPeriodRange } from '@/lib/periodUtils';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import {
   getMonthlyReport,
@@ -230,6 +232,8 @@ const ReportsContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { open: openPanel, close: closePanel } = useSubPanelStore();
+  const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
+  const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
 
   const today = new Date();
   const [tab, setTab] = useState<Tab>(() => (searchParams.get('tab') as Tab) ?? 'monthly');
@@ -394,10 +398,15 @@ const ReportsContent = () => {
       {tab === 'monthly' && (
         <>
           {/* 月セレクター */}
-          <div className="flex items-center gap-4 justify-center">
-            <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="前月">◀</button>
-            <span className="text-lg font-semibold text-gray-800 w-32 text-center">{year}年{month}月</span>
-            <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="翌月">▶</button>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-4">
+              <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="前月">◀</button>
+              <span className="text-lg font-semibold text-gray-800 w-40 text-center">{year}年{month}月</span>
+              <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="翌月">▶</button>
+            </div>
+            {startDayOfMonth > 1 && (
+              <span className="text-xs text-gray-400">{getPeriodRange(year, month, startDayOfMonth).label.match(/\(.*\)/)?.[0]}</span>
+            )}
           </div>
 
           {reportLoading || !monthlyData ? (

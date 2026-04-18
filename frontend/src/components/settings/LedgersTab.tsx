@@ -35,6 +35,7 @@ import {
   type Category,
 } from '@/lib/api/ledger';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
 
@@ -58,11 +59,12 @@ type CategoryForm = z.infer<typeof categorySchema>;
 
 type SortableCategoryProps = {
   category: Category;
+  type: 'EXPENSE' | 'INCOME';
   onEdit: (c: Category) => void;
   onDelete: (c: Category) => void;
 };
 
-const SortableCategory = ({ category, onEdit, onDelete }: SortableCategoryProps) => {
+const SortableCategory = ({ category, type, onEdit, onDelete }: SortableCategoryProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: category.categoryId });
 
@@ -72,11 +74,16 @@ const SortableCategory = ({ category, onEdit, onDelete }: SortableCategoryProps)
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const borderClass =
+    type === 'EXPENSE'
+      ? 'border-red-200 bg-red-50'
+      : 'border-green-200 bg-green-50';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between py-2 px-3 bg-white border border-gray-200 rounded-md mb-1"
+      className={`flex items-center justify-between py-2 px-3 border rounded-md mb-1 ${borderClass}`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -92,7 +99,7 @@ const SortableCategory = ({ category, onEdit, onDelete }: SortableCategoryProps)
       <div className="flex gap-2">
         <button
           onClick={() => onEdit(category)}
-          className="text-xs text-blue-500 hover:underline"
+          className="text-xs text-theme hover:underline"
         >
           編集
         </button>
@@ -202,11 +209,17 @@ const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
     }
   });
 
+  // 支出: 赤系ヘッダー、収入: 緑系ヘッダー
+  const headerClass =
+    type === 'EXPENSE'
+      ? 'text-red-600 font-semibold'
+      : 'text-green-600 font-semibold';
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</h4>
-        <button onClick={startAdd} className="text-xs text-blue-600 hover:underline">+ 追加</button>
+        <h4 className={`text-xs uppercase tracking-wide ${headerClass}`}>{label}</h4>
+        <button onClick={startAdd} className="text-xs text-theme hover:underline">+ 追加</button>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -216,16 +229,17 @@ const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
               <form key={c.categoryId} onSubmit={onSubmit} className="flex gap-2 mb-1">
                 <input
                   {...form.register('categoryName')}
-                  className="flex-1 border border-blue-400 rounded-md px-2 py-1 text-sm focus:outline-none"
+                  className="flex-1 border border-[var(--theme-color)] rounded-md px-2 py-1 text-sm focus:outline-none"
                   autoFocus
                 />
-                <button type="submit" className="text-xs bg-blue-600 text-white px-3 py-1 rounded">保存</button>
+                <button type="submit" className="text-xs btn-theme px-3 py-1 rounded">保存</button>
                 <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 px-2">×</button>
               </form>
             ) : (
               <SortableCategory
                 key={c.categoryId}
                 category={c}
+                type={type}
                 onEdit={startEdit}
                 onDelete={handleDelete}
               />
@@ -239,10 +253,10 @@ const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
           <input
             {...form.register('categoryName')}
             placeholder="カテゴリ名"
-            className="flex-1 border border-blue-400 rounded-md px-2 py-1 text-sm focus:outline-none"
+            className="flex-1 border border-[var(--theme-color)] rounded-md px-2 py-1 text-sm focus:outline-none"
             autoFocus
           />
-          <button type="submit" className="text-xs bg-blue-600 text-white px-3 py-1 rounded">追加</button>
+          <button type="submit" className="text-xs btn-theme px-3 py-1 rounded">追加</button>
           <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-gray-400 px-2">×</button>
         </form>
       )}
@@ -297,7 +311,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
 
   return (
     <div>
-      <button onClick={onBack} className="text-sm text-blue-600 hover:underline mb-4 block">
+      <button onClick={onBack} className="text-sm text-theme hover:underline mb-4 block">
         ← 帳簿一覧
       </button>
 
@@ -311,7 +325,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
             <label className="block text-sm text-gray-600 mb-1">帳簿名</label>
             <input
               {...form.register('ledgerName')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
             />
             {form.formState.errors.ledgerName && (
               <p className="text-red-500 text-xs mt-1">{form.formState.errors.ledgerName.message}</p>
@@ -322,7 +336,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
             <input
               {...form.register('initialBalance')}
               type="number"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
             />
           </div>
           <div className="flex gap-4">
@@ -352,7 +366,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
           <button
             type="submit"
             disabled={form.formState.isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-theme px-4 py-2 text-sm rounded-md"
           >
             保存
           </button>
@@ -427,14 +441,14 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
         <h2 className="text-base font-semibold text-gray-800">帳簿一覧</h2>
         <button
           onClick={() => setShowAddForm(true)}
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          className="btn-theme px-3 py-1.5 text-sm rounded-md"
         >
           ＋ 新しい帳簿
         </button>
       </div>
 
       {showAddForm && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex gap-2">
+        <div className="bg-theme-light border border-theme rounded-lg p-4 mb-4 flex gap-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -443,7 +457,7 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
             autoFocus
             onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
           />
-          <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md">作成</button>
+          <button onClick={handleCreate} className="btn-theme px-4 py-2 text-sm rounded-md">作成</button>
           <button onClick={() => setShowAddForm(false)} className="text-sm text-gray-400">×</button>
         </div>
       )}
@@ -453,11 +467,12 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
           <button
             key={l.ledgerId}
             onClick={() => onSelect(l)}
-            className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-[var(--theme-color)] hover:bg-theme-light transition-colors"
           >
             <div className="font-medium text-gray-800 text-sm">{l.ledgerName}</div>
             <div className="text-xs text-gray-400 mt-0.5">
               初期残高: {l.initialBalance.toLocaleString('ja-JP')}円
+              月度開始日: {l.startDayOfMonth}日
               作成日: {l.createdAt.slice(0, 10)}
             </div>
           </button>
@@ -473,30 +488,21 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
 // ─── LedgersTab ────────────────────────────────────────────────────────────
 
 const LedgersTab = () => {
-  const [selectedLedger, setSelectedLedger] = useState<Ledger | null>(null);
+  const { open: openPanel, close: closePanel } = useSubPanelStore();
   const fetchLedgers = useLedgerStore((s) => s.fetchLedgers);
 
-  const handleDeleted = () => {
-    fetchLedgers();
-    setSelectedLedger(null);
-  };
-
-  const handleUpdated = () => {
-    fetchLedgers();
-  };
-
-  if (selectedLedger) {
-    return (
+  const openSettings = (ledger: Ledger) => {
+    openPanel(
       <LedgerSettingsView
-        ledger={selectedLedger}
-        onBack={() => setSelectedLedger(null)}
-        onUpdated={handleUpdated}
-        onDeleted={handleDeleted}
+        ledger={ledger}
+        onBack={closePanel}
+        onUpdated={() => { fetchLedgers(); }}
+        onDeleted={() => { fetchLedgers(); closePanel(); }}
       />
     );
-  }
+  };
 
-  return <LedgerListView onSelect={setSelectedLedger} />;
+  return <LedgerListView onSelect={openSettings} />;
 };
 
 export default LedgersTab;

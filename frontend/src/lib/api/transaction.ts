@@ -18,12 +18,14 @@ export type { Transaction };
 
 export const getTransactions = (
   ledgerId: string,
-  params: { year: number; month: number; categoryId?: string; type?: string }
+  params: { year: number; month: number; startDayOfMonth?: number; categoryId?: string; type?: string }
 ) => {
   const query = new URLSearchParams({
     year: String(params.year),
     month: String(params.month),
   });
+  if (params.startDayOfMonth && params.startDayOfMonth > 1)
+    query.set('startDayOfMonth', String(params.startDayOfMonth));
   if (params.categoryId) query.set('categoryId', params.categoryId);
   if (params.type) query.set('type', params.type);
   return apiClient<ApiResponse<TransactionListResponse>>(

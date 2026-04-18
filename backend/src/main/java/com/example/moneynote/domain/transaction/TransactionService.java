@@ -42,14 +42,29 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public TransactionListResponse getTransactions(
-            String ledgerId, int year, int month,
+            String ledgerId, int year, int month, int startDayOfMonth,
             String categoryId, TransactionType type, String userId) {
 
         accessValidator.validate(ledgerId, userId);
 
-        YearMonth ym = YearMonth.of(year, month);
-        LocalDate from = ym.atDay(1);
-        LocalDate to   = ym.atEndOfMonth();
+        // startDayOfMonth = 1 の場合はカレンダー月をそのまま使う
+        // startDayOfMonth = 25 の場合、"4月" = 3/25〜4/24
+        LocalDate from;
+        LocalDate to;
+        if (startDayOfMonth <= 1) {
+            YearMonth ym = YearMonth.of(year, month);
+            from = ym.atDay(1);
+            to   = ym.atEndOfMonth();
+        } else {
+            // from: 前月の startDayOfMonth 日
+            YearMonth prevYm = YearMonth.of(year, month).minusMonths(1);
+            int clampedDay = Math.min(startDayOfMonth, prevYm.lengthOfMonth());
+            from = prevYm.atDay(clampedDay);
+            // to: 当月の startDayOfMonth - 1 日
+            YearMonth curYm = YearMonth.of(year, month);
+            int toDay = Math.min(startDayOfMonth - 1, curYm.lengthOfMonth());
+            to = curYm.atDay(toDay);
+        }
 
         List<Transaction> transactions = fetchFiltered(ledgerId, from, to, categoryId, type);
 
@@ -66,10 +81,9 @@ public class TransactionService {
         TransactionSummary summary = new TransactionSummary(
                 totalIncome, totalExpense, totalIncome.subtract(totalExpense));
 
-        // dailySummaries: 月の全日を初期化し、明細で集計する
+        // dailySummaries: from〜to の全日を初期化し、明細で集計する
         Map<LocalDate, BigDecimal[]> dailyMap = new java.util.LinkedHashMap<>();
-        for (int d = 1; d <= ym.lengthOfMonth(); d++) {
-            LocalDate date = ym.atDay(d);
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             dailyMap.put(date, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
         }
         for (Transaction t : transactions) {

@@ -28,12 +28,13 @@ public class TransactionController {
             @PathVariable String ledgerId,
             @RequestParam int year,
             @RequestParam @Min(1) @Max(12) int month,
+            @RequestParam(defaultValue = "1") @Min(1) @Max(28) int startDayOfMonth,
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) TransactionType type,
             Principal principal) {
         return ApiResponse.success(
-                transactionService.getTransactions(ledgerId, year, month, categoryId, type,
-                        principal.getName()));
+                transactionService.getTransactions(ledgerId, year, month, startDayOfMonth,
+                        categoryId, type, principal.getName()));
     }
 
     // -----------------------------------------------------------------------

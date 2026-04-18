@@ -74,11 +74,16 @@ const SideMenu = () => {
             <Link
               key={item.label}
               href={href}
-              className={`px-3 py-2 text-sm rounded-md transition-colors ${
+              className="px-3 py-2 text-sm rounded-md transition-colors"
+              style={
                 isActive
-                  ? 'bg-blue-50 text-blue-600 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
+                  ? {
+                      backgroundColor: 'color-mix(in srgb, var(--theme-color) 12%, white)',
+                      color: 'var(--theme-color)',
+                      fontWeight: 600,
+                    }
+                  : { color: '#4B5563' }
+              }
             >
               {item.label}
             </Link>

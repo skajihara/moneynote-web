@@ -42,8 +42,10 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 const AccountTab = () => {
   const addToast = useToastStore((s) => s.add);
   const authLogout = useAuthStore((s) => s.logout);
+  const storeThemeColor = useAuthStore((s) => s.themeColor);
+  const setStoreThemeColor = useAuthStore((s) => s.setThemeColor);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [themeColor, setThemeColor] = useState('#3B82F6');
+  const [themeColor, setThemeColor] = useState(storeThemeColor || '#4A90D9');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const profileForm = useForm<ProfileForm>({ resolver: zodResolver(profileSchema) });
@@ -54,7 +56,9 @@ const AccountTab = () => {
       .then((res) => {
         setProfile(res.data);
         profileForm.reset({ userName: res.data.userName, email: res.data.email });
-        if (res.data.themeColor) setThemeColor(res.data.themeColor);
+        const color = res.data.themeColor || '#4A90D9';
+        setThemeColor(color);
+        setStoreThemeColor(color);
       })
       .catch(() => addToast('error', 'プロフィールの取得に失敗しました'));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,6 +89,7 @@ const AccountTab = () => {
   const onSaveTheme = async () => {
     try {
       await updateTheme({ themeColor });
+      setStoreThemeColor(themeColor);
       addToast('success', 'テーマカラーを保存しました');
     } catch {
       addToast('error', '保存に失敗しました');
@@ -114,7 +119,7 @@ const AccountTab = () => {
             <label className="block text-sm text-gray-600 mb-1">ユーザー名</label>
             <input
               {...profileForm.register('userName')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
             />
             {profileForm.formState.errors.userName && (
               <p className="text-red-500 text-xs mt-1">{profileForm.formState.errors.userName.message}</p>
@@ -125,7 +130,7 @@ const AccountTab = () => {
             <input
               {...profileForm.register('email')}
               type="email"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
             />
             {profileForm.formState.errors.email && (
               <p className="text-red-500 text-xs mt-1">{profileForm.formState.errors.email.message}</p>
@@ -135,7 +140,7 @@ const AccountTab = () => {
           <button
             type="submit"
             disabled={profileForm.formState.isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-theme px-4 py-2 text-sm rounded-md"
           >
             保存
           </button>
@@ -158,7 +163,7 @@ const AccountTab = () => {
               <input
                 {...passwordForm.register(name)}
                 type="password"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
               />
               {passwordForm.formState.errors[name] && (
                 <p className="text-red-500 text-xs mt-1">
@@ -170,7 +175,7 @@ const AccountTab = () => {
           <button
             type="submit"
             disabled={passwordForm.formState.isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-theme px-4 py-2 text-sm rounded-md"
           >
             変更
           </button>
@@ -184,17 +189,21 @@ const AccountTab = () => {
           <input
             type="color"
             value={themeColor}
-            onChange={(e) => setThemeColor(e.target.value)}
+            onChange={(e) => {
+              setThemeColor(e.target.value);
+              setStoreThemeColor(e.target.value);
+            }}
             className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
           />
           <span className="text-sm text-gray-500">{themeColor}</span>
           <button
             onClick={onSaveTheme}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+            className="btn-theme px-4 py-2 text-sm rounded-md"
           >
             保存
           </button>
         </div>
+        <p className="text-xs text-gray-400 mt-2">カラーピッカーで選択すると即プレビューされます</p>
       </section>
 
       {/* アカウント削除 */}

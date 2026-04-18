@@ -57,7 +57,8 @@
       "Bash(* > /dev/null 2>&1 &)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\components"
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\components",
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app"
     ]
   },
   "rules": [

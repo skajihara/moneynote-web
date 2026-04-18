@@ -9,12 +9,6 @@ type Props = {
 const fmt = (n: number) =>
   n.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' });
 
-const statusColor: Record<BudgetStatus['status'], string> = {
-  NORMAL: 'bg-green-500',
-  WARNING: 'bg-yellow-400',
-  OVER: 'bg-red-500',
-};
-
 const statusLabel: Record<BudgetStatus['status'], string> = {
   NORMAL: '正常',
   WARNING: '注意',
@@ -34,7 +28,14 @@ const BudgetProgressList = ({ budgetStatus }: Props) => {
     <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
       {budgetStatus.map((item) => {
         const pct = Math.min(item.percentage, 100);
-        const barColor = statusColor[item.status];
+        // NORMAL は --theme-color、WARNING は黄色、OVER は赤
+        const barStyle =
+          item.status === 'NORMAL'
+            ? { backgroundColor: 'var(--theme-color)', width: `${pct}%` }
+            : item.status === 'WARNING'
+            ? { backgroundColor: '#FBBF24', width: `${pct}%` }
+            : { backgroundColor: '#EF4444', width: `${pct}%` };
+
         return (
           <div key={item.categoryId} className="px-4 py-3">
             <div className="flex items-center justify-between mb-1">
@@ -48,16 +49,17 @@ const BudgetProgressList = ({ budgetStatus }: Props) => {
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className={`h-2 rounded-full transition-all ${barColor}`}
-                  style={{ width: `${pct}%` }}
+                  className="h-2 rounded-full transition-all"
+                  style={barStyle}
                   aria-label={`${item.categoryName} ${item.percentage.toFixed(1)}%`}
                 />
               </div>
               <span
                 className={`text-xs font-medium w-14 text-right ${
                   item.status === 'OVER' ? 'text-red-600' :
-                  item.status === 'WARNING' ? 'text-yellow-600' : 'text-green-600'
+                  item.status === 'WARNING' ? 'text-yellow-600' : ''
                 }`}
+                style={item.status === 'NORMAL' ? { color: 'var(--theme-color)' } : {}}
               >
                 {item.percentage.toFixed(1)}% ({statusLabel[item.status]})
               </span>
