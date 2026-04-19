@@ -117,6 +117,7 @@ public class LedgerService {
         if (request.getStartMonthOfYear() != null) {
             ledger.setStartMonthOfYear(request.getStartMonthOfYear().shortValue());
         }
+        ledger.setThemeColor(request.getThemeColor());
 
         return LedgerResponse.from(ledgerRepository.save(ledger));
     }

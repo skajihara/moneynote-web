@@ -240,6 +240,20 @@ class LedgerControllerTest {
     }
 
     @Test
+    void updateLedger_withThemeColor_success() throws Exception {
+        String ledgerId = createLedger(token1, "カラーテスト");
+
+        mockMvc.perform(put("/api/v1/ledgers/" + ledgerId)
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "ledgerName", "カラーテスト",
+                                "themeColor", "#FF6B6B"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.themeColor").value("#FF6B6B"));
+    }
+
+    @Test
     void updateLedger_otherUser_returns403() throws Exception {
         String ledgerId = createLedger(token1, "user1 帳簿");
 

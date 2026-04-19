@@ -8,7 +8,6 @@ import {
   getProfile,
   updateProfile,
   changePassword,
-  updateTheme,
   deleteAccount,
   type UserProfile,
 } from '@/lib/api/user';
@@ -20,7 +19,7 @@ import { logout as logoutApi } from '@/lib/api/auth';
 // ─── schemas ───────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
-  userName: z.string().min(1, '必須').max(100),
+  userName: z.string().min(1, '必須').max(50, '50文字以内で入力してください'),
   email: z.string().email('メールアドレスの形式が正しくありません').max(255),
 });
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -28,7 +27,13 @@ type ProfileForm = z.infer<typeof profileSchema>;
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, '必須'),
-    newPassword: z.string().min(8, '8文字以上').max(100),
+    newPassword: z
+      .string()
+      .min(8, '8文字以上')
+      .regex(/[A-Z]/, '英大文字を1文字以上含めてください')
+      .regex(/[a-z]/, '英小文字を1文字以上含めてください')
+      .regex(/\d/, '数字を1文字以上含めてください')
+      .regex(/[!@#$%^&*]/, '記号（!@#$%^&*）を1文字以上含めてください'),
     confirmPassword: z.string().min(1, '必須'),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
@@ -42,57 +47,66 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 const AccountTab = () => {
   const addToast = useToastStore((s) => s.add);
   const authLogout = useAuthStore((s) => s.logout);
-  const storeThemeColor = useAuthStore((s) => s.themeColor);
-  const setStoreThemeColor = useAuthStore((s) => s.setThemeColor);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [themeColor, setThemeColor] = useState(storeThemeColor || '#4A90D9');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingProfileData, setPendingProfileData] = useState<ProfileForm | null>(null);
+  const [pendingPasswordData, setPendingPasswordData] = useState<PasswordForm | null>(null);
 
   const profileForm = useForm<ProfileForm>({ resolver: zodResolver(profileSchema) });
   const passwordForm = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
+  const newPasswordValue = passwordForm.watch('newPassword') || '';
+
+  const passwordPolicies = [
+    { label: '8文字以上', ok: newPasswordValue.length >= 8 },
+    { label: '英大文字を含む', ok: /[A-Z]/.test(newPasswordValue) },
+    { label: '英小文字を含む', ok: /[a-z]/.test(newPasswordValue) },
+    { label: '数字を含む', ok: /\d/.test(newPasswordValue) },
+    { label: '記号（!@#$%^&*）を含む', ok: /[!@#$%^&*]/.test(newPasswordValue) },
+  ];
 
   useEffect(() => {
     getProfile()
       .then((res) => {
         setProfile(res.data);
         profileForm.reset({ userName: res.data.userName, email: res.data.email });
-        const color = res.data.themeColor || '#4A90D9';
-        setThemeColor(color);
-        setStoreThemeColor(color);
       })
       .catch(() => addToast('error', 'プロフィールの取得に失敗しました'));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onSaveProfile = profileForm.handleSubmit(async (data) => {
+  const onSaveProfile = profileForm.handleSubmit((data) => {
+    setPendingProfileData(data);
+  });
+
+  const confirmSaveProfile = async () => {
+    if (!pendingProfileData) return;
     try {
-      const res = await updateProfile(data);
+      const res = await updateProfile(pendingProfileData);
       setProfile(res.data);
       addToast('success', 'プロフィールを更新しました');
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.error.message : '更新に失敗しました';
       addToast('error', msg);
+    } finally {
+      setPendingProfileData(null);
     }
+  };
+
+  const onChangePassword = passwordForm.handleSubmit((data) => {
+    setPendingPasswordData(data);
   });
 
-  const onChangePassword = passwordForm.handleSubmit(async (data) => {
+  const confirmChangePassword = async () => {
+    if (!pendingPasswordData) return;
     try {
-      await changePassword({ currentPassword: data.currentPassword, newPassword: data.newPassword });
+      await changePassword({ currentPassword: pendingPasswordData.currentPassword, newPassword: pendingPasswordData.newPassword });
       passwordForm.reset();
       addToast('success', 'パスワードを変更しました');
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.error.message : '変更に失敗しました';
       addToast('error', msg);
-    }
-  });
-
-  const onSaveTheme = async () => {
-    try {
-      await updateTheme({ themeColor });
-      setStoreThemeColor(themeColor);
-      addToast('success', 'テーマカラーを保存しました');
-    } catch {
-      addToast('error', '保存に失敗しました');
+    } finally {
+      setPendingPasswordData(null);
     }
   };
 
@@ -107,6 +121,20 @@ const AccountTab = () => {
       addToast('error', msg);
       setShowDeleteConfirm(false);
     }
+  };
+
+  // ─── confirmation messages for profile ────────────────────────────────────
+
+  const profileConfirmMessages = (): string[] => {
+    if (!pendingProfileData || !profile) return [];
+    const msgs: string[] = [];
+    if (pendingProfileData.userName !== profile.userName) {
+      msgs.push(`ユーザー名を「${pendingProfileData.userName}」に変更します。`);
+    }
+    if (pendingProfileData.email !== profile.email) {
+      msgs.push(`メールアドレスを「${pendingProfileData.email}」に変更します。`);
+    }
+    return msgs;
   };
 
   return (
@@ -151,27 +179,47 @@ const AccountTab = () => {
       <section className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">パスワード変更</h2>
         <form onSubmit={onChangePassword} className="space-y-4">
-          {(
-            [
-              ['currentPassword', '現在のパスワード'],
-              ['newPassword', '新しいパスワード（8文字以上）'],
-              ['confirmPassword', '新しいパスワード（確認）'],
-            ] as const
-          ).map(([name, label]) => (
-            <div key={name}>
-              <label className="block text-sm text-gray-600 mb-1">{label}</label>
-              <input
-                {...passwordForm.register(name)}
-                type="password"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
-              />
-              {passwordForm.formState.errors[name] && (
-                <p className="text-red-500 text-xs mt-1">
-                  {passwordForm.formState.errors[name]?.message}
-                </p>
-              )}
-            </div>
-          ))}
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">現在のパスワード</label>
+            <input
+              {...passwordForm.register('currentPassword')}
+              type="password"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+            />
+            {passwordForm.formState.errors.currentPassword && (
+              <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.currentPassword.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">新しいパスワード</label>
+            <input
+              {...passwordForm.register('newPassword')}
+              type="password"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+            />
+            {passwordForm.formState.errors.newPassword && (
+              <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.newPassword.message}</p>
+            )}
+            {/* パスワードポリシー */}
+            <ul className="mt-2 space-y-0.5">
+              {passwordPolicies.map(({ label, ok }) => (
+                <li key={label} className={`text-xs flex items-center gap-1 ${ok ? 'text-green-600' : 'text-gray-400'}`}>
+                  {ok ? '✅' : '❌'} {label}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">新しいパスワード（確認）</label>
+            <input
+              {...passwordForm.register('confirmPassword')}
+              type="password"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+            />
+            {passwordForm.formState.errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>
+            )}
+          </div>
           <button
             type="submit"
             disabled={passwordForm.formState.isSubmitting}
@@ -180,30 +228,6 @@ const AccountTab = () => {
             変更
           </button>
         </form>
-      </section>
-
-      {/* テーマカラー */}
-      <section className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">テーマカラー</h2>
-        <div className="flex items-center gap-4">
-          <input
-            type="color"
-            value={themeColor}
-            onChange={(e) => {
-              setThemeColor(e.target.value);
-              setStoreThemeColor(e.target.value);
-            }}
-            className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-          />
-          <span className="text-sm text-gray-500">{themeColor}</span>
-          <button
-            onClick={onSaveTheme}
-            className="btn-theme px-4 py-2 text-sm rounded-md"
-          >
-            保存
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mt-2">カラーピッカーで選択すると即プレビューされます</p>
       </section>
 
       {/* アカウント削除 */}
@@ -219,6 +243,58 @@ const AccountTab = () => {
           アカウントを削除する
         </button>
       </section>
+
+      {/* プロフィール変更確認ダイアログ */}
+      {pendingProfileData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-800 mb-3">変更の確認</h3>
+            <ul className="text-sm text-gray-600 mb-4 space-y-1">
+              {profileConfirmMessages().map((msg, i) => (
+                <li key={i}>{msg}</li>
+              ))}
+              <li className="text-gray-500">よろしいですか？</li>
+            </ul>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPendingProfileData(null)}
+                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-md hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={confirmSaveProfile}
+                className="btn-theme px-4 py-2 text-sm rounded-md"
+              >
+                変更する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* パスワード変更確認ダイアログ */}
+      {pendingPasswordData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-800 mb-3">パスワードを変更します。よろしいですか？</h3>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setPendingPasswordData(null)}
+                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-md hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={confirmChangePassword}
+                className="btn-theme px-4 py-2 text-sm rounded-md"
+              >
+                変更する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 削除確認ダイアログ */}
       {showDeleteConfirm && (

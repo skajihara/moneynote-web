@@ -31,6 +31,7 @@ const ledgersResponse = {
       initialBalance: 0,
       startDayOfMonth: 1,
       startMonthOfYear: 1,
+      themeColor: null,
       isActive: true,
       createdAt: '',
       updatedAt: '',

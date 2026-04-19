@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.user;
 
+import com.example.moneynote.common.exception.ConflictException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.UnauthorizedException;
 import com.example.moneynote.common.exception.ValidationException;
@@ -40,7 +41,7 @@ public class UserService {
 
         if (!user.getEmail().equals(request.email())
                 && userRepository.existsByEmail(request.email())) {
-            throw new ValidationException("このメールアドレスはすでに使用されています");
+            throw new ConflictException("このメールアドレスはすでに使用されています");
         }
 
         user.setUserName(request.userName());

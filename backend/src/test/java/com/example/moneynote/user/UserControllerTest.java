@@ -118,14 +118,14 @@ class UserControllerTest {
     }
 
     @Test
-    void updateProfile_duplicateEmail_returns400() throws Exception {
+    void updateProfile_duplicateEmail_returns409() throws Exception {
         mockMvc.perform(put("/api/v1/users/me")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "userName", "名前",
                                 "email", "user2@example.com"))))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", notNullValue()));
     }
 
@@ -146,12 +146,18 @@ class UserControllerTest {
 
     @Test
     void changePassword_success() throws Exception {
+        // ポリシー準拠パスワードを持つユーザーでテスト
+        jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
+        createUserWithStrongPassword("user1", "user1@example.com");
+        createUserWithStrongPassword("user2", "user2@example.com");
+        token1 = jwtTokenProvider.generateAccessToken("user1");
+
         mockMvc.perform(put("/api/v1/users/me/password")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "currentPassword", "Password1",
-                                "newPassword", "NewPass99"))))
+                                "currentPassword", "Password1!",
+                                "newPassword", "NewPass1!"))))
                 .andExpect(status().isOk());
     }
 
@@ -161,19 +167,35 @@ class UserControllerTest {
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "currentPassword", "WrongPassword",
-                                "newPassword", "NewPass99"))))
+                                "currentPassword", "WrongPass!",
+                                "newPassword", "NewPass1!"))))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void changePassword_samePassword_returns400() throws Exception {
+        jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
+        createUserWithStrongPassword("user1", "user1@example.com");
+        createUserWithStrongPassword("user2", "user2@example.com");
+        token1 = jwtTokenProvider.generateAccessToken("user1");
+
+        mockMvc.perform(put("/api/v1/users/me/password")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "currentPassword", "Password1!",
+                                "newPassword", "Password1!"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changePassword_violatesPolicy_returns400() throws Exception {
         mockMvc.perform(put("/api/v1/users/me/password")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "currentPassword", "Password1",
-                                "newPassword", "Password1"))))
+                                "newPassword", "password123"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -304,5 +326,10 @@ class UserControllerTest {
                 .email(email)
                 .passwordHash(passwordEncoder.encode(password))
                 .build());
+    }
+
+    /** ポリシー準拠パスワードでユーザーを作成する（パスワード変更テスト用）。 */
+    private void createUserWithStrongPassword(String userId, String email) {
+        createUser(userId, email, "Password1!");
     }
 }

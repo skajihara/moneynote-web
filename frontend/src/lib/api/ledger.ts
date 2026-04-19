@@ -17,6 +17,7 @@ export type Ledger = {
   initialBalance: number;
   startDayOfMonth: number;
   startMonthOfYear: number;
+  themeColor: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +40,7 @@ export type CreateLedgerRequest = {
   initialBalance?: number;
   startDayOfMonth?: number;
   startMonthOfYear?: number;
+  themeColor?: string | null;
 };
 
 export type UpdateLedgerRequest = CreateLedgerRequest;

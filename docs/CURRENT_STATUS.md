@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 12 月度開始日・年度開始月の全 API 反映完了）
+2026年4月（Step 12 バリデーション強化・パスワードポリシー・帳簿テーマカラー実装完了）
 
 ---
 
@@ -95,6 +95,9 @@
 | LedgerPeriodCalculator（共通ユーティリティ）で月度・年度期間を一元計算 | startDayOfMonth=20 なら「4月」=3/20〜4/19、startMonthOfYear=4 なら「2026年度」=2026/4〜2027/3 |
 | 帳簿一覧は created_at ASC でソート固定 | UI で帳簿の表示順が毎回変わらないようにするため |
 | TransactionController から startDayOfMonth リクエストパラメータを削除 | バックエンドが Ledger エンティティから直接取得するため。フロント API クライアントも同様に削除 |
+| 重複メールは 409 Conflict を返す（ConflictException） | 400 との意味的区別: バリデーション失敗(400) vs リソース競合(409) |
+| パスワードポリシー: 8文字以上・大文字・小文字・数字・記号（!@#$%^&*）各1文字以上 | ChangePasswordRequest の @Pattern で検証。RegisterRequest は従来の緩いポリシーのまま |
+| テーマカラーを帳簿単位で管理（ledgers.theme_color カラム追加: V12） | アカウント設定のテーマ UI を削除。帳簿切り替え時に ledgerStore.selectLedger() から CSS 変数を更新 |
 | ユーザー API は PUT /api/v1/users/me・/password・/theme、DELETE /api/v1/users/me | アカウント削除は FK 順 (ai_cache→budgets→transactions→fixed→categories→perms→ledgers→user) で一括削除 |
 | 取引検索 GET /api/v1/ledgers/{id}/transactions/search | keyword（memo LIKE）・categoryId・startDate・endDate の任意組み合わせフィルター |
 | 設定ページのタブ: account/ledgers/fixed/search/csv | 帳簿管理は一覧↔帳簿設定の2段階ビュー。カテゴリ並び替えは @dnd-kit/sortable で実装 |

@@ -46,6 +46,7 @@ const ledgerSchema = z.object({
   initialBalance: z.coerce.number().default(0),
   startDayOfMonth: z.coerce.number().min(1).max(28).default(1),
   startMonthOfYear: z.coerce.number().min(1).max(12).default(1),
+  themeColor: z.string().max(30).default('#4A90D9'),
 });
 type LedgerForm = z.infer<typeof ledgerSchema>;
 
@@ -283,6 +284,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
       initialBalance: ledger.initialBalance,
       startDayOfMonth: ledger.startDayOfMonth,
       startMonthOfYear: ledger.startMonthOfYear,
+      themeColor: ledger.themeColor || '#4A90D9',
     },
   });
 
@@ -296,6 +298,8 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
       addToast('error', msg);
     }
   });
+
+  const themeColorValue = form.watch('themeColor') || '#4A90D9';
 
   const handleDelete = async () => {
     if (!confirm('帳簿内の全データ（明細・予算・カテゴリ）が削除されます。よろしいですか？')) return;
@@ -362,6 +366,19 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
                 ))}
               </select>
             </div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">テーマカラー</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={themeColorValue}
+                onChange={(e) => form.setValue('themeColor', e.target.value)}
+                className="w-10 h-9 border border-gray-300 rounded cursor-pointer"
+              />
+              <span className="text-sm text-gray-500">{themeColorValue}</span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">帳簿切り替え時にアプリ全体の色が変わります</p>
           </div>
           <button
             type="submit"
