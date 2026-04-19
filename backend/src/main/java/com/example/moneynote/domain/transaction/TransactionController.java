@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/ledgers/{ledgerId}")
@@ -31,8 +32,8 @@ public class TransactionController {
             @RequestParam(required = false) TransactionType type,
             Principal principal) {
         return ApiResponse.success(
-                transactionService.getTransactions(ledgerId, year, month, categoryId, type,
-                        principal.getName()));
+                transactionService.getTransactions(ledgerId, year, month,
+                        categoryId, type, principal.getName()));
     }
 
     // -----------------------------------------------------------------------
@@ -59,6 +60,24 @@ public class TransactionController {
             Principal principal) {
         return ApiResponse.success(
                 transactionService.createTransaction(ledgerId, request, principal.getName()));
+    }
+
+    // -----------------------------------------------------------------------
+    // GET /api/v1/ledgers/{ledgerId}/transactions/search  明細検索
+    // -----------------------------------------------------------------------
+
+    @GetMapping("/transactions/search")
+    public ApiResponse<List<TransactionResponse>> searchTransactions(
+            @PathVariable String ledgerId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            Principal principal) {
+        return ApiResponse.success(
+                transactionService.searchTransactions(
+                        ledgerId, keyword, categoryId, startDate, endDate,
+                        principal.getName()));
     }
 
     // -----------------------------------------------------------------------

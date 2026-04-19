@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useAuthStore } from '@/stores/authStore';
 import Header from '@/components/layout/Header';
 import SideMenu from '@/components/layout/SideMenu';
 import LedgerCreateModal from '@/components/ledger/LedgerCreateModal';
@@ -21,8 +22,14 @@ type AppLayoutProps = {
 const AppLayout = ({ children }: AppLayoutProps) => {
   const { isOpen, content, contentKey, close } = useSubPanelStore();
   const { ledgers, fetchLedgers } = useLedgerStore();
+  const themeColor = useAuthStore((s) => s.themeColor);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+
+  // テーマカラーを CSS 変数に同期する
+  useEffect(() => {
+    document.documentElement.style.setProperty('--theme-color', themeColor || '#4A90D9');
+  }, [themeColor]);
 
   useEffect(() => {
     fetchLedgers().finally(() => setLoading(false));

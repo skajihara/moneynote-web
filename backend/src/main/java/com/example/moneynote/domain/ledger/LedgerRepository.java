@@ -15,6 +15,9 @@ public interface LedgerRepository extends JpaRepository<Ledger, String> {
      */
     @Query("SELECT l FROM Ledger l WHERE l.isActive = true AND " +
            "(l.owner.userId = :userId OR EXISTS " +
-           "(SELECT lp FROM LedgerPermission lp WHERE lp.ledger = l AND lp.user.userId = :userId))")
+           "(SELECT lp FROM LedgerPermission lp WHERE lp.ledger = l AND lp.user.userId = :userId)) " +
+           "ORDER BY l.createdAt ASC")
     List<Ledger> findAccessibleLedgers(@Param("userId") String userId);
+
+    List<Ledger> findByOwnerUserId(String ownerUserId);
 }

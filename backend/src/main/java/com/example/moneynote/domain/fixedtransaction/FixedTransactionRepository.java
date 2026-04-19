@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.fixedtransaction;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -27,4 +28,8 @@ public interface FixedTransactionRepository extends JpaRepository<FixedTransacti
     List<FixedTransaction> findActiveByLedgerId(
             @Param("ledgerId") String ledgerId,
             @Param("today") LocalDate today);
+
+    @Modifying
+    @Query("DELETE FROM FixedTransaction f WHERE f.ledger.ledgerId = :ledgerId")
+    void deleteByLedgerLedgerId(@Param("ledgerId") String ledgerId);
 }

@@ -33,6 +33,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure("E400", e.getMessage());
     }
 
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleConflict(ConflictException e) {
+        return ApiResponse.failure("E409", e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {

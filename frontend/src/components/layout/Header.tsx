@@ -45,20 +45,23 @@ const Header = () => {
   };
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
+    <header
+      className="h-14 border-b flex items-center justify-between px-4 shrink-0"
+      style={{ backgroundColor: 'var(--theme-color)', borderBottomColor: 'transparent' }}
+    >
       {/* 左: ロゴ */}
-      <span className="font-bold text-gray-800 text-lg">MoneyNote Web</span>
+      <span className="font-bold text-white text-lg">MoneyNote Web</span>
 
       {/* 中央: 帳簿セレクター */}
       <div className="relative">
         <button
           onClick={() => setDropdownOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors min-w-[180px] justify-between"
+          className="flex items-center gap-2 px-4 py-1.5 bg-white/20 border border-white/40 rounded-md text-sm text-white hover:bg-white/30 transition-colors min-w-[180px] justify-between"
         >
           <span className="truncate">
             {selectedLedger ? selectedLedger.ledgerName : '帳簿を選択'}
           </span>
-          <span className="text-gray-400">▾</span>
+          <span className="text-white/70">▾</span>
         </button>
 
         {dropdownOpen && (
@@ -70,11 +73,12 @@ const Header = () => {
                 <button
                   key={ledger.ledgerId}
                   onClick={() => handleSelectLedger(ledger.ledgerId)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  style={
                     ledger.ledgerId === selectedLedgerId
-                      ? 'font-semibold text-blue-600'
-                      : 'text-gray-700'
-                  }`}
+                      ? { fontWeight: 600, color: 'var(--theme-color)' }
+                      : { color: '#374151' }
+                  }
                 >
                   {ledger.ledgerName}
                 </button>
@@ -87,11 +91,11 @@ const Header = () => {
       {/* 右: ユーザー名・ログアウト */}
       <div className="flex items-center gap-3">
         {userName && (
-          <span className="text-sm text-gray-500">{userName}</span>
+          <span className="text-sm text-white/80">{userName}</span>
         )}
         <button
           onClick={handleLogout}
-          className="text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md px-3 py-1 hover:bg-gray-50 transition-colors"
+          className="text-sm text-white border border-white/40 rounded-md px-3 py-1 hover:bg-white/20 transition-colors"
         >
           ログアウト
         </button>

@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 11 UI改善・ヒートマップAPI追加・seed充実）
+2026年4月（Step 12 バリデーション強化・パスワードポリシー・帳簿テーマカラー実装完了）
 
 ---
 
@@ -20,10 +20,12 @@
 | Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
 | Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
 | Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
+| Step 12 | 設定・管理画面 | feature/step12-settings | 実装完了・バグ修正完了・テストグリーン |
 
 ## 現在の状態
-- 現在のブランチ: develop
-- 次の作業: Step 12（設定・管理画面）
+- 現在のブランチ: feature/step12-settings
+- 次の作業: Gate 3（ブラウザ動作確認）→ develop マージ
+- バックエンド: 全テストグリーン（BUILD SUCCESSFUL） / フロントエンド: 185テスト全グリーン
 - リリース済み: v0.2.0（Step 1〜9）
 
 ---
@@ -89,6 +91,20 @@
 | AiService スコアのエッジケース: 非ゼロ支出月が2ヶ月未満 → stabilityScore=12（中立） | CV(変動係数)は2サンプル以上必要。1ヶ月しかないと CV=高になり不当に 0 点になるため |
 | seed.ps1 の当月予算から衣服費を除外 | 境界値データ 999999 円の支出があるが予算を設定しない場合は budgetScore に影響しないため |
 | フォントは next/font/google で Noto Sans JP を読み込み（subsets: latin） | CJK サブセットは別途 preload 不要 |
+| Docker ビルド時は next/font/google を使用しない（CSS システムフォントで代替） | Docker ビルド環境は外部ネットワーク（Google Fonts）にアクセスできないため |
+| LedgerPeriodCalculator（共通ユーティリティ）で月度・年度期間を一元計算 | startDayOfMonth=20 なら「4月」=3/20〜4/19、startMonthOfYear=4 なら「2026年度」=2026/4〜2027/3 |
+| 帳簿一覧は created_at ASC でソート固定 | UI で帳簿の表示順が毎回変わらないようにするため |
+| TransactionController から startDayOfMonth リクエストパラメータを削除 | バックエンドが Ledger エンティティから直接取得するため。フロント API クライアントも同様に削除 |
+| 重複メールは 409 Conflict を返す（ConflictException） | 400 との意味的区別: バリデーション失敗(400) vs リソース競合(409) |
+| パスワードポリシー: 8文字以上・大文字・小文字・数字・記号（!@#$%^&*）各1文字以上 | ChangePasswordRequest の @Pattern で検証。RegisterRequest は従来の緩いポリシーのまま |
+| テーマカラーを帳簿単位で管理（ledgers.theme_color カラム追加: V12） | アカウント設定のテーマ UI を削除。帳簿切り替え時に ledgerStore.selectLedger() から CSS 変数を更新 |
+| ユーザー API は PUT /api/v1/users/me・/password・/theme、DELETE /api/v1/users/me | アカウント削除は FK 順 (ai_cache→budgets→transactions→fixed→categories→perms→ledgers→user) で一括削除 |
+| 取引検索 GET /api/v1/ledgers/{id}/transactions/search | keyword（memo LIKE）・categoryId・startDate・endDate の任意組み合わせフィルター |
+| 設定ページのタブ: account/ledgers/fixed/search/csv | 帳簿管理は一覧↔帳簿設定の2段階ビュー。カテゴリ並び替えは @dnd-kit/sortable で実装 |
+| @dnd-kit/core + @dnd-kit/sortable を frontend に追加 | カテゴリのドラッグ並び替えに使用 |
+| 取引検索の keyword・categoryId も空文字列センチネル値を使用 | Hibernate 6 + PostgreSQL で null String を lower() に渡すと bytea 型エラーになるため。`:keyword = ''` で全件、`:categoryId = ''` で全件を意味する |
+| LedgerService.cascadeDeleteLedger() を public に変更 | UserService（別パッケージ）から呼び出すため。package-private では cross-package アクセス不可 |
+| 帳簿削除は物理削除（カスケード：ai_cache→budgets→transactions→fixed→categories→perms→ledger の順） | DB に CASCADE DELETE なし。FK 制約順に明示的に削除する必要があるため |
 
 ---
 

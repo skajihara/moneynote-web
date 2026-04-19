@@ -40,6 +40,9 @@ public class Ledger {
     @Builder.Default
     private short startMonthOfYear = 1;
 
+    @Column(name = "theme_color", length = 30)
+    private String themeColor;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean isActive = true;

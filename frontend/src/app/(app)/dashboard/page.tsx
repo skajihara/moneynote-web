@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { getDashboard } from '@/lib/api/dashboard';
+import { getPeriodRange, prevYearMonth, nextYearMonth, getCurrentYearMonth } from '@/lib/periodUtils';
 import { analyzeAi, getAiScore } from '@/lib/api/ai';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
@@ -21,14 +22,14 @@ const RECENT_COUNT_OPTIONS = [5, 10, 20, 50];
 const DashboardContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { selectedLedgerId } = useLedgerStore();
+  const { selectedLedgerId, getSelectedLedger } = useLedgerStore();
+  const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
 
-  const today = new Date();
   const [year, setYear] = useState(
-    () => Number(searchParams.get('year')) || today.getFullYear()
+    () => Number(searchParams.get('year')) || getCurrentYearMonth(startDayOfMonth).year
   );
   const [month, setMonth] = useState(
-    () => Number(searchParams.get('month')) || today.getMonth() + 1
+    () => Number(searchParams.get('month')) || getCurrentYearMonth(startDayOfMonth).month
   );
   const [recentCount, setRecentCount] = useState(10);
   const [data, setData] = useState<DashboardResponse | null>(null);
@@ -47,14 +48,16 @@ const DashboardContent = () => {
     [router]
   );
 
+  const period = getPeriodRange(year, month, startDayOfMonth);
+
   const prevMonth = () => {
-    if (month === 1) updateYearMonth(year - 1, 12);
-    else updateYearMonth(year, month - 1);
+    const { year: y, month: m } = prevYearMonth(year, month);
+    updateYearMonth(y, m);
   };
 
   const nextMonth = () => {
-    if (month === 12) updateYearMonth(year + 1, 1);
-    else updateYearMonth(year, month + 1);
+    const { year: y, month: m } = nextYearMonth(year, month);
+    updateYearMonth(y, m);
   };
 
   const fetchData = useCallback(async () => {
@@ -93,24 +96,29 @@ const DashboardContent = () => {
   return (
     <div className="flex flex-col gap-6 pb-8">
       {/* 月セレクター */}
-      <div className="flex items-center gap-4 justify-center">
-        <button
-          onClick={prevMonth}
-          className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
-          aria-label="前月"
-        >
-          ◀
-        </button>
-        <span className="text-lg font-semibold text-gray-800 w-32 text-center">
-          {year}年{month}月
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={prevMonth}
+            className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+            aria-label="前月"
+          >
+            ◀
+          </button>
+          <span className="text-lg font-semibold text-gray-800 w-40 text-center">
+            {year}年{month}月
+          </span>
+          <button
+            onClick={nextMonth}
+            className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+            aria-label="翌月"
+          >
+            ▶
+          </button>
+        </div>
+        <span className="text-xs text-gray-400">
+          （{period.from.getMonth() + 1}/{period.from.getDate()}〜{period.to.getMonth() + 1}/{period.to.getDate()}）
         </span>
-        <button
-          onClick={nextMonth}
-          className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
-          aria-label="翌月"
-        >
-          ▶
-        </button>
       </div>
 
       {loading || !data ? (
@@ -174,7 +182,7 @@ const DashboardContent = () => {
             <button
               onClick={handleAiAnalyze}
               disabled={aiLoading || !selectedLedgerId}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-md px-4 py-2 text-sm font-medium btn-theme disabled:opacity-50"
               aria-label="今月を分析する"
             >
               {aiLoading ? '分析中...' : '今月を分析する'}

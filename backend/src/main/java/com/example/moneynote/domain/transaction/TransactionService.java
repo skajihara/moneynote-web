@@ -3,6 +3,8 @@ package com.example.moneynote.domain.transaction;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.ValidationException;
 import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.category.Category;
 import com.example.moneynote.domain.category.CategoryRepository;
@@ -44,11 +46,13 @@ public class TransactionService {
             String ledgerId, int year, int month,
             String categoryId, TransactionType type, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
 
-        YearMonth ym = YearMonth.of(year, month);
-        LocalDate from = ym.atDay(1);
-        LocalDate to   = ym.atEndOfMonth();
+        // 帳簿の月度開始日を使って集計期間を算出する
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                year, month, ledger.getStartDayOfMonth());
+        LocalDate from = period.from();
+        LocalDate to   = period.to();
 
         List<Transaction> transactions = fetchFiltered(ledgerId, from, to, categoryId, type);
 
@@ -65,10 +69,9 @@ public class TransactionService {
         TransactionSummary summary = new TransactionSummary(
                 totalIncome, totalExpense, totalIncome.subtract(totalExpense));
 
-        // dailySummaries: 月の全日を初期化し、明細で集計する
+        // dailySummaries: from〜to の全日を初期化し、明細で集計する
         Map<LocalDate, BigDecimal[]> dailyMap = new java.util.LinkedHashMap<>();
-        for (int d = 1; d <= ym.lengthOfMonth(); d++) {
-            LocalDate date = ym.atDay(d);
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             dailyMap.put(date, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
         }
         for (Transaction t : transactions) {
@@ -133,9 +136,12 @@ public class TransactionService {
         BigDecimal initialBalance = ledger.getInitialBalance();
         BigDecimal currentBalance = initialBalance.add(totalIncome).subtract(totalExpense);
 
-        // carryOver: 今月1日より前の残高
-        LocalDate firstOfMonth = LocalDate.now().withDayOfMonth(1);
-        List<Transaction> prevTx = transactionRepository.findByLedgerIdBeforeDate(ledgerId, firstOfMonth);
+        // carryOver: 現在の月度開始日より前の残高
+        YearMonth currentYM = LedgerPeriodCalculator.getCurrentMonth(ledger.getStartDayOfMonth());
+        LocalDateRange currentPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                currentYM.getYear(), currentYM.getMonthValue(), ledger.getStartDayOfMonth());
+        List<Transaction> prevTx = transactionRepository.findByLedgerIdBeforeDate(
+                ledgerId, currentPeriod.from());
         BigDecimal prevIncome  = BigDecimal.ZERO;
         BigDecimal prevExpense = BigDecimal.ZERO;
         for (Transaction t : prevTx) {
@@ -219,6 +225,30 @@ public class TransactionService {
         } else {
             transactionRepository.delete(t);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // 検索
+    // -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> searchTransactions(
+            String ledgerId, String keyword, String categoryId,
+            String startDate, String endDate, String userId) {
+
+        accessValidator.validate(ledgerId, userId);
+
+        // Hibernate 6 は LocalDate 型パラメータに null を渡すと型解決できないため
+        // null の代わりにセンチネル値を渡して BETWEEN で範囲を表現する
+        LocalDate from = (startDate != null && !startDate.isBlank())
+                ? LocalDate.parse(startDate) : LocalDate.of(1900, 1, 1);
+        LocalDate to   = (endDate != null && !endDate.isBlank())
+                ? LocalDate.parse(endDate) : LocalDate.of(9999, 12, 31);
+        String kw    = (keyword == null || keyword.isBlank()) ? "" : keyword.trim();
+        String catId = (categoryId == null || categoryId.isBlank()) ? "" : categoryId;
+
+        return transactionRepository.searchTransactions(ledgerId, kw, catId, from, to)
+                .stream().map(TransactionResponse::from).toList();
     }
 
     // -------------------------------------------------------------------------

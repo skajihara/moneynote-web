@@ -106,4 +106,32 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
             @Param("from") LocalDate from,
             @Param("to") LocalDate to,
             @Param("categoryIds") List<String> categoryIds);
+
+    /**
+     * キーワード・カテゴリ・期間フィルター検索。
+     * Hibernate 6 では LocalDate 型パラメータに null を渡すと型解決に失敗するため
+     * startDate/endDate は必ずセンチネル値（1900-01-01 / 9999-12-31）を渡す。
+     */
+    /**
+     * Hibernate 6 + PostgreSQL では null String パラメータを lower() に渡すと
+     * bytea 型エラーになるため、空文字列センチネル値を使って null チェックを回避する。
+     * :keyword = '' で全件、:categoryId = '' で全件を意味する。
+     */
+    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.fixedTransaction " +
+           "WHERE t.ledger.ledgerId = :ledgerId " +
+           "AND t.transactionDate BETWEEN :startDate AND :endDate " +
+           "AND (:categoryId = '' OR (t.category IS NOT NULL AND t.category.categoryId = :categoryId)) " +
+           "AND (:keyword = '' OR LOWER(t.memo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY t.transactionDate DESC, t.createdAt DESC")
+    List<Transaction> searchTransactions(
+            @Param("ledgerId") String ledgerId,
+            @Param("keyword") String keyword,
+            @Param("categoryId") String categoryId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    /** アカウント削除用: 帳簿に紐づく全明細を削除する */
+    @Modifying
+    @Query("DELETE FROM Transaction t WHERE t.ledger.ledgerId = :ledgerId")
+    void deleteByLedgerLedgerId(@Param("ledgerId") String ledgerId);
 }
