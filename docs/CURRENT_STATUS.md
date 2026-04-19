@@ -20,13 +20,10 @@
 | Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
 | Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
 | Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
-| Step 12 | 設定・管理画面 | feature/step12-settings | 実装完了・バグ修正完了・テストグリーン |
+| Step 12 | 設定・管理画面 | feature/step12-settings | 完了・develop マージ済み |
 
 ## 現在の状態
-- 現在のブランチ: feature/step12-settings
-- 次の作業: Gate 3（ブラウザ動作確認）→ develop マージ
-- バックエンド: 全テストグリーン（BUILD SUCCESSFUL） / フロントエンド: 185テスト全グリーン
-- リリース済み: v0.2.0（Step 1〜9）
+- 次の作業: Step 13（セキュリティ強化・エラーハンドリング・CI）
 
 ---
 
