@@ -67,6 +67,8 @@ MoneyNote Web - Web版家計簿管理アプリ（モノレポ構成）
 - JWT: アクセストークン15分 / リフレッシュトークン7日
   - アクセストークンはレスポンスボディで返す
   - リフレッシュトークンはHttpOnly・SameSite=Strictのcookieで返す
+  - JWT_SECRET は `openssl rand -base64 64` で生成した256bit以上のランダム文字列を使用すること
+  - リフレッシュトークンをBearerトークンとしてAPIアクセスに使用できないよう type=ACCESS クレームを検証すること
 - 帳簿アクセス: ログインユーザーが帳簿の権限を持つか必ずDBで検証。権限なしは403を返す
 - ログイン失敗: 同一IPから5回失敗で15分ロック（Redisで管理）
 - SQLインジェクション: JPQLまたはCriteriaAPIを使用（ネイティブSQL禁止）
@@ -115,8 +117,8 @@ MoneyNote Web - Web版家計簿管理アプリ（モノレポ構成）
 - ファイルの読み書き・作成・削除
 - ./gradlew build / ./gradlew test の実行
 - npm run build / npm test / npm run lint の実行
-- docker compose up -d / docker compose down の実行
-- seed.sh の実行
+- docker compose up -d --build / docker compose down の実行
+- seed.ps1 の実行（PowerShell -ExecutionPolicy Bypass -File .\seed.ps1）
 
 ### 実装前に必ず行うこと
 1. このファイル（CLAUDE.md）を読む
@@ -145,12 +147,35 @@ MoneyNote Web - Web版家計簿管理アプリ（モノレポ構成）
 ---
 
 ## ローカル環境の起動方法
+
+### 初回セットアップ（1回だけ実行）
+```powershell
+# mkcert インストール（winget がない場合は https://github.com/FiloSottile/mkcert からダウンロード）
+winget install mkcert
+
+# ローカル CA 登録 + localhost 証明書生成（nginx/certs/ に出力）
+./setup-ssl.ps1
+```
+
+### 通常起動
 ```bash
-docker compose up -d          # 全サービス起動
-./seed.sh                     # テストデータ投入・リセット
-# フロント:    http://localhost:3000
-# API/Swagger: http://localhost:8080/swagger-ui.html
+docker compose up -d --build  # 全サービス起動（ローカルの最新状態でビルドしてから起動）
+```
+```powershell
+# テストデータ投入・リセット（DB ダウン → 再起動 → データ投入まで自動）
+PowerShell -ExecutionPolicy Bypass -File .\seed.ps1
+```
+```
+# アクセス先
+# フロント:    https://localhost
+# API/Swagger: https://localhost/swagger-ui.html
 # メール:      http://localhost:8025
+```
+
+### 本番プロファイルで起動する場合（ローカル確認用）
+```bash
+# .env の SPRING_PROFILES_ACTIVE=prod に変更するか、environment を上書きする
+SPRING_PROFILES_ACTIVE=prod docker compose up -d --build
 ```
 
 ---
@@ -164,7 +189,7 @@ docker compose up -d          # 全サービス起動
 → application-dev.yml の ai.mock=true に変更してモックで代替する。
 
 ### Flywayマイグレーションが失敗する場合
-→ docker compose down -v でボリュームを削除してから docker compose up -d で再起動する。
+→ docker compose down -v でボリュームを削除してから docker compose up -d --build で再起動する。
 
 ### フロントエンドでAPI接続エラーが出る場合
 → CORS設定を確認。バックエンドが :8080 で起動しているか確認。
@@ -273,7 +298,7 @@ test: Add transaction service unit tests
     │
     ▼
 【Gate 3：ブラウザで動作確認】
-    seed.sh でリセットして再確認
+    seed.ps1 でリセットして再確認
     │
     ▼
 【人間が git commit & push → develop へマージ】

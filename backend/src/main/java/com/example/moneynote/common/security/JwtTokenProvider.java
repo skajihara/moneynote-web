@@ -57,6 +57,16 @@ public class JwtTokenProvider {
         }
     }
 
+    /** トークンの type クレームを返す。解析失敗時は空文字を返す */
+    public String getTokenType(String token) {
+        try {
+            Object type = getClaims(token).get("type");
+            return type != null ? type.toString() : "";
+        } catch (JwtException | IllegalArgumentException e) {
+            return "";
+        }
+    }
+
     private Claims getClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)

@@ -1,7 +1,9 @@
 import { useAuthStore } from '@/stores/authStore';
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// nginx 同一ドメイン構成のため相対パスを使用する。
+// SSR でのサーバーサイド API 呼び出しが必要な場合は NEXT_PUBLIC_API_URL に
+// 内部 URL（http://backend:8080）を設定すること。
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 // -------------------------
 // エラー型

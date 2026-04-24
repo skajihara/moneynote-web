@@ -41,6 +41,7 @@ public class AiController {
             @PathVariable String ledgerId,
             @Valid @RequestBody AiAnalyzeRequest request,
             Principal principal) {
+        // レート制限は AiService 内でキャッシュミス時のみ適用する
         return ApiResponse.success(
                 aiService.analyze(ledgerId, request.period(), request.adviceType(),
                         principal.getName()));

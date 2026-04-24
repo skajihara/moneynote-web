@@ -345,6 +345,16 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void getTransaction_otherUser_returns403() throws Exception {
+        // 検証6: GET /transactions/{id} も帳簿アクセス制御が機能すること
+        String txId = createTx("EXPENSE", 1500, "2026-04-05", expCategoryId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/transactions/" + txId)
+                        .header("Authorization", "Bearer " + token2))
+                .andExpect(status().isForbidden());
+    }
+
     // =========================================================================
     // PUT /api/v1/ledgers/{ledgerId}/transactions/{transactionId}
     // =========================================================================

@@ -18,9 +18,11 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/lib/api/auth');
 jest.mock('@/lib/api/ledger');
 
+const mockRefresh = jest.mocked(authApi.refresh);
 const mockLogout = jest.mocked(authApi.logout);
 const mockGetLedgers = jest.mocked(ledgerApi.getLedgers);
 
+const refreshResponse = { data: { accessToken: 'refreshed-token' }, error: null, timestamp: '' };
 const emptyLedgersResponse = { data: [], error: null, timestamp: '' };
 const ledgersResponse = {
   data: [
@@ -44,7 +46,10 @@ const ledgersResponse = {
 beforeEach(() => {
   mockPush.mockReset();
   mockLogout.mockReset();
+  mockRefresh.mockReset();
+  mockGetLedgers.mockReset();
   mockPathname = '/dashboard';
+  mockRefresh.mockResolvedValue(refreshResponse);
   mockGetLedgers.mockResolvedValue(ledgersResponse);
   useAuthStore.setState({
     userId: 'test_user',
@@ -55,6 +60,44 @@ beforeEach(() => {
   useToastStore.setState({ toasts: [] });
   useLedgerStore.setState({ ledgers: [], selectedLedgerId: null });
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
+});
+
+describe('AppLayout 初期化（リロード時のトークンリフレッシュ）', () => {
+  it('マウント時にトークンリフレッシュ API を呼び出す', async () => {
+    render(<AppLayout><div>コンテンツ</div></AppLayout>);
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('リフレッシュ成功後にアクセストークンがストアにセットされ children が表示される', async () => {
+    render(<AppLayout><div>コンテンツ</div></AppLayout>);
+    await waitFor(() => {
+      expect(useAuthStore.getState().accessToken).toBe('refreshed-token');
+      expect(screen.getByText('コンテンツ')).toBeInTheDocument();
+    });
+  });
+
+  it('リフレッシュ失敗時はログアウトして /login へリダイレクトする', async () => {
+    mockRefresh.mockRejectedValueOnce(new Error('Unauthorized'));
+
+    render(<AppLayout><div>コンテンツ</div></AppLayout>);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/login');
+    });
+
+    const state = useAuthStore.getState();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.accessToken).toBeNull();
+  });
+
+  it('リフレッシュ成功後に帳簿一覧を取得する', async () => {
+    render(<AppLayout><div>コンテンツ</div></AppLayout>);
+    await waitFor(() => {
+      expect(mockGetLedgers).toHaveBeenCalledTimes(1);
+    });
+  });
 });
 
 describe('AppLayout ログアウト', () => {

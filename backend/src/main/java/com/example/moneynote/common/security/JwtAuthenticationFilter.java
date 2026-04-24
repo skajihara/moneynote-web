@@ -27,7 +27,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractBearerToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        // セキュリティ: type=ACCESS のトークンのみ認証に使用する（リフレッシュトークンを Bearer で使用できないようにする）
+        if (token != null && jwtTokenProvider.validateToken(token)
+                && "ACCESS".equals(jwtTokenProvider.getTokenType(token))) {
             String userId = jwtTokenProvider.getUserId(token);
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(userId, null, List.of());
