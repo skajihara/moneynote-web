@@ -13,9 +13,10 @@ public class PasswordResetConfirmDto {
     private String token;
 
     @NotBlank(message = "新しいパスワードは必須です")
+    // セキュリティ: ChangePasswordRequest と同一ポリシーに統一（パスワードリセット経由の迂回を防ぐ）
     @Pattern(
-        regexp = "^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$",
-        message = "パスワードは8文字以上で、英字と数字を各1文字以上含めてください"
+        regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*]).{8,}$",
+        message = "パスワードは8文字以上で、英大文字・英小文字・数字・記号（!@#$%^&*）を各1文字以上含めてください"
     )
     private String newPassword;
 }

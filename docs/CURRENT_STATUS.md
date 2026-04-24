@@ -1,7 +1,7 @@
 # CURRENT_STATUS.md - 現在の開発状況
 
 ## 最終更新
-2026年4月（Step 12 バリデーション強化・パスワードポリシー・帳簿テーマカラー実装完了）
+2026年4月（Step 13 セキュリティ強化: 残存リスク対応完了・228テスト全グリーン）
 
 ---
 
@@ -23,7 +23,19 @@
 | Step 12 | 設定・管理画面 | feature/step12-settings | 完了・develop マージ済み |
 
 ## 現在の状態
-- 次の作業: Step 13（セキュリティ強化・エラーハンドリング・CI）
+- Step 13（セキュリティ強化）進行中: 全修正 + 残存リスク対応完了
+- 対応済みリスク: C-1 補完（refreshAccessToken type=REFRESH 検証）、HSTS profile 分離、Swagger permitAll 動的制御、application-prod.yml 作成
+- 次の作業: Step 13 Gate 3（ブラウザ動作確認）+ インフラ依存 Todo の確認（詳細下記）
+
+## 残存 Todo（インフラ依存・判断待ち）
+
+| # | 内容 | 優先度 | 必要な確認 |
+|---|---|---|---|
+| 1 | M-1: nginx/LB で X-Forwarded-For を制御（信頼プロキシ限定） | 高 | 本番アーキテクチャ（直接公開 or nginx 経由）の確認 |
+| 2 | Redis 固定ウィンドウ → スライディングウィンドウへ変更（バースト対策） | 中 | 既存レート制限の仕様変更の合意 |
+| 3 | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | 高 | デプロイ先インフラの確認 |
+| 4 | env なしのクレデンシャル管理（Secrets Manager 等）の導入 | 高 | クラウドプロバイダー（AWS/GCP/その他）の確認 |
+| 5 | 本番 CD パイプラインで COOKIE_SECURE=true を環境変数として設定 | 高 | CI/CD 環境の確認 |
 
 ---
 
@@ -93,6 +105,24 @@
 | 帳簿一覧は created_at ASC でソート固定 | UI で帳簿の表示順が毎回変わらないようにするため |
 | TransactionController から startDayOfMonth リクエストパラメータを削除 | バックエンドが Ledger エンティティから直接取得するため。フロント API クライアントも同様に削除 |
 | 重複メールは 409 Conflict を返す（ConflictException） | 400 との意味的区別: バリデーション失敗(400) vs リソース競合(409) |
+| JWT type クレームを JwtAuthenticationFilter で検証（ACCESS のみ通過） | リフレッシュトークン(REFRESH)を Bearer として API 認証に悪用できないようにする |
+| Cookie に Secure フラグを追加（app.cookie.secure で環境別制御） | 本番(HTTPS)では COOKIE_SECURE=true に設定。開発(HTTP)では false のまま |
+| パスワードリセット DTO のポリシーを ChangePasswordRequest と統一 | リセット経由でポリシー検証を迂回できる抜け道を塞ぐ |
+| ForwardedHeaderFilter を HIGHEST_PRECEDENCE で登録 | X-Forwarded-For の信頼済みプロキシ処理を Security フィルターより先に実行 |
+| AiRateLimiter: /ai/analyze=1分5回・1日20回、/ai/score・/ai/summary=1分30回（Redis カウンター） | Fail-Open 設計: Redis 障害時はスルー |
+| パスワードリセット IP レート制限: 1時間5回（Redis: pwd_reset:req:{ip}） | メール爆撃対策 |
+| Swagger UI を dev profile のみ有効化（springdoc.swagger-ui.enabled） | 本番での API 仕様公開を防ぐ |
+| ddl-auto を update → validate に変更 | 本番での意図しないスキーマ変更防止。スキーマ変更は Flyway で管理 |
+| SecurityConfig にセキュリティレスポンスヘッダーを追加（X-Content-Type-Options, X-Frame-Options, HSTS, CSP） | クリックジャッキング・MIMEスニッフィング攻撃の緩和 |
+| CORS の allowedOrigins を ${app.frontend.url} から読み込む | 本番 URL の設定忘れ防止 |
+| RateLimitException に retryAfterSeconds フィールドを追加。GlobalExceptionHandler で Retry-After ヘッダーを返す | クライアントがリトライ間隔を判断できるようにする |
+| .env.example を追加（JWT_SECRET は openssl rand -base64 64 で生成すること） | セキュアな秘密鍵生成を文書化 |
+| .gitignore に .env.* を追加（.env.example は除外） | .env.production 等の誤コミット防止 |
+| refreshAccessToken() に type=REFRESH 検証を追加（C-1 補完） | アクセストークンをリフレッシュ API に流用できないようにする |
+| HSTS を app.security.hsts.enabled プロパティで制御 | HTTP 開発環境でブラウザが HTTPS 強制を記憶してしまうのを防ぐ |
+| HSTS は application-prod.yml で enabled=true | 本番のみ HTTPS 強制を有効化 |
+| Swagger permitAll を springdoc.swagger-ui.enabled で動的制御 | Swagger 無効時に /v3/api-docs/** を permitAll に追加しない |
+| application-prod.yml を作成（本番専用設定: cookie.secure=true, hsts.enabled=true, SMTP 設定） | 開発と本番の設定を明確に分離 |
 | パスワードポリシー: 8文字以上・大文字・小文字・数字・記号（!@#$%^&*）各1文字以上 | ChangePasswordRequest の @Pattern で検証。RegisterRequest は従来の緩いポリシーのまま |
 | テーマカラーを帳簿単位で管理（ledgers.theme_color カラム追加: V12） | アカウント設定のテーマ UI を削除。帳簿切り替え時に ledgerStore.selectLedger() から CSS 変数を更新 |
 | ユーザー API は PUT /api/v1/users/me・/password・/theme、DELETE /api/v1/users/me | アカウント削除は FK 順 (ai_cache→budgets→transactions→fixed→categories→perms→ledgers→user) で一括削除 |
@@ -185,16 +215,15 @@
 ## ブランチ戦略
 
 - main: v0.1.0 タグ済み
-- develop: Step 1〜10 マージ済み
-- feature/step11-ai-analysis: Step 11 実装済み（テストグリーン）
+- develop: Step 1〜12 マージ済み
 
 ---
 
 ### 次回の作業手順（Gate 3 完了後）
 ```bash
 git checkout develop
-git checkout -b feature/step12-settings
-git push origin feature/step12-settings
+git checkout -b feature/step13-security
+git push origin feature/step13-security
 ```
 
 ## Step 完了時の更新ルール

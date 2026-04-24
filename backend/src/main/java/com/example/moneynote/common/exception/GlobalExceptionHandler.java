@@ -1,6 +1,7 @@
 package com.example.moneynote.common.exception;
 
 import com.example.moneynote.common.response.ApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
@@ -56,7 +57,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RateLimitException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
-    public ApiResponse<Void> handleRateLimit(RateLimitException e) {
+    public ApiResponse<Void> handleRateLimit(RateLimitException e, HttpServletResponse response) {
+        response.setHeader("Retry-After", String.valueOf(e.getRetryAfterSeconds()));
         return ApiResponse.failure("E429", e.getMessage());
     }
 

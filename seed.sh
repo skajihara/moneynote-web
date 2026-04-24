@@ -3,14 +3,15 @@
 # MoneyNote シードデータ投入スクリプト (Bash / Git Bash 版)
 # ===========================================================
 
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+BASE_URL="${BASE_URL:-https://localhost}"
 CURRENT_YEAR=$(date +%Y)
 CURRENT_MONTH_RAW=$(date +%m)
 CURRENT_MONTH=$(( 10#$CURRENT_MONTH_RAW ))
 
 # ─── 依存確認 ────────────────────────────────────────────────
-if command -v python3 &>/dev/null; then PY="python3"
-elif command -v python &>/dev/null; then PY="python"
+# Windows ストアのスタブは command -v で見つかるが実際には動かないため import sys で動作確認する
+if python3 -c "import sys" 2>/dev/null; then PY="python3"
+elif python -c "import sys" 2>/dev/null; then PY="python"
 else echo "ERROR: python3 が必要です。インストールしてください。"; exit 1; fi
 
 # ─── ヘルパー ────────────────────────────────────────────────
@@ -20,16 +21,16 @@ warn()  { echo "  ✗ ERROR: $*"; }
 
 api_post() {
   local ep=$1 body=$2 token=$3
-  local args=(-s -X POST "${BASE_URL}${ep}" -H "Content-Type: application/json" -d "$body")
+  local args=(-sk -X POST "${BASE_URL}${ep}" -H "Content-Type: application/json" -d "$body")
   [ -n "$token" ] && args+=(-H "Authorization: Bearer $token")
   curl "${args[@]}"
 }
 api_put() {
-  curl -s -X PUT "${BASE_URL}$1" -H "Content-Type: application/json" \
+  curl -sk -X PUT "${BASE_URL}$1" -H "Content-Type: application/json" \
        -H "Authorization: Bearer $3" -d "$2"
 }
 api_get() {
-  curl -s -X GET "${BASE_URL}$1" -H "Authorization: Bearer $2"
+  curl -sk -X GET "${BASE_URL}$1" -H "Authorization: Bearer $2"
 }
 
 # JSON値取得: json_get "$resp" "data.accessToken"
@@ -121,7 +122,7 @@ TR=(5000   6000  7000  8000  9000 10000 12000 10000  9000  8000  7000  6000  500
 # ─── Step 1: バックエンド起動確認 ───────────────────────────
 step "Step1: バックエンド起動確認"
 for i in $(seq 1 15); do
-  if curl -sf "${BASE_URL}/v3/api-docs" -o /dev/null 2>&1; then
+  if curl -skf "${BASE_URL}/v3/api-docs" -o /dev/null 2>&1; then
     ok "バックエンドが起動しています"; break
   fi
   [ $i -eq 15 ] && { warn "バックエンドが起動していません。docker compose up -d を実行してください。"; exit 1; }
@@ -350,8 +351,8 @@ post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_COMM"     "スマホ代（有効
 post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_ENT"      "今月開始の固定費（境界値）"  "EXPENSE" 3000   20 "$CURR_M01"  ""
 post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_UTILITY"  "28日発生の固定費（境界値）"  "EXPENSE" 2000   28 "2025-01-01" ""
 post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_ENT"      "旧サブスク（終了済み）"      "EXPENSE" 1490   15 "2024-04-01" "2025-03-31"
-post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_TRANSPORT""今月終了の固定費（境界値）"  "EXPENSE" 1000   10 "2025-01-01" "$CURR_LAST"
-post_ft "$LEDGER_OVER_ID" "$TOKEN_OVER"   "$CAT_OVER_RENT""高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" ""
+post_ft "$LEDGER_MAIN_ID" "$TOKEN_NORMAL" "$CAT_TRANSPORT" "今月終了の固定費（境界値）"  "EXPENSE" 1000   10 "2025-01-01" "$CURR_LAST"
+post_ft "$LEDGER_OVER_ID" "$TOKEN_OVER"   "$CAT_OVER_RENT" "高額固定費（予算超過用）"    "EXPENSE" 150000 1  "2025-01-01" ""
 
 # ─── Step 7: 予算データ投入 ──────────────────────────────────
 step "Step7: 予算データ投入中..."

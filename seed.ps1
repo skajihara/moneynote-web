@@ -11,7 +11,21 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ErrorActionPreference = "Continue"
-$baseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "http://localhost:8080" }
+$baseUrl = if ($env:BASE_URL) { $env:BASE_URL } else { "https://localhost" }
+
+# mkcert のローカル証明書を信頼する（SSL 検証をスキップ）
+# 本番環境では絶対に使用しないこと
+if (-not ([System.Management.Automation.PSTypeName]'TrustAllCerts').Type) {
+    Add-Type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCerts : ICertificatePolicy {
+    public bool CheckValidationResult(ServicePoint sp, X509Certificate cert, WebRequest req, int problem) { return true; }
+}
+"@
+}
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCerts
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12 -bor [System.Net.SecurityProtocolType]::Tls13
 $now     = Get-Date
 $curYear = $now.Year
 $curMonth= $now.Month
@@ -148,8 +162,8 @@ $transport   = @( 5000,  6000,  7000,  8000,  9000, 10000, 12000, 10000,  9000, 
 Step-Print "Step0: DB リセット中..."
 Write-Host "  docker compose down -v を実行してボリュームを削除します..." -ForegroundColor Yellow
 docker compose down -v 2>&1 | Out-Null
-Write-Host "  docker compose up -d を実行してコンテナを起動します..." -ForegroundColor Yellow
-docker compose up -d 2>&1 | Out-Null
+Write-Host "  docker compose up -d --build を実行してコンテナを起動します..." -ForegroundColor Yellow
+docker compose up -d --build 2>&1 | Out-Null
 Ok "DB リセット完了"
 
 # ─── Step 1: バックエンド起動確認 ───────────────────────────

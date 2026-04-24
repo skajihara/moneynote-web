@@ -31,7 +31,24 @@
       "Bash(git -C /c/Users/ruri3/git/moneynote-web branch)",
       "Bash(git -C /c/Users/ruri3/git/moneynote-web log --oneline -5)",
       "Read(//c/Users/ruri3/AppData/Local/Temp/claude/c--Users-ruri3-git-moneynote-web/6bc293f7-a1a9-4b71-a020-43b1ccc9e363/tasks/**)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Read(//c/c/Users/ruri3/git/moneynote-web/backend/src/test/java/com/example/**)",
+      "Bash(docker info *)",
+      "Bash(docker context *)",
+      "Bash(awk -F'\"' '{t+=$2; f+=$4; e+=$6} END {print \"total:\"t, \"failures:\"f, \"errors:\"e}')",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File setup-ssl.ps1)",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"$PATH:/c/Users/ruri3/AppData/Local/Microsoft/WinGet/Packages/FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\")",
+      "Bash(mkcert --version)",
+      "Bash(/c/Users/ruri3/AppData/Local/Microsoft/WinGet/Links/mkcert.exe --version)",
+      "Bash(mkcert -install)",
+      "Bash(/c/Users/ruri3/AppData/Local/Microsoft/WinGet/Links/mkcert.exe -install)",
+      "Read(//c/Users/ruri3/AppData/Local/**)",
+      "Bash(/c/Users/ruri3/AppData/Local/Microsoft/WinGet/Packages/FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe/mkcert.exe -install)",
+      "Bash(/c/Users/ruri3/AppData/Local/Microsoft/WinGet/Packages/FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe/mkcert.exe -cert-file nginx/certs/localhost.pem -key-file nginx/certs/localhost-key.pem localhost 127.0.0.1 ::1)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Swagger OK:', d.get\\('info',{}\\).get\\('title','?'\\)\\)\")",
+      "Bash(bash seed.sh)",
+      "Bash(docker compose *)"
     ],
     "deny": [
       "Bash(git commit*)",
@@ -62,7 +79,8 @@
     ],
     "additionalDirectories": [
       "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\components",
-      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app"
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app",
+      "C:\\Users\\ruri3\\git\\moneynote-web\\nginx"
     ]
   },
   "rules": [

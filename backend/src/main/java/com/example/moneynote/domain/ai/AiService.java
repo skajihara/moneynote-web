@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.ai;
 
+import com.example.moneynote.common.ratelimit.AiRateLimiter;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
@@ -42,6 +43,7 @@ public class AiService {
     private final AiAdviceCacheRepository aiAdviceCacheRepository;
     private final LedgerAccessValidator accessValidator;
     private final ChatClient.Builder chatClientBuilder;
+    private final AiRateLimiter aiRateLimiter;
 
     @Value("${ai.mock:false}")
     private boolean mockMode;
@@ -298,6 +300,9 @@ public class AiService {
             return new AiAnalyzeResponse(c.getAdviceType(), c.getAdviceText(),
                     c.getGeneratedAt(), true);
         }
+
+        // キャッシュミス時のみレート制限を適用する（キャッシュヒットは AI を呼ばないため制限しない）
+        aiRateLimiter.checkAnalyzeLimit(userId);
 
         // ---------- 集計データ取得 ----------
         AiSummaryResponse summary = getSummary(ledgerId, period, userId);
