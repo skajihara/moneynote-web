@@ -21,10 +21,13 @@
 | Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
 | Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
 | Step 12 | 設定・管理画面 | feature/step12-settings | 完了・develop マージ済み |
+| Step 13 | セキュリティリスク対応・エラーハンドリング実装 | feature/step13-security-hardening | 完了・develop マージ済み |
+| Step 14 | MCP導入 | feature/step14-mcp-setup | 完了・develop マージ済み |
+| Step 15 | 設定ファイル最適化 | feature/step15-mcp-setup | 実装中 |
 
 ## 現在の状態
-- Step 13（セキュリティリスク対応・エラーハンドリング実装）完了
-- 次の作業: v0.5.0（MCP導入・設定ファイル最適化）
+- Step 14（MCP導入）完了
+- 次の作業: Step 15（設定ファイル最適化・TODO整理・hooks導入）
 - リリース済み: v0.4.0（Step 12〜13）
 
 ## 残存 Todo（インフラ依存・判断待ち）
