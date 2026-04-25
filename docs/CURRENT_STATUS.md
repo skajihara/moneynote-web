@@ -21,11 +21,14 @@
 | Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
 | Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
 | Step 12 | 設定・管理画面 | feature/step12-settings | 完了・develop マージ済み |
+| Step 13 | セキュリティリスク対応・エラーハンドリング実装 | feature/step13-security-hardening | 完了・develop マージ済み |
+| Step 14 | MCP導入 | feature/step14-mcp-setup | 完了・develop マージ済み |
+| Step 15 | 設定ファイル最適化 | feature/step15-mcp-setup | 実装中 |
 
 ## 現在の状態
-- Step 13（セキュリティ強化）進行中: 全修正 + 残存リスク対応完了
-- 対応済みリスク: C-1 補完（refreshAccessToken type=REFRESH 検証）、HSTS profile 分離、Swagger permitAll 動的制御、application-prod.yml 作成
-- 次の作業: Step 13 Gate 3（ブラウザ動作確認）+ インフラ依存 Todo の確認（詳細下記）
+- Step 14（MCP導入）完了
+- 次の作業: Step 15（設定ファイル最適化・TODO整理・hooks導入）
+- リリース済み: v0.4.0（Step 12〜13）
 
 ## 残存 Todo（インフラ依存・判断待ち）
 
