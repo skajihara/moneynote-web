@@ -23,6 +23,10 @@
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | テスト自動実行・Docker イメージビルド・EC2 への自動デプロイ（Step 18） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | ECS Fargate 移行 | ECR + ECS Fargate への移行（Step 19） |
 | T-015 | [#15](https://github.com/skajihara/moneynote-web/issues/15) | インフラ | SESによるメール送受信 | AWS SES を使った本番メール送信・問い合わせ受付（Step 21） |
+| T-029 | [#32](https://github.com/skajihara/moneynote-web/issues/32) | インフラ | nginx/LB で X-Forwarded-For を信頼プロキシ限定に設定 | 本番アーキテクチャ確定後に nginx.conf または Spring の forwarded-headers-strategy で制限する |
+| T-030 | [#33](https://github.com/skajihara/moneynote-web/issues/33) | インフラ | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | openssl rand -base64 64 で生成した256bit以上の文字列を Secrets Manager で管理する |
+| T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | CI/CD（T-013）に COOKIE_SECURE=true の環境変数設定を追加する |
+| T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager 等によるクレデンシャル管理の導入 | JWT_SECRET・CLAUDE_API_KEY 等の機密情報を AWS Secrets Manager で管理する（Step 21） |
 
 ---
 
@@ -60,6 +64,7 @@
 | TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | フロントエンドのテストカバレッジが低い画面がある | 中 |
 | TD-002 | [#30](https://github.com/skajihara/moneynote-web/issues/30) | Docker ビルドが毎回時間がかかる（Gradle キャッシュの最適化余地あり） | 低 |
 | TD-003 | [#31](https://github.com/skajihara/moneynote-web/issues/31) | application.yml・application-prod.yml の整合性確認が必要 | 高 |
+| TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | 中 |
 
 ---
 
