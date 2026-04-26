@@ -320,6 +320,8 @@ test: Add transaction service unit tests
 | `/security` | Step 13（セキュリティ強化）または気になった時 |
 | `/test` | カバレッジが足りないと気づいた時 |
 | `/ops` | エラーが解決できない時・CI構築・ドキュメント生成時 |
+| `/performance` | N+1・クエリ最適化・再レンダリング問題を診断したい時 |
+| `/debug` | エラーログ・スタックトレースを解読して原因特定したい時 |
 
 ---
 
