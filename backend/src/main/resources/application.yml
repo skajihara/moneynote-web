@@ -26,6 +26,10 @@ spring:
           model: claude-sonnet-4-5
           max-tokens: 1000
 
+ai:
+  # デフォルトは本番想定（Claude API を使用する）。開発環境は application-dev.yml で true に上書きする
+  mock: false
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

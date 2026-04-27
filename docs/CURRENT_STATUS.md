@@ -1,240 +1,67 @@
-# CURRENT_STATUS.md - 現在の開発状況
+# CURRENT_STATUS.md
 
-## 最終更新
-2026年4月（Step 13 セキュリティ強化: 残存リスク対応完了・228テスト全グリーン）
+最終更新: 2026年4月（Step 15 設定ファイル最適化 完了）
 
 ---
 
 ## 完了した Step
 
-| Step | 内容 | ブランチ | 状態 |
-|---|---|---|---|
-| Step 1 | プロジェクト雛形 | feature/step1-project-scaffold | 完了・develop マージ済み |
-| Step 2 | DB設計・マイグレーション | feature/step2-db-migration | 完了・develop マージ済み |
-| Step 3 | 認証 API | feature/step3-auth-api | 完了・develop マージ済み |
-| Step 4 | 認証画面 | feature/step4-auth-frontend | 完了・develop マージ済み |
-| Step 5 | 帳簿管理 API・フロントエンド | feature/step5-ledger | 完了・develop マージ済み |
-| Step 6 | 収支明細 API・カレンダー・一覧画面 | feature/step6-transaction | 完了・develop マージ済み |
-| Step 7 | ダッシュボード完成 | feature/step7-dashboard | 完了・develop マージ済み |
-| Step 8 | 分析レポート・カテゴリ集計 | feature/step8-reports | 完了・develop マージ済み |
-| Step 9 | 予算設定・固定費管理 | feature/step9-budget-fixed | 完了・develop マージ済み |
-| Step 10 | CSVエクスポート・インポート | feature/step10-csv | 完了・develop マージ済み |
-| Step 11 | AI支出分析・アドバイス | feature/step11-ai-analysis | 完了・develop マージ済み |
-| Step 12 | 設定・管理画面 | feature/step12-settings | 完了・develop マージ済み |
-| Step 13 | セキュリティリスク対応・エラーハンドリング実装 | feature/step13-security-hardening | 完了・develop マージ済み |
-| Step 14 | MCP導入 | feature/step14-mcp-setup | 完了・develop マージ済み |
-| Step 15 | 設定ファイル最適化 | feature/step15-mcp-setup | 実装中 |
+| Step | 内容 | 状態 |
+|---|---|---|
+| Step 1 | プロジェクト雛形 | 完了・develop マージ済み |
+| Step 2 | DB設計・マイグレーション | 完了・develop マージ済み |
+| Step 3 | 認証 API | 完了・develop マージ済み |
+| Step 4 | 認証画面 | 完了・develop マージ済み |
+| Step 5 | 帳簿管理 API・フロントエンド | 完了・develop マージ済み |
+| Step 6 | 収支明細 API・カレンダー・一覧画面 | 完了・develop マージ済み |
+| Step 7 | ダッシュボード完成 | 完了・develop マージ済み |
+| Step 8 | 分析レポート・カテゴリ集計 | 完了・develop マージ済み |
+| Step 9 | 予算設定・固定費管理 | 完了・develop マージ済み |
+| Step 10 | CSVエクスポート・インポート | 完了・develop マージ済み |
+| Step 11 | AI支出分析・アドバイス | 完了・develop マージ済み |
+| Step 12 | 設定・管理画面 | 完了・develop マージ済み |
+| Step 13 | セキュリティリスク対応・エラーハンドリング | 完了・develop マージ済み |
+| Step 14 | 設定ファイル最適化・MCP導入 | 完了・develop マージ済み |
+| Step 15 | hooks・skills | 完了・develop マージ済み |
+
+---
 
 ## 現在の状態
-- Step 14（MCP導入）完了
-- 次の作業: Step 15（設定ファイル最適化・TODO整理・hooks導入）
-- リリース済み: v0.4.0（Step 12〜13）
 
-## 残存 Todo（インフラ依存・判断待ち）
-
-| # | 内容 | 優先度 | 必要な確認 |
-|---|---|---|---|
-| 1 | M-1: nginx/LB で X-Forwarded-For を制御（信頼プロキシ限定） | 高 | 本番アーキテクチャ（直接公開 or nginx 経由）の確認 |
-| 2 | Redis 固定ウィンドウ → スライディングウィンドウへ変更（バースト対策） | 中 | 既存レート制限の仕様変更の合意 |
-| 3 | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | 高 | デプロイ先インフラの確認 |
-| 4 | env なしのクレデンシャル管理（Secrets Manager 等）の導入 | 高 | クラウドプロバイダー（AWS/GCP/その他）の確認 |
-| 5 | 本番 CD パイプラインで COOKIE_SECURE=true を環境変数として設定 | 高 | CI/CD 環境の確認 |
+- Step 15（設定ファイル最適化）完了。現在ブランチ: `feature/step15-config-optimization`
+- 次の作業: 次の作業: Step 16（品質仕上げ）
+- リリース済み: v0.5.0（Step 12〜13）
 
 ---
 
-## 重要な技術的決定事項
+## 重要な技術的決定事項（バグ防止のため必読）
 
-| 決定内容 | 理由 |
+| 決定 | 理由 |
 |---|---|
-| Java 24 を採用（企画書は Java 21） | 開発 PC に Java 24 がインストール済みのため |
-| Gradle 8.14 を採用 | Java 24 対応のため（8.8 では非対応） |
-| Spring Boot 3.4.5 を採用 | Java 24 の ASM 対応のため |
-| Spring AI 1.0.0 GA を採用 | スターター名が spring-ai-starter-model-anthropic に変更 |
-| npm install を使用（npm ci ではなく） | package-lock.json が存在しないため |
-| メール送信ホスト名は mailhog（localhost ではなく） | Docker コンテナ間通信のため |
-| 未認証リクエストに AuthenticationEntryPoint で 401 を返す | Spring Security デフォルトは 403 を返すため明示的に設定 |
-| LedgerAccessValidator をコンポーネントとして共通化 | 全帳簿エンドポイントのアクセス制御を一元管理するため |
-| CategoryType の変更は PUT /categories/{id} では不可 | 変更すると既存明細の分類が変わるため |
-| POST /api/v1/ledgers ではカテゴリを自動生成しない | 追加帳簿は用途が異なるケースが多いため。register 時のみ生成する |
-| seed.ps1 は UTF-8 BOM付きで保存 | PowerShell 5.1 での日本語文字化け対策 |
-| TransactionService.createTransaction では accessValidator.validate() の戻り値（Ledger）を再利用 | DB の二重アクセスを避けるため |
-| DELETE /transactions/{id} のリクエストボディに scope フィールドを設ける | SINGLE/ALL の切り替えを明示的に表現するため |
-| フロントエンドの通貨フォーマット `toLocaleString('ja-JP', {style:'currency'})` は JSDOM で全角円記号を出力する | テストでは `/3,000/` などの regex で検証する |
-| Recharts の ResponsiveContainer はテストで jsdom モック対象 | JSDOM は ResizeObserver を持たないため |
-| ダッシュボード API は GET /api/v1/ledgers/{ledgerId}/dashboard として TransactionController と分離し DashboardController に実装 | 責務分離のため |
-| CategoryReportController を CategoryController と別クラスで同じ base path に定義 | GET /summary と GET /{categoryId}/transactions が既存の PUT/DELETE と競合しないため Spring MVC が正しくルーティングできる |
-| CategoryType → TransactionType の変換は `TransactionType.valueOf(type.name())` | 両 Enum は同名の値 INCOME/EXPENSE を持つため |
-| CategorySummary（report.ts）と CategoryBreakdown（dashboard.ts）は同一形状 | CategoryPieChart の再利用のため `as unknown as CategoryBreakdown[]` でキャスト |
-| カテゴリ別集計はレポートページ（月別・年別タブ）に統合 | 独立したカテゴリページは削除。サイドメニューからも除去 |
-| 収入系カラーは text-green-600 / #16A34A、支出系は text-red-500 / #EF4444 に統一 | アプリ全体で緑=収入・赤=支出の配色に統一するため |
-| 年間カテゴリ別集計 API: GET /categories/summary/annual?year= | 月次集計メソッドをリファクタリングしてプライベートヘルパー buildCategorySummary を共用 |
-| SummaryCards に carryOver? prop を追加 | レポートページで繰り越しをサマリーカードと同じ行に表示するため |
-| 円グラフの開始点を12時に統一 | UI の一貫性のため |
-| 予算の upsert は POST /budgets で実現（既存レコードがあれば更新、なければ作成） | EXPENSE カテゴリのみ対象。ステータスは NORMAL(<80%)・WARNING(80-99%)・OVER(>=100%) |
-| 固定費削除は transactionRepository.deleteByFixedTransactionId → fixedRepository.delete の順 | 参照整合性違反を防ぐため |
-| 固定費の明細生成は startDate〜endDate のループ（endDate は必須） | endDate が必須化されたため null チェック不要 |
-| dayOfMonth は max=28 に制限 | 月末日（28/29/30/31）の変動を避けるため。実際の日付は `Math.min(dayOfMonth, ym.lengthOfMonth())` で調整 |
-| FixedScopeDialog の「全件削除」を廃止し「設定ページへ誘導」に変更 | 誤操作による全件削除を防ぐため。固定費の変更は設定ページ（/settings?tab=fixed）で行う |
-| 設定ページ（/settings）を新規作成し固定費タブを実装 | FixedTransactionList と FixedTransactionForm を再利用可能コンポーネントとして実装 |
-| 固定費の endDate を必須化（@NotNull）・デフォルト10年後 | endDate=null 運用をやめ、seed.ps1 でも startDate+10年を明示設定。バリデーション: endDate > startDate |
-| V10 マイグレーションで既存レコードの end_date=NULL を start_date+10年に更新 | 必須化前の既存データを正規化するため |
-| 固定費の終了日を必須化・デフォルト10年後 | 期間不明の固定費も明細生成範囲を明確にするため |
-| 固定費編集=全明細削除→再生成 | データの一貫性を保つため |
-| 固定費のメモを明細にコピー | 固定費由来の明細の識別を容易にするため |
-| 固定費の登録間隔機能はTODO | 実装の複雑さからStep 9の範囲を超えるため |
-| CSV エクスポートは BOM（0xEF 0xBB 0xBF）付き UTF-8 で出力 | Excel での文字化け防止。Apache Commons CSV 1.11.0 を使用 |
-| CSV インポートは PushbackInputStream でBOM検出・スキップ | エクスポートしたCSVをそのまま再インポートできるラウンドトリップ対応 |
-| CSV エクスポート/インポートのエンドポイントを CsvController に分離 | TransactionController との責務分離のため |
-| CSV インポートは行単位でバリデーション（RowValidationException） | 不正行をスキップして正常行のみ保存し errorRows で詳細を返す |
-| CSV インポートのカテゴリ照合は category_name + category_type の組み合わせで行う | category_id は異なる帳簿間で不一致になるため。存在しない場合は自動作成 |
-| CSV エクスポートの categoryIds は複数指定可能（?categoryIds=X&categoryIds=Y） | マルチセレクト対応のためリスト型パラメータ |
-| CSV エクスポートに includeFixed=false で固定費明細を除外できる | デフォルト true |
-| 設定ページの CSV タブは「CSV」（旧:「データ管理」） |
-| CSVインポート時に存在しないカテゴリは自動作成 | 他アプリからの移行を容易にするため |
-| CSVエクスポートはBOM付きUTF-8 | Excelでの文字化けを防ぐため |
-| 固定費明細はインポート時に通常明細として登録 | データの一貫性を保つため |
-| スコア計算: balanceScore(25pt) + budgetScore(25pt) + savingsScore(25pt) + stabilityScore(25pt) = 100pt | 四項目均等配点。EXCELLENT≥80 / GOOD≥60 / CAUTION≥40 / POOR<40 |
-| stabilityScore はCV（変動係数）で算出（3ヶ月分のデータが必要） | データが1ヶ月しかない場合はCV=高になりスコア=0になるため注意 |
-| AiService.getScore() は Spring AI の呼び出しを行わない（DBデータのみで計算） | AI コスト節約・高速化のため |
-| ダッシュボードの getAiScore 呼び出しは fire-and-forget（失敗しても継続） | スコア取得失敗でダッシュボード全体が壊れないようにするため |
-| AI分析ページの期間切り替えは getAiSummary のみ再呼び出し（スコアは再呼び出ししない） | スコアは期間非依存（直近1ヶ月固定）のため |
-| 予算ヒートマップは GET /budgets/heatmap?months=N の単一 API で取得 | 12並列呼び出しから1回に変更。フロントは受け取ったデータを reverse() して左→右=古→新に表示 |
-| AiService スコアのエッジケース: income=0 かつ expense=0 → savingsScore=12（中立） | データ未入力月に 0 点がつくと全体スコアが不当に低くなるため |
-| AiService スコアのエッジケース: 非ゼロ支出月が2ヶ月未満 → stabilityScore=12（中立） | CV(変動係数)は2サンプル以上必要。1ヶ月しかないと CV=高になり不当に 0 点になるため |
-| seed.ps1 の当月予算から衣服費を除外 | 境界値データ 999999 円の支出があるが予算を設定しない場合は budgetScore に影響しないため |
-| フォントは next/font/google で Noto Sans JP を読み込み（subsets: latin） | CJK サブセットは別途 preload 不要 |
-| Docker ビルド時は next/font/google を使用しない（CSS システムフォントで代替） | Docker ビルド環境は外部ネットワーク（Google Fonts）にアクセスできないため |
-| LedgerPeriodCalculator（共通ユーティリティ）で月度・年度期間を一元計算 | startDayOfMonth=20 なら「4月」=3/20〜4/19、startMonthOfYear=4 なら「2026年度」=2026/4〜2027/3 |
-| 帳簿一覧は created_at ASC でソート固定 | UI で帳簿の表示順が毎回変わらないようにするため |
-| TransactionController から startDayOfMonth リクエストパラメータを削除 | バックエンドが Ledger エンティティから直接取得するため。フロント API クライアントも同様に削除 |
-| 重複メールは 409 Conflict を返す（ConflictException） | 400 との意味的区別: バリデーション失敗(400) vs リソース競合(409) |
-| JWT type クレームを JwtAuthenticationFilter で検証（ACCESS のみ通過） | リフレッシュトークン(REFRESH)を Bearer として API 認証に悪用できないようにする |
-| Cookie に Secure フラグを追加（app.cookie.secure で環境別制御） | 本番(HTTPS)では COOKIE_SECURE=true に設定。開発(HTTP)では false のまま |
-| パスワードリセット DTO のポリシーを ChangePasswordRequest と統一 | リセット経由でポリシー検証を迂回できる抜け道を塞ぐ |
-| ForwardedHeaderFilter を HIGHEST_PRECEDENCE で登録 | X-Forwarded-For の信頼済みプロキシ処理を Security フィルターより先に実行 |
-| AiRateLimiter: /ai/analyze=1分5回・1日20回、/ai/score・/ai/summary=1分30回（Redis カウンター） | Fail-Open 設計: Redis 障害時はスルー |
-| パスワードリセット IP レート制限: 1時間5回（Redis: pwd_reset:req:{ip}） | メール爆撃対策 |
-| Swagger UI を dev profile のみ有効化（springdoc.swagger-ui.enabled） | 本番での API 仕様公開を防ぐ |
-| ddl-auto を update → validate に変更 | 本番での意図しないスキーマ変更防止。スキーマ変更は Flyway で管理 |
-| SecurityConfig にセキュリティレスポンスヘッダーを追加（X-Content-Type-Options, X-Frame-Options, HSTS, CSP） | クリックジャッキング・MIMEスニッフィング攻撃の緩和 |
-| CORS の allowedOrigins を ${app.frontend.url} から読み込む | 本番 URL の設定忘れ防止 |
-| RateLimitException に retryAfterSeconds フィールドを追加。GlobalExceptionHandler で Retry-After ヘッダーを返す | クライアントがリトライ間隔を判断できるようにする |
-| .env.example を追加（JWT_SECRET は openssl rand -base64 64 で生成すること） | セキュアな秘密鍵生成を文書化 |
-| .gitignore に .env.* を追加（.env.example は除外） | .env.production 等の誤コミット防止 |
-| refreshAccessToken() に type=REFRESH 検証を追加（C-1 補完） | アクセストークンをリフレッシュ API に流用できないようにする |
-| HSTS を app.security.hsts.enabled プロパティで制御 | HTTP 開発環境でブラウザが HTTPS 強制を記憶してしまうのを防ぐ |
-| HSTS は application-prod.yml で enabled=true | 本番のみ HTTPS 強制を有効化 |
-| Swagger permitAll を springdoc.swagger-ui.enabled で動的制御 | Swagger 無効時に /v3/api-docs/** を permitAll に追加しない |
-| application-prod.yml を作成（本番専用設定: cookie.secure=true, hsts.enabled=true, SMTP 設定） | 開発と本番の設定を明確に分離 |
-| パスワードポリシー: 8文字以上・大文字・小文字・数字・記号（!@#$%^&*）各1文字以上 | ChangePasswordRequest の @Pattern で検証。RegisterRequest は従来の緩いポリシーのまま |
-| テーマカラーを帳簿単位で管理（ledgers.theme_color カラム追加: V12） | アカウント設定のテーマ UI を削除。帳簿切り替え時に ledgerStore.selectLedger() から CSS 変数を更新 |
-| ユーザー API は PUT /api/v1/users/me・/password・/theme、DELETE /api/v1/users/me | アカウント削除は FK 順 (ai_cache→budgets→transactions→fixed→categories→perms→ledgers→user) で一括削除 |
-| 取引検索 GET /api/v1/ledgers/{id}/transactions/search | keyword（memo LIKE）・categoryId・startDate・endDate の任意組み合わせフィルター |
-| 設定ページのタブ: account/ledgers/fixed/search/csv | 帳簿管理は一覧↔帳簿設定の2段階ビュー。カテゴリ並び替えは @dnd-kit/sortable で実装 |
-| @dnd-kit/core + @dnd-kit/sortable を frontend に追加 | カテゴリのドラッグ並び替えに使用 |
-| 取引検索の keyword・categoryId も空文字列センチネル値を使用 | Hibernate 6 + PostgreSQL で null String を lower() に渡すと bytea 型エラーになるため。`:keyword = ''` で全件、`:categoryId = ''` で全件を意味する |
-| LedgerService.cascadeDeleteLedger() を public に変更 | UserService（別パッケージ）から呼び出すため。package-private では cross-package アクセス不可 |
-| 帳簿削除は物理削除（カスケード：ai_cache→budgets→transactions→fixed→categories→perms→ledger の順） | DB に CASCADE DELETE なし。FK 制約順に明示的に削除する必要があるため |
-
----
-
-## 重要なファイルパス
-
-### バックエンド
-
-- 認証 API: backend/src/main/java/com/example/moneynote/domain/auth/
-- 帳簿 API: backend/src/main/java/com/example/moneynote/domain/ledger/
-- カテゴリ API: backend/src/main/java/com/example/moneynote/domain/category/
-- 明細 API: backend/src/main/java/com/example/moneynote/domain/transaction/
-- ダッシュボード API: backend/src/main/java/com/example/moneynote/domain/dashboard/
-- 予算 API: backend/src/main/java/com/example/moneynote/domain/budget/
-- 固定費 API: backend/src/main/java/com/example/moneynote/domain/fixedtransaction/
-- CSV API: backend/src/main/java/com/example/moneynote/domain/csv/
-- AI API: backend/src/main/java/com/example/moneynote/domain/ai/
-- アクセス制御: backend/src/main/java/com/example/moneynote/common/validator/LedgerAccessValidator.java
-- 共通例外: backend/src/main/java/com/example/moneynote/common/exception/
-- 共通レスポンス: backend/src/main/java/com/example/moneynote/common/response/
-- JWT 設定: backend/src/main/java/com/example/moneynote/common/security/
-- DB マイグレーション: backend/src/main/resources/db/migration/
-- アプリ設定: backend/src/main/resources/application.yml
-
-### フロントエンド
-
-- 認証画面: frontend/src/app/(auth)/
-- アプリ画面: frontend/src/app/(app)/
-- ダッシュボードページ: frontend/src/app/(app)/dashboard/
-- 明細ページ: frontend/src/app/(app)/ledgers/[ledgerId]/transactions/
-- レポートページ: frontend/src/app/(app)/ledgers/[ledgerId]/reports/
-- 予算ページ: frontend/src/app/(app)/ledgers/[ledgerId]/budget/
-- 設定ページ: frontend/src/app/(app)/settings/ （固定費タブ・データ管理タブあり）
-- カテゴリ集計: レポートページに統合済み（独立ページ廃止）
-- AI分析ページ: frontend/src/app/(app)/ledgers/[ledgerId]/ai/
-- API クライアント: frontend/src/lib/api/ （budget.ts, fixed.ts, csv.ts, ai.ts 追加）
-- 型定義: frontend/src/types/ （budget.ts, fixed.ts, ai.ts 追加）
-- Zustand ストア: frontend/src/stores/
-- 共通コンポーネント: frontend/src/components/
-  - レイアウト: frontend/src/components/layout/
-  - 帳簿: frontend/src/components/ledger/
-  - 明細: frontend/src/components/transaction/
-  - グラフ: frontend/src/components/charts/
-  - 予算: frontend/src/components/budget/
-  - 固定費: frontend/src/components/fixed/ （FixedTransactionList.tsx, FixedTransactionForm.tsx）
-  - CSV: frontend/src/components/csv/ （CsvExport.tsx, CsvImport.tsx）
-  - UI汎用: frontend/src/components/ui/
+| 取引検索の `keyword`・`categoryId` は空文字列センチネル値を使用（`= ''` で全件） | Hibernate 6 + PostgreSQL で null String を `lower()` に渡すと bytea 型エラーになるため |
+| Docker ビルド時は `next/font/google` を使用しない（CSS システムフォントで代替） | Docker ビルド環境は Google Fonts にアクセスできないためビルド失敗する |
+| 帳簿削除の物理削除カスケード順: `ai_cache→budgets→transactions→fixed→categories→perms→ledger` | DB に CASCADE DELETE なし。FK 制約違反を防ぐため順序が重要 |
+| 固定費の `endDate` は必須（`@NotNull`）。デフォルト10年後 | endDate=null 運用を廃止。バリデーション: endDate > startDate |
+| `JWT_SECRET` は `openssl rand -base64 64` で生成した256bit以上の文字列を使用 | CLAUDE.md のセキュリティルール参照。.env.example にも記載済み |
 
 ---
 
 ## 既知の注意点
 
-1. コード変更後は docker compose up -d --build が必要
-   （docker compose up -d だけではイメージが更新されない）
-
-2. seed.ps1 は Step 6（収支明細 API）完了後に完全動作する
-
-3. seed.ps1 は実行時に自動で `docker compose down -v && docker compose up -d` を実行して DB をリセットしてからデータを投入する。
-   既存データはすべて削除されるため、手動で DB をリセットする必要はない
-
-3. DB リセットが必要な場合は docker compose down -v を使う
-   （-v オプションでボリュームも削除される）
-
-4. Flyway マイグレーション失敗時は docker compose down -v の後に up --build を実行する
-
-5. PUT /api/v1/ledgers/{ledgerId}/categories/order はパス設計上、
-   /{categoryId} より前に定義する必要がある（Spring MVC のルーティング順序）
-
-6. user_no_data はログイン後に帳簿0件でモーダルが表示されるユーザー。
-   seed.ps1 で register 後に自動生成された帳簿を DELETE で削除している。
-
-7. 固定費の明細生成は冪等ではない（既存月はスキップ）。
-   PUT /fixed-transactions/{id} では一旦全削除して再生成するため、
-   手動で編集した明細も上書きされる点に注意。
-
-8. 固定費の endDate は必須（@NotNull）。
-   フロントエンドのデフォルト値は登録日から10年後を設定することを推奨。
-   seed.ps1 では startDate + 10年を計算して設定している。
+1. **コード変更後は必ず `docker compose up -d --build`**（`--build` 省略不可。省略するとイメージが更新されない）
+2. **DB リセット**: `docker compose down -v`（ボリュームも削除。seed.ps1 が自動実行）
+3. **Flyway 失敗時**: `docker compose down -v && docker compose up -d --build`（ボリューム削除が必須）
 
 ---
 
-## ブランチ戦略
+## コンテキストリフレッシュ後の再開手順
 
-- main: v0.1.0 タグ済み
-- develop: Step 1〜12 マージ済み
-
----
-
-### 次回の作業手順（Gate 3 完了後）
 ```bash
-git checkout develop
-git checkout -b feature/step13-security
-git push origin feature/step13-security
+git branch                    # 現在のブランチ確認
+git log --oneline -5          # 直近コミット確認
+git status                    # 未コミットファイル確認
+cat docs/CURRENT_STATUS.md    # 開発状況確認（このファイル）
 ```
 
-## Step 完了時の更新ルール
+確認後「コンテキストを復元しました。現在は〇〇ブランチで〇〇の作業中です。」と報告すること。
 
-このファイルは各 Step の Gate 3（動作確認）完了・コミット前に更新する。
-
-更新内容:
-- 完了した Step のステータスを更新する
-- 現在の状態セクションを更新する
-- 新たな技術的決定事項があれば追記する
-- 新たな注意点があれば追記する

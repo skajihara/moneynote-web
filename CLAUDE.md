@@ -1,373 +1,66 @@
-# CLAUDE.md - エージェントへの憲法
-
-## このファイルの目的
-Claude Code がこのプロジェクトで自律的に開発を進めるための
-ルール・方針・文脈を定義する。
-全ての作業の前にこのファイルを読み、全ての方針に従うこと。
-
----
+# CLAUDE.md
 
 ## プロジェクト概要
-MoneyNote Web - Web版家計簿管理アプリ（モノレポ構成）
-マルチアカウント・マルチ帳簿対応。PC大画面を活かした3ペインレイアウト。
-
-## リポジトリ構成（モノレポ）
-- backend/   ← Spring Boot 3.x / Java 24
-- frontend/  ← Next.js 14 / TypeScript
-
----
+MoneyNote Web - モノレポ（`backend/` Spring Boot 3.x / Java 24、`frontend/` Next.js 14 / TypeScript）
+マルチアカウント・マルチ帳簿。PC大画面3ペインレイアウト。
 
 ## 技術スタック
+**Backend**: Spring Boot 3.x, Java 24, Spring Security+JWT, Spring AI+Claude API, JPA+Hibernate, PostgreSQL 16, Flyway, Redis 7, JUnit5+Testcontainers+MockMvc
+**Frontend**: Next.js 14, TypeScript, Tailwind CSS, Zustand, React Hook Form+Zod, Recharts, Jest+RTL
 
-### Backend
-- Spring Boot 3.x / Java 24
-- Spring Security + JWT
-  - アクセストークン: 15分
-  - リフレッシュトークン: 7日（Redis で管理）
-- Spring AI + Claude API（モック切替対応）
-- Spring Data JPA + Hibernate + PostgreSQL 16
-- Flyway（DBマイグレーション）
-- Redis 7（セッション・キャッシュ・レート制限）
-- Apache Commons CSV
-- JUnit5 + Testcontainers + MockMvc
-
-### Frontend
-- Next.js 14 / TypeScript / Tailwind CSS
-- Zustand（状態管理）
-- React Hook Form + Zod（フォーム・バリデーション）
-- Recharts（グラフ）
-- Jest + React Testing Library
-
----
-
-## ID生成規則
-全テーブルのPKは文字列型。アプリ側で以下のプレフィックス付き一意文字列を生成する。
-ただしユーザーIDのみ、ユーザーが任意に入力する（例: tanaka_01）。
-- 帳簿:          ldg_{12桁}
-- 帳簿権限:      lperm_{12桁}
-- カテゴリ:      cat_{12桁}
-- 明細:          txn_{12桁}
-- 固定費:        fix_{12桁}
-- 予算:          bgt_{12桁}
-- AIキャッシュ:  aic_{12桁}
-
----
+## ID生成規則（PKはアプリ側生成・文字列型。ユーザーIDのみユーザー入力）
+`ldg_` 帳簿 / `lperm_` 帳簿権限 / `cat_` カテゴリ / `txn_` 明細 / `fix_` 固定費 / `bgt_` 予算 / `aic_` AIキャッシュ
 
 ## アーキテクチャ原則
-1. レイヤードアーキテクチャを厳守: Controller → Service → Repository
-2. ドメインロジックはServiceに集約（Controller・Repositoryに書かない）
-3. 全APIは /api/v1/ プレフィックスを付ける
-4. 全 /api/v1/ledgers/{ledgerId}/* エンドポイントで帳簿アクセス制御を実装する
-5. AIの呼び出しはモック切替可能にする（application-dev.yml の ai.mock=true）
-
----
+1. Controller → Service → Repository を厳守（レイヤー越え禁止）
+2. ドメインロジックはServiceに集約
+3. 全APIに `/api/v1/` プレフィックス
+4. 全 `/api/v1/ledgers/{ledgerId}/*` でDBアクセス制御（権限なし403）
+5. AI呼び出しはモック切替対応（`ai.mock=true` で Claude API を回避）
 
 ## セキュリティ必須ルール
-- パスワード: BCrypt 強度12でハッシュ化
-- JWT: アクセストークン15分 / リフレッシュトークン7日
-  - アクセストークンはレスポンスボディで返す
-  - リフレッシュトークンはHttpOnly・SameSite=Strictのcookieで返す
-  - JWT_SECRET は `openssl rand -base64 64` で生成した256bit以上のランダム文字列を使用すること
-  - リフレッシュトークンをBearerトークンとしてAPIアクセスに使用できないよう type=ACCESS クレームを検証すること
-- 帳簿アクセス: ログインユーザーが帳簿の権限を持つか必ずDBで検証。権限なしは403を返す
-- ログイン失敗: 同一IPから5回失敗で15分ロック（Redisで管理）
-- SQLインジェクション: JPQLまたはCriteriaAPIを使用（ネイティブSQL禁止）
-- 機密情報（パスワード・トークン）をログに出力しない
-- セキュリティ変更時は理由をコメントに記載する
-
----
+- BCrypt強度12 / JWT: アクセス15分（Bodyで返す）・リフレッシュ7日（HttpOnly Cookie SameSite=Strict）
+- `type=ACCESS` クレーム検証必須（リフレッシュトークンのBearer悪用防止）
+- 帳簿アクセスは必ずDBで権限確認。権限なし403
+- ログイン失敗: 同一IP 5回で15分ロック（Redis）
+- JPQL/CriteriaAPI使用（ネイティブSQL禁止）。機密情報をログ出力禁止
+- セキュリティ変更時はコメントに理由を記載
 
 ## コーディング規約
-
-### Java
-- クラス名: UpperCamelCase
-- メソッド名・変数名: lowerCamelCase
-- 定数: UPPER_SNAKE_CASE
-- パッケージ: com.example.moneynote.{layer}.{domain}
-- 例外: カスタム例外クラスを使う（RuntimeException直接使用禁止）
-  - ResourceNotFoundException（404）
-  - AccessDeniedException（403）
-  - ValidationException（400）
-  - ExternalApiException（502）
-- レスポンス形式: { "data": {...}, "error": null, "timestamp": "..." }
-- エラー形式: { "data": null, "error": { "code": "E001", "message": "..." }, "timestamp": "..." }
-- タイプ・区分はJava側Enum / DB側VARCHARで管理する
-
-### TypeScript
-- any型の使用禁止
-- コンポーネント: アロー関数で定義
-- ESLint + Prettier の設定に従う
-- APIクライアント: lib/api/ に集約
-
----
+**Java例外**: `ResourceNotFoundException(404)` / `AccessDeniedException(403)` / `ValidationException(400)` / `ExternalApiException(502)`
+**レスポンス**: `{"data":{...},"error":null,"timestamp":"..."}` / エラー: `{"data":null,"error":{"code":"E001","message":"..."},"timestamp":"..."}`
+**TypeScript**: any型禁止 / コンポーネントはアロー関数 / APIクライアントは `lib/api/` に集約
 
 ## テスト必須ルール
-- 全Serviceクラスに対してJUnit5テストを作成する
-- DBを使うテストはTestcontainersを使用する
-- MockMvcで全APIエンドポイントのテストを作成する
-- テストには帳簿アクセス制御（他ユーザーが403になること）を含める
-- テストカバレッジ目標: 80%以上
-- テストなしの実装は行わない
+全ServiceにJUnit5 / DBテストはTestcontainers / MockMvcで全API / 帳簿アクセス制御テスト含む / カバレッジ80%以上 / テストなし実装禁止
 
----
+## エージェント行動ルール
+**会話再開時**: `docs/CURRENT_STATUS.md` の「コンテキストリフレッシュ後の再開手順」を参照して git 状態を確認する
+**実装前**: CLAUDE.md → `docs/CURRENT_STATUS.md` → 設計書（`docs/`配下）の順で読む。設計書なしは `/design` で出力し承認を待つ
+**MCP活用**: コード実装・検索時は serena を使う（呼出前に `initial_instructions` 必須）。ライブラリ実装時は context7 で最新ドキュメントを確認する。新規 TODO は GitHub MCP で Issues 登録し `TODO.md` に番号を記録する。詳細: `docs/MCP_GUIDE.md`
+**自律実行OK**: ファイル操作 / `./gradlew test` / `npm test` / `docker compose up -d --build` / `seed.ps1`
+**禁止**: コミット・プッシュ（人間のみ）/ テストなし実装 / any型（TypeScript）
+**エラー時**: 原因・影響範囲・修正方針を先に説明してから修正する
+**Gate 3後**: `docs/CURRENT_STATUS.md` を更新（完了Stepのステータス・現在の状態・技術的決定事項・注意点）してからコミットへ
 
-## エージェントの自律的な行動ルール
+## よくある行き詰まり
+- Testcontainers失敗 → Docker Desktop起動・WSL2統合確認
+- Spring AI エラー → `docker-compose.yml` の `AI_MOCK: "true"` を確認
+- Flyway失敗 → `docker compose down -v && docker compose up -d --build`
+- CORS/接続エラー → `FRONTEND_URL` 環境変数・バックエンド `:8080` 起動確認
 
-### 自律的に実行してよい操作（確認不要）
-- ファイルの読み書き・作成・削除
-- ./gradlew build / ./gradlew test の実行
-- npm run build / npm test / npm run lint の実行
-- docker compose up -d --build / docker compose down の実行
-- seed.ps1 の実行（PowerShell -ExecutionPolicy Bypass -File .\seed.ps1）
-
-### 実装前に必ず行うこと
-1. このファイル（CLAUDE.md）を読む
-2. docs/CURRENT_STATUS.md を読んで現在の開発状況を把握する
-3. 実装対象の設計書（docs/配下）を読む
-4. 設計書がない場合は /design コマンドで設計書を先に出力し承認を待つ
-
-### 実装時のルール
-- 機能や画面の区分ごと・意味的・目的が類似したファイルはまとめて変更する
-- 実装とテストは必ずセットで作成する
-- 不明点があれば実装を止めて質問リストを出力する
-- エラー発生時: 原因・影響範囲・修正方針を先に説明してから修正する
-- Gate 3（動作確認）完了・コミット前に docs/CURRENT_STATUS.md を更新する
-  更新内容:
-    - 完了した Step のステータスを更新する
-    - 現在の状態セクションを更新する
-    - 新たな技術的決定事項があれば追記する
-    - 新たな注意点があれば追記する
-
-### やってはいけないこと
-- コミット・プッシュ（人間が行う）
-- 設計書がない状態での実装開始
-- テストなしの実装
-- any型の使用（TypeScript）
-
----
-
-## ローカル環境の起動方法
-
-### 初回セットアップ（1回だけ実行）
-```powershell
-# mkcert インストール（winget がない場合は https://github.com/FiloSottile/mkcert からダウンロード）
-winget install mkcert
-
-# ローカル CA 登録 + localhost 証明書生成（nginx/certs/ に出力）
-./setup-ssl.ps1
-```
-
-### 通常起動
+## 起動コマンド
 ```bash
-docker compose up -d --build  # 全サービス起動（ローカルの最新状態でビルドしてから起動）
-```
-```powershell
-# テストデータ投入・リセット（DB ダウン → 再起動 → データ投入まで自動）
-PowerShell -ExecutionPolicy Bypass -File .\seed.ps1
-```
-```
-# アクセス先
-# フロント:    https://localhost
-# API/Swagger: https://localhost/swagger-ui.html
-# メール:      http://localhost:8025
+docker compose up -d --build                                    # 通常起動
+powershell -ExecutionPolicy Bypass -File seed.ps1               # DBリセット＋データ投入
+SPRING_PROFILES_ACTIVE=prod docker compose up -d --build        # 本番プロファイルで確認
+# アクセス: https://localhost | https://localhost/swagger-ui.html | http://localhost:8025
 ```
 
-### 本番プロファイルで起動する場合（ローカル確認用）
-```bash
-# .env の SPRING_PROFILES_ACTIVE=prod に変更するか、environment を上書きする
-SPRING_PROFILES_ACTIVE=prod docker compose up -d --build
-```
-
----
-
-## よくある行き詰まりと対処法
-
-### Testcontainersでテストが失敗する場合
-→ Docker Desktopが起動しているか確認。WSL2統合が有効か確認。
-
-### Spring AI / Claude APIでエラーが出る場合
-→ application-dev.yml の ai.mock=true に変更してモックで代替する。
-
-### Flywayマイグレーションが失敗する場合
-→ docker compose down -v でボリュームを削除してから docker compose up -d --build で再起動する。
-
-### フロントエンドでAPI接続エラーが出る場合
-→ CORS設定を確認。バックエンドが :8080 で起動しているか確認。
-
----
-
-## ブランチ戦略（Git Flow）
-
-### ブランチ構成
-```
-main      ← 完成・安定版のみ。直接コミット禁止
-develop   ← 開発の統合ブランチ。各Stepのマージ先
- └── feature/step{番号}-{内容を英語で簡潔に}
-```
-
-### ブランチ命名規則
-```
-feature/step1-project-scaffold
-feature/step2-db-migration
-feature/step3-auth-api
-feature/step4-auth-frontend
-feature/step5-ledger
-...
-```
-
-### 運用フロー
-```
-1. develop から feature ブランチを切る
-   git checkout develop
-   git checkout -b feature/step{番号}-{内容}
-
-2. Claude Code で実装・テスト・動作確認を進める
-
-3. Gate 3（ブラウザ動作確認）完了後に develop へマージ
-   git checkout develop
-   git merge --no-ff feature/step{番号}-{内容}
-   git branch -d feature/step{番号}-{内容}
-   git push origin develop
-
-4. 複数Stepが安定したら main へマージしてタグを打つ
-   git checkout main
-   git merge --no-ff develop
-   git tag v0.x.0
-   git push origin main --tags
-```
-
-### main へのマージタイミング（目安）
-```
-v0.1.0 ← Step 1〜4 完了（認証・帳簿が動く状態）
-v0.2.0 ← Step 5〜7 完了（明細・ダッシュボードが動く状態）
-v0.3.0 ← Step 8〜11 完了（レポート・予算・CSV・AIが動く状態）
-v0.4.0 ← Step 12〜13 完了（設定・セキュリティ・エラーハンドリング）
-v0.5.0 ← Step 14〜15 完了（MCP導入・設定ファイル最適化）
-v0.6.0 ← Step 16 完了（品質仕上げ）
-v1.0.0 ← Step 17 完了（初回デプロイ設定：EC2 + Docker Compose）
-v1.1.0 ← Step 18 完了（CI/CDパイプライン構築）
-v1.2.0 ← Step 19 完了（ECR + ECS Fargate 移行）
-v1.3.0 ← Step 20 完了（RDS + ElastiCache 移行）
-v1.4.0 ← Step 21 完了（SES・Secrets Manager 追加）
-```
-
-### コミットメッセージの規則
-```
-feat: 新機能の追加
-fix: バグ修正
-test: テストの追加・修正
-refactor: リファクタリング
-docs: ドキュメントの更新
-chore: 設定ファイル・依存関係の更新
-
-例:
-feat: Add JWT authentication API
-fix: Fix ledger access control bug
-test: Add transaction service unit tests
-```
-
----
-
-## カスタムコマンドの活用・連携フロー
-
-### Step 内の標準的な進め方
-```
-【Step 開始】feature ブランチを切る
-    │
-    ▼
-/design（アーキテクト）
-    設計書・ER図・API仕様を出力
-    │
-    ▼
-【Gate 1：設計を確認して「OK」と入力】
-    │
-    ├──→ バックエンドがある場合
-    │        /implement（バックエンドエンジニア）
-    │            Entity・Service・Controller・テストを実装
-    │            ./gradlew test を自動実行してグリーン確認
-    │
-    ├──→ フロントエンドがある場合
-    │        /frontend（フロントエンドエンジニア）
-    │            コンポーネント・ページ・APIクライアントを実装
-    │            npm test を自動実行してグリーン確認
-    │
-    ▼
-【Gate 2：テストがグリーンか確認】
-    │
-    ▼
-/review（シニアレビュアー）
-    Critical・Major・Minor の指摘リストを出力
-    │
-    ▼
-【Critical・Major があれば】
-    /refactor（リファクタエンジニア）
-        指摘箇所を修正・テスト再実行
-    │
-    ▼
-【Gate 3：ブラウザで動作確認】
-    seed.ps1 でリセットして再確認
-    │
-    ▼
-【人間が git commit & push → develop へマージ】
-    │
-    ▼
-【次の Step へ】
-```
-
-### その他のロールの使いどころ
-| コマンド | 使うタイミング |
-|---|---|
-| `/security` | Step 13（セキュリティ強化）または気になった時 |
-| `/test` | カバレッジが足りないと気づいた時 |
-| `/ops` | エラーが解決できない時・CI構築・ドキュメント生成時 |
-
----
-
-## MCP サーバーの運用方針
-
-### 接続中の MCP サーバー
-| MCP | 用途 |
-|---|---|
-| serena | シンボリック検索・クロスファイル編集（必要な時のみ使用） |
-| context7 | 最新ライブラリドキュメントの参照 |
-| github | Issue・PR管理 |
-
-### serena 運用方針
-あらゆる場面で serena を戦略的に活用し、トークンの最大効率化と回答精度維持を両立しつつ構造化された問題解決を実現する
-効率向上が見込める場面では必ず serena を活用する
-具体的な活用の一例は以下の通り:
-- frontend/backend開発・修正・デバッグ・リファクタ
-- APIバージョニングとドキュメント化
-- プロジェクトアーキテクチャのセットアップ
-- テスト
-- CI/CDパイプラインの実装
-
-### context7 の運用
-ライブラリの API・設定・バージョン依存の実装をする際は
-必ず use context7 で最新ドキュメントを確認してから実装する。
-例: Spring AI・Next.js・Recharts 等のライブラリを使う実装
-
-### GitHub MCP の使い方
-- 新しい TODO・改善点は GitHub Issues に登録する
-- Issue にラベルを付けて管理する（enhancement・bug・security等）
-- コミット前に関連 Issue を確認する
-
----
-
-## コンテキストリフレッシュ後の再開手順
-/compact 実行後または会話を再開する際は以下を必ず実行すること:
-```bash
-# 1. 現在のブランチを確認する
-git branch
-
-# 2. 直近のコミット履歴を確認する
-git log --oneline -5
-
-# 3. 未コミットファイルを確認する
-git status
-
-# 4. 現在の開発状況を確認する
-cat docs/CURRENT_STATUS.md
-```
-
-確認完了後「コンテキストを復元しました。現在は〇〇ブランチで〇〇の作業中です。」と報告すること。
+## 詳細ドキュメント
+- 開発状況・再開手順: `docs/CURRENT_STATUS.md`
+- ブランチ戦略・コミット規則: `docs/BRANCH_STRATEGY.md`
+- リリース計画: `docs/RELEASE_PLAN.md`
+- MCP運用方針・コマンド一覧: `docs/MCP_GUIDE.md`
+- システム構成・技術スタック・パッケージ構成: `docs/architecture.md`
+- コマンド実装: `.claude/commands/`

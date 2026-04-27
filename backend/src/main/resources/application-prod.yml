@@ -16,6 +16,9 @@ spring:
           starttls:
             enable: true
 
+ai:
+  mock: false  # 本番環境では Claude API を使用する
+
 app:
   cookie:
     # セキュリティ: 本番環境は HTTPS のため Secure フラグを強制する
@@ -24,3 +27,8 @@ app:
     hsts:
       # セキュリティ: 本番環境では HSTS を有効化して HTTPS を強制する（max-age=1年）
       enabled: true
+
+logging:
+  level:
+    root: WARN
+    com.example.moneynote: INFO
