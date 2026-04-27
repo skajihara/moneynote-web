@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__initial_instructions",
+      "mcp__serena__list_memories",
+      "Edit(/.claude/skills/test-patterns/**)",
+      "Edit(/.claude/skills/db-migration/**)",
+      "Bash(where python3 *)",
+      "Bash(where py *)",
+      "Bash(where python *)",
+      "Bash(ls \"/c/Python*/\")",
+      "Read(//c/Program Files/**)",
+      "Bash(where jq *)",
+      "Bash(where node *)",
+      "Bash(bash .claude/hooks/check-migration-branch.sh)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Edit(/.claude/skills/prompt-tuning/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks"
+    ]
+  }
+}
