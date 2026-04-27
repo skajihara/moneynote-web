@@ -2,9 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --theme-color: #4A90D9;
+}
+
 @layer base {
   body {
     font-size: 14px;
+    font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
     @apply text-gray-800 antialiased;
+  }
+}
+
+@layer utilities {
+  .btn-theme {
+    background-color: var(--theme-color);
+    color: white;
+    transition: filter 150ms;
+  }
+  .btn-theme:hover:not(:disabled) {
+    filter: brightness(0.88);
+  }
+  .btn-theme:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .text-theme {
+    color: var(--theme-color);
+  }
+  .border-theme {
+    border-color: var(--theme-color);
+  }
+  .bg-theme-light {
+    background-color: color-mix(in srgb, var(--theme-color) 10%, white);
   }
 }

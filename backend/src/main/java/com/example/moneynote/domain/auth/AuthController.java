@@ -28,6 +28,9 @@ public class AuthController {
     @Value("${app.jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
+
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
@@ -88,8 +91,10 @@ public class AuthController {
     // -------------------------------------------------------------------------
 
     private void addRefreshTokenCookie(HttpServletResponse response, String token) {
+        // セキュリティ: secure フラグは app.cookie.secure で環境別に切り替え（本番=true, 開発=false）
         ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, token)
                 .httpOnly(true)
+                .secure(cookieSecure)
                 .sameSite("Strict")
                 .path("/api/v1/auth")
                 .maxAge(Duration.ofMillis(refreshTokenExpiration))
@@ -100,6 +105,7 @@ public class AuthController {
     private void clearRefreshTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(REFRESH_COOKIE_NAME, "")
                 .httpOnly(true)
+                .secure(cookieSecure)
                 .sameSite("Strict")
                 .path("/api/v1/auth")
                 .maxAge(Duration.ZERO)
@@ -108,10 +114,7 @@ public class AuthController {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
+        // セキュリティ: ForwardedHeaderFilter (HIGHEST_PRECEDENCE) が X-Forwarded-For を処理済みのため getRemoteAddr() で実 IP を取得できる
         return request.getRemoteAddr();
     }
 }

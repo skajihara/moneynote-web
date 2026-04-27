@@ -3,11 +3,16 @@ package com.example.moneynote.domain.ledger;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
+import com.example.moneynote.domain.aiadvicecache.AiAdviceCacheRepository;
+import com.example.moneynote.domain.budget.BudgetRepository;
+import com.example.moneynote.domain.category.CategoryRepository;
+import com.example.moneynote.domain.fixedtransaction.FixedTransactionRepository;
 import com.example.moneynote.domain.ledger.dto.LedgerRequest;
 import com.example.moneynote.domain.ledger.dto.LedgerResponse;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermission;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
 import com.example.moneynote.domain.ledgerpermission.PermissionType;
+import com.example.moneynote.domain.transaction.TransactionRepository;
 import com.example.moneynote.domain.user.User;
 import com.example.moneynote.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +32,11 @@ public class LedgerService {
     private final LedgerPermissionRepository ledgerPermissionRepository;
     private final UserRepository userRepository;
     private final LedgerAccessValidator accessValidator;
+    private final AiAdviceCacheRepository aiAdviceCacheRepository;
+    private final BudgetRepository budgetRepository;
+    private final TransactionRepository transactionRepository;
+    private final FixedTransactionRepository fixedTransactionRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * ログインユーザーがアクセス可能な帳簿一覧を取得する（所有または権限あり）。
@@ -49,7 +59,7 @@ public class LedgerService {
     }
 
     /**
-     * 帳簿を作成する。作成時にデフォルトカテゴリを自動生成する。
+     * 帳簿を作成する。
      */
     @Transactional
     public LedgerResponse createLedger(LedgerRequest request, String userId) {
@@ -107,18 +117,33 @@ public class LedgerService {
         if (request.getStartMonthOfYear() != null) {
             ledger.setStartMonthOfYear(request.getStartMonthOfYear().shortValue());
         }
+        ledger.setThemeColor(request.getThemeColor());
 
         return LedgerResponse.from(ledgerRepository.save(ledger));
     }
 
     /**
-     * 帳簿を論理削除する（is_active を false に更新）。アクセス権限を検証する。
+     * 帳簿と全関連データを物理削除する。
+     * FK制約の順序に従い: ai_cache → budgets → transactions → fixed_transactions
+     *                    → categories → ledger_permissions → ledger
      */
     @Transactional
     public void deleteLedger(String ledgerId, String userId) {
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
-        ledger.setActive(false);
-        ledgerRepository.save(ledger);
+        accessValidator.validate(ledgerId, userId);
+        cascadeDeleteLedger(ledgerId);
     }
 
+    /**
+     * 帳簿に紐づく全データをFK順に削除してから帳簿本体を削除する。
+     * UserService.deleteAccount からも呼び出せるようパッケージスコープで公開する。
+     */
+    public void cascadeDeleteLedger(String ledgerId) {
+        aiAdviceCacheRepository.deleteByLedgerLedgerId(ledgerId);
+        budgetRepository.deleteByLedgerLedgerId(ledgerId);
+        transactionRepository.deleteByLedgerLedgerId(ledgerId);
+        fixedTransactionRepository.deleteByLedgerLedgerId(ledgerId);
+        categoryRepository.deleteByLedgerLedgerId(ledgerId);
+        ledgerPermissionRepository.deleteByLedgerLedgerId(ledgerId);
+        ledgerRepository.deleteById(ledgerId);
+    }
 }

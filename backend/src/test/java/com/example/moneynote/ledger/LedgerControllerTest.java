@@ -240,6 +240,20 @@ class LedgerControllerTest {
     }
 
     @Test
+    void updateLedger_withThemeColor_success() throws Exception {
+        String ledgerId = createLedger(token1, "カラーテスト");
+
+        mockMvc.perform(put("/api/v1/ledgers/" + ledgerId)
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "ledgerName", "カラーテスト",
+                                "themeColor", "#FF6B6B"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.themeColor").value("#FF6B6B"));
+    }
+
+    @Test
     void updateLedger_otherUser_returns403() throws Exception {
         String ledgerId = createLedger(token1, "user1 帳簿");
 
@@ -277,6 +291,46 @@ class LedgerControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void deleteLedger_cascadesRelatedData() throws Exception {
+        // register 経由で帳簿＋デフォルトカテゴリを作成する
+        String ledgerId = registerAndGetLedgerId("user3", "user3@example.com");
+        String token3 = jwtTokenProvider.generateAccessToken("user3");
+
+        // カテゴリIDを取得する
+        String catBody = mockMvc.perform(get("/api/v1/ledgers/" + ledgerId + "/categories")
+                        .header("Authorization", "Bearer " + token3))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String categoryId = objectMapper.readTree(catBody).at("/data/0/categoryId").asText();
+
+        // 明細を1件作成する
+        jdbcTemplate.update(
+                "INSERT INTO transactions(transaction_id, ledger_id, category_id, transaction_type, amount, transaction_date, is_fixed_origin, created_at, updated_at) " +
+                "VALUES (?, ?, ?, 'EXPENSE', 1000, '2026-04-01', false, NOW(), NOW())",
+                "txn_cascade_test", ledgerId, categoryId);
+
+        // 帳簿削除
+        mockMvc.perform(delete("/api/v1/ledgers/" + ledgerId)
+                        .header("Authorization", "Bearer " + token3))
+                .andExpect(status().isOk());
+
+        // 明細が削除されていることを確認する
+        int txCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM transactions WHERE ledger_id = ?", Integer.class, ledgerId);
+        org.junit.jupiter.api.Assertions.assertEquals(0, txCount, "帳簿削除後に明細が残っている");
+
+        // カテゴリが削除されていることを確認する
+        int catCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM categories WHERE ledger_id = ?", Integer.class, ledgerId);
+        org.junit.jupiter.api.Assertions.assertEquals(0, catCount, "帳簿削除後にカテゴリが残っている");
+
+        // 帳簿権限が削除されていることを確認する
+        int permCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM ledger_permissions WHERE ledger_id = ?", Integer.class, ledgerId);
+        org.junit.jupiter.api.Assertions.assertEquals(0, permCount, "帳簿削除後に権限が残っている");
+    }
+
     // =========================================================================
     // helpers
     // =========================================================================
@@ -288,6 +342,24 @@ class LedgerControllerTest {
                 .email(email)
                 .passwordHash(passwordEncoder.encode("Password1"))
                 .build());
+    }
+
+    /** register API でユーザーを登録し、デフォルト帳簿の ledgerId を返す。 */
+    private String registerAndGetLedgerId(String userId, String email) throws Exception {
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "userId", userId,
+                                "userName", "テストユーザー",
+                                "email", email,
+                                "password", "Password1"))))
+                .andExpect(status().isCreated());
+        String token = jwtTokenProvider.generateAccessToken(userId);
+        String body = mockMvc.perform(get("/api/v1/ledgers")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(body).at("/data/0/ledgerId").asText();
     }
 
     /** 帳簿を作成して ledgerId を返す。 */

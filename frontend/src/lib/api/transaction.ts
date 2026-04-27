@@ -70,3 +70,24 @@ export const deleteTransaction = (
       body: JSON.stringify({ scope }),
     }
   );
+
+export type TransactionSearchParams = {
+  keyword?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export const searchTransactions = (
+  ledgerId: string,
+  params: TransactionSearchParams
+) => {
+  const query = new URLSearchParams();
+  if (params.keyword) query.set('keyword', params.keyword);
+  if (params.categoryId) query.set('categoryId', params.categoryId);
+  if (params.startDate) query.set('startDate', params.startDate);
+  if (params.endDate) query.set('endDate', params.endDate);
+  return apiClient<ApiResponse<Transaction[]>>(
+    `/api/v1/ledgers/${ledgerId}/transactions/search?${query.toString()}`
+  );
+};

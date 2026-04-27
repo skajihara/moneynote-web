@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useLedgerStore } from '@/stores/ledgerStore';
 import {
   ComposedChart,
   BarChart,
@@ -348,7 +349,7 @@ const AdviceCard = ({ ledgerId, period, adviceType, label, description }: Advice
       <button
         onClick={handleClick}
         disabled={loading}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        className="w-full rounded-md px-4 py-2 text-sm font-medium btn-theme disabled:opacity-50"
         aria-label={label}
       >
         {loading
@@ -383,6 +384,8 @@ const AdviceCard = ({ ledgerId, period, adviceType, label, description }: Advice
 const AiContent = () => {
   const params = useParams<{ ledgerId: string }>();
   const ledgerId = params.ledgerId;
+  const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
+  const ledger = getSelectedLedger();
 
   const [period, setPeriod] = useState<PeriodType>('ONE_MONTH');
   const [summary, setSummary] = useState<AiSummary | null>(null);

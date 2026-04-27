@@ -245,6 +245,28 @@ class CategoryControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void deleteCategory_nullifiesTransactionCategoryId() throws Exception {
+        String categoryId = createCategory(token1, ledgerId1, "削除後NULL化対象", "EXPENSE");
+
+        // カテゴリを参照する明細を直接挿入する
+        jdbcTemplate.update(
+                "INSERT INTO transactions(transaction_id, ledger_id, category_id, transaction_type, amount, transaction_date, is_fixed_origin, created_at, updated_at) " +
+                "VALUES (?, ?, ?, 'EXPENSE', 500, '2026-04-01', false, NOW(), NOW())",
+                "txn_nullify_test", ledgerId1, categoryId);
+
+        // カテゴリを削除する
+        mockMvc.perform(delete("/api/v1/ledgers/" + ledgerId1 + "/categories/" + categoryId)
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk());
+
+        // 明細の category_id が NULL になっていることを確認する
+        String catIdInDb = jdbcTemplate.queryForObject(
+                "SELECT category_id FROM transactions WHERE transaction_id = ?",
+                String.class, "txn_nullify_test");
+        org.junit.jupiter.api.Assertions.assertNull(catIdInDb, "カテゴリ削除後に明細のcategory_idがNULLになっていない");
+    }
+
     // =========================================================================
     // PUT /api/v1/ledgers/{ledgerId}/categories/order
     // =========================================================================

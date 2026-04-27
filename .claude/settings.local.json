@@ -1,12 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File /tmp/convert_bom.ps1)",
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File seed.ps1)",
-      "Bash(mkdir -p /c/Users/ruri3/git/moneynote-web/frontend/src/app/\\\\\\(app\\\\\\)/ledgers/\\\\[ledgerId\\\\]/reports/__tests__)",
-      "Bash(mkdir -p /c/Users/ruri3/git/moneynote-web/frontend/src/app/\\\\\\(app\\\\\\)/ledgers/\\\\[ledgerId\\\\]/categories/__tests__)",
-      "Bash(xargs ls:*)",
-      "Bash(powershell.exe -File /c/Users/ruri3/git/moneynote-web/seed.ps1)"
+      "mcp__serena__initial_instructions",
+      "mcp__serena__list_memories",
+      "Edit(/.claude/skills/test-patterns/**)",
+      "Edit(/.claude/skills/db-migration/**)",
+      "Bash(where python3 *)",
+      "Bash(where py *)",
+      "Bash(where python *)",
+      "Bash(ls \"/c/Python*/\")",
+      "Read(//c/Program Files/**)",
+      "Bash(where jq *)",
+      "Bash(where node *)",
+      "Bash(bash .claude/hooks/check-migration-branch.sh)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Edit(/.claude/skills/prompt-tuning/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks"
     ]
   }
 }

@@ -88,6 +88,7 @@ class AiControllerTest {
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtTokenProvider jwtTokenProvider;
     @Autowired org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Autowired org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     private String token1;
     private String token2;
@@ -98,6 +99,11 @@ class AiControllerTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
+        // AI レート制限キーをリセット（テスト間の干渉を防ぐ）
+        var aiKeys = redisTemplate.keys("ai:*");
+        if (aiKeys != null && !aiKeys.isEmpty()) {
+            redisTemplate.delete(aiKeys);
+        }
 
         User user1 = userRepository.save(User.builder()
                 .userId("user1").userName("ユーザー1").email("u1@example.com")
@@ -295,7 +301,7 @@ class AiControllerTest {
         String adviceBody   = objectMapper.writeValueAsString(
                 Map.of("period", "ONE_MONTH", "adviceType", "ADVICE"));
 
-        // INSIGHT 呼び出し
+        // INSIGHT 呼び出し（1回目: rate limit count=1）
         mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/ai/analyze")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -303,7 +309,13 @@ class AiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.fromCache").value(false));
 
-        // ADVICE は別キャッシュ → fromCache=false
+        // rate limit キーをリセットして ADVICE の AI 呼び出しを許可する
+        var rateLimitKeys = redisTemplate.keys("ai:analyze:1m:*");
+        if (rateLimitKeys != null && !rateLimitKeys.isEmpty()) {
+            redisTemplate.delete(rateLimitKeys);
+        }
+
+        // ADVICE は別キャッシュ → fromCache=false（INSIGHT のキャッシュは使われない）
         mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/ai/analyze")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -411,6 +423,36 @@ class AiControllerTest {
                         .header("Authorization", "Bearer " + token1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.breakdown.budgetScore").value(25));
+    }
+
+    // =========================================================================
+    // Rate limit
+    // =========================================================================
+
+    @Test
+    void analyze_rateLimitedAfter1Request_returns429() throws Exception {
+        // /ai/analyze は 1分1回の制限。キャッシュヒットは制限対象外のため
+        // 異なる adviceType（= キャッシュミス確定）で2回呼び出す
+        String insightBody = objectMapper.writeValueAsString(
+                Map.of("period", "ONE_MONTH", "adviceType", "INSIGHT"));
+        String adviceBody = objectMapper.writeValueAsString(
+                Map.of("period", "ONE_MONTH", "adviceType", "ADVICE"));
+
+        // 1回目: INSIGHT（キャッシュミス）→ rate limit count=1 → OK
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/ai/analyze")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(insightBody))
+                .andExpect(status().isOk());
+
+        // 2回目: ADVICE（キャッシュミス）→ rate limit count=2 > 1 → 429
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/ai/analyze")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adviceBody))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("E429"))
+                .andExpect(header().exists("Retry-After"));
     }
 
     // =========================================================================

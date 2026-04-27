@@ -12,22 +12,28 @@
       "Bash(echo *)",
       "Bash(find *)",
       "Bash(grep *)",
+      "Bash(awk *)",
+      "Bash(mkdir *)",
       "Bash(curl *)",
-      "Bash(docker compose up*)",
-      "Bash(docker compose down)",
-      "Bash(docker compose ps*)",
-      "Bash(docker compose logs*)",
-      "Bash(docker compose exec*)",
-      "Bash(docker ps*)",
-      "Bash(./gradlew *)",
-      "Bash(npm *)",
-      "Bash(node *)",
       "Bash(sleep *)",
       "Bash(base64 *)",
-      "Bash(powershell.exe -ExecutionPolicy Bypass -File /c/Users/ruri3/git/moneynote-web/seed.ps1)",
-      "Bash(python3 -m json.tool)",
-      "Bash(npx jest *)",
-      "Bash(awk -F'\"' '{sum+=$2} END{print \"Total tests: \"sum}')"
+      "Bash(python3 *)",
+      "Bash(python *)",
+      "Bash(git *)",
+      "Bash(docker compose *)",
+      "Bash(docker ps*)",
+      "Bash(docker info)",
+      "Bash(docker context *)",
+      "Bash(./gradlew *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(mkcert *)",
+      "Bash(winget install mkcert)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File seed.ps1)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File setup-ssl.ps1)",
+      "Bash(gh label *)",
+      "Bash(where gh *)"
     ],
     "deny": [
       "Bash(git commit*)",
@@ -55,6 +61,12 @@
       "Bash(npm publish*)",
       "Bash(npx create-*)",
       "Bash(* > /dev/null 2>&1 &)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\components",
+      "C:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app",
+      "C:\\Users\\ruri3\\git\\moneynote-web\\nginx",
+      "C:\\Users\\ruri3\\git\\moneynote-web\\.claude"
     ]
   },
   "rules": [
@@ -65,6 +77,24 @@
     "セキュリティに関わる変更は理由をコメントに記載する",
     "日本語でコメント・ドキュメントを記述する",
     "エラー発生時は原因・影響範囲・修正方針を説明してから修正する",
-    "コミット・プッシュはユーザーが行うため実行しない"
-  ]
+    "コミット・プッシュはユーザーが行うため実行しない",
+    "会話中に同じコマンド・skill で期待外の動作・手動修正が2回以上発生した場合、会話の最後に該当プロンプトの prompt-tuning 実施をユーザーに提案すること"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/check-env-write.js"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-migration-branch.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

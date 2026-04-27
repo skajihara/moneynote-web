@@ -1,6 +1,9 @@
 package com.example.moneynote.domain.ai;
 
+import com.example.moneynote.common.ratelimit.AiRateLimiter;
 import com.example.moneynote.common.util.IdGenerator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.ai.dto.*;
 import com.example.moneynote.domain.aiadvicecache.AdviceType;
@@ -40,6 +43,7 @@ public class AiService {
     private final AiAdviceCacheRepository aiAdviceCacheRepository;
     private final LedgerAccessValidator accessValidator;
     private final ChatClient.Builder chatClientBuilder;
+    private final AiRateLimiter aiRateLimiter;
 
     @Value("${ai.mock:false}")
     private boolean mockMode;
@@ -50,30 +54,37 @@ public class AiService {
 
     @Transactional(readOnly = true)
     public AiSummaryResponse getSummary(String ledgerId, PeriodType period, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        int startDay = ledger.getStartDayOfMonth();
 
         int months = monthCount(period);
-        YearMonth currentYM = YearMonth.now();
+        // 帳簿の月度開始日を考慮した「現在の月度」を起点にする
+        YearMonth currentYM = LedgerPeriodCalculator.getCurrentMonth(startDay);
         YearMonth startYM = currentYM.minusMonths(months - 1);
 
-        LocalDate from = startYM.atDay(1);
-        LocalDate to   = currentYM.atEndOfMonth();
+        LocalDateRange currentPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                currentYM.getYear(), currentYM.getMonthValue(), startDay);
+        LocalDateRange startPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                startYM.getYear(), startYM.getMonthValue(), startDay);
+
+        LocalDate from = startPeriod.from();
+        LocalDate to   = currentPeriod.to();
 
         List<Transaction> txList =
                 transactionRepository.findByLedgerIdAndDateRangeWithDetails(ledgerId, from, to);
 
         // ---------- monthlyTrend ----------
-        List<MonthlyTrendDto> monthlyTrend = buildMonthlyTrend(txList, startYM, months);
+        List<MonthlyTrendDto> monthlyTrend = buildMonthlyTrend(txList, startYM, months, startDay);
 
         // ---------- periodSummary ----------
         BigDecimal totalIncome  = sumType(txList, TransactionType.INCOME);
         BigDecimal totalExpense = sumType(txList, TransactionType.EXPENSE);
         BigDecimal netBalance   = totalIncome.subtract(totalExpense);
-        BigDecimal monthCount   = BigDecimal.valueOf(months);
+        BigDecimal monthCountBD = BigDecimal.valueOf(months);
         BigDecimal avgIncome    = months == 0 ? BigDecimal.ZERO
-                : totalIncome.divide(monthCount, 0, RoundingMode.HALF_UP);
+                : totalIncome.divide(monthCountBD, 0, RoundingMode.HALF_UP);
         BigDecimal avgExpense   = months == 0 ? BigDecimal.ZERO
-                : totalExpense.divide(monthCount, 0, RoundingMode.HALF_UP);
+                : totalExpense.divide(monthCountBD, 0, RoundingMode.HALF_UP);
         PeriodSummaryDto periodSummary =
                 new PeriodSummaryDto(totalIncome, totalExpense, netBalance, avgIncome, avgExpense);
 
@@ -83,15 +94,18 @@ public class AiService {
 
         // ---------- budgetComparison (current month only) ----------
         List<BudgetComparisonDto> budgetComparison =
-                buildBudgetComparison(ledgerId, txList, currentYM);
+                buildBudgetComparison(ledgerId, txList, currentYM, currentPeriod);
 
         // ---------- prevPeriodComparison ----------
         YearMonth prevStartYM = startYM.minusMonths(months);
         YearMonth prevEndYM   = startYM.minusMonths(1);
-        LocalDate prevFrom = prevStartYM.atDay(1);
-        LocalDate prevTo   = prevEndYM.atEndOfMonth();
+        LocalDateRange prevStartPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                prevStartYM.getYear(), prevStartYM.getMonthValue(), startDay);
+        LocalDateRange prevEndPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                prevEndYM.getYear(), prevEndYM.getMonthValue(), startDay);
         List<Transaction> prevTxList =
-                transactionRepository.findByLedgerIdAndDateRangeWithDetails(ledgerId, prevFrom, prevTo);
+                transactionRepository.findByLedgerIdAndDateRangeWithDetails(
+                        ledgerId, prevStartPeriod.from(), prevEndPeriod.to());
         BigDecimal prevIncome  = sumType(prevTxList, TransactionType.INCOME);
         BigDecimal prevExpense = sumType(prevTxList, TransactionType.EXPENSE);
         PrevPeriodComparisonDto prevPeriodComparison = new PrevPeriodComparisonDto(
@@ -115,53 +129,62 @@ public class AiService {
 
     @Transactional(readOnly = true)
     public AiScoreResponse getScore(String ledgerId, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        int startDay = ledger.getStartDayOfMonth();
 
-        YearMonth currentYM = YearMonth.now();
+        YearMonth currentYM = LedgerPeriodCalculator.getCurrentMonth(startDay);
         YearMonth prevYM    = currentYM.minusMonths(1);
 
         // 当月トランザクション
+        LocalDateRange currentPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                currentYM.getYear(), currentYM.getMonthValue(), startDay);
         List<Transaction> currentTxList =
                 transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                        ledgerId, currentYM.atDay(1), currentYM.atEndOfMonth());
+                        ledgerId, currentPeriod.from(), currentPeriod.to());
 
         // 直近3ヶ月（安定度計算用）: currentYM-2 〜 currentYM
         YearMonth startYM3 = currentYM.minusMonths(2);
+        LocalDateRange start3Period = LedgerPeriodCalculator.getMonthPeriod(
+                startYM3.getYear(), startYM3.getMonthValue(), startDay);
         List<Transaction> threeMoTxList =
                 transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                        ledgerId, startYM3.atDay(1), currentYM.atEndOfMonth());
+                        ledgerId, start3Period.from(), currentPeriod.to());
 
         // 当月予算
         List<Budget> currentBudgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                 ledgerId, (short) currentYM.getYear(), (short) currentYM.getMonthValue());
 
-        int currentScore = calculateScore(currentTxList, threeMoTxList, currentBudgets, currentYM);
-        ScoreBreakdownDto breakdown = buildBreakdown(currentTxList, threeMoTxList, currentBudgets, currentYM);
+        int currentScore = calculateScore(currentTxList, threeMoTxList, currentBudgets, currentYM, startDay);
+        ScoreBreakdownDto breakdown = buildBreakdown(currentTxList, threeMoTxList, currentBudgets, currentYM, startDay);
 
         // 先月スコア
+        LocalDateRange prevPeriod = LedgerPeriodCalculator.getMonthPeriod(
+                prevYM.getYear(), prevYM.getMonthValue(), startDay);
         List<Transaction> prevTxList =
                 transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                        ledgerId, prevYM.atDay(1), prevYM.atEndOfMonth());
+                        ledgerId, prevPeriod.from(), prevPeriod.to());
         YearMonth prevStart3 = prevYM.minusMonths(2);
+        LocalDateRange prevStart3Period = LedgerPeriodCalculator.getMonthPeriod(
+                prevStart3.getYear(), prevStart3.getMonthValue(), startDay);
         List<Transaction> prevThreeMoTxList =
                 transactionRepository.findByLedgerIdAndDateRangeWithDetails(
-                        ledgerId, prevStart3.atDay(1), prevYM.atEndOfMonth());
+                        ledgerId, prevStart3Period.from(), prevPeriod.to());
         List<Budget> prevBudgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                 ledgerId, (short) prevYM.getYear(), (short) prevYM.getMonthValue());
-        int prevScore = calculateScore(prevTxList, prevThreeMoTxList, prevBudgets, prevYM);
+        int prevScore = calculateScore(prevTxList, prevThreeMoTxList, prevBudgets, prevYM, startDay);
 
         String grade = scoreToGrade(currentScore);
         return new AiScoreResponse(currentScore, grade, breakdown, prevScore, currentScore - prevScore);
     }
 
     private int calculateScore(List<Transaction> monthTx, List<Transaction> threeMoTx,
-                               List<Budget> budgets, YearMonth ym) {
-        ScoreBreakdownDto bd = buildBreakdown(monthTx, threeMoTx, budgets, ym);
+                               List<Budget> budgets, YearMonth ym, int startDay) {
+        ScoreBreakdownDto bd = buildBreakdown(monthTx, threeMoTx, budgets, ym, startDay);
         return bd.balanceScore() + bd.budgetScore() + bd.savingsScore() + bd.stabilityScore();
     }
 
     private ScoreBreakdownDto buildBreakdown(List<Transaction> monthTx, List<Transaction> threeMoTx,
-                                             List<Budget> budgets, YearMonth ym) {
+                                             List<Budget> budgets, YearMonth ym, int startDay) {
         BigDecimal totalIncome  = sumType(monthTx, TransactionType.INCOME);
         BigDecimal totalExpense = sumType(monthTx, TransactionType.EXPENSE);
         BigDecimal netBalance   = totalIncome.subtract(totalExpense);
@@ -173,7 +196,6 @@ public class AiService {
         } else if (netBalance.compareTo(BigDecimal.ZERO) >= 0) {
             balanceScore = 25;
         } else {
-            // netBalance < 0 → 比例減点
             double ratio = netBalance.divide(totalIncome, 4, RoundingMode.HALF_UP).doubleValue();
             balanceScore = (int) Math.max(0, 25 * (1.0 + ratio));
         }
@@ -183,9 +205,10 @@ public class AiService {
         if (budgets.isEmpty()) {
             budgetScore = 25;
         } else {
-            // 当月のカテゴリ別実績
-            LocalDate from = ym.atDay(1);
-            LocalDate to   = ym.atEndOfMonth();
+            LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                    ym.getYear(), ym.getMonthValue(), startDay);
+            LocalDate from = period.from();
+            LocalDate to   = period.to();
             Map<String, BigDecimal> expByCat = new LinkedHashMap<>();
             for (Transaction t : monthTx) {
                 if (t.getTransactionType() == TransactionType.EXPENSE
@@ -202,15 +225,12 @@ public class AiService {
                              .divide(b.getAmount(), 2, RoundingMode.HALF_UP)
                              .doubleValue();
             }).average().orElse(0.0);
-            // 80%以下 → 25点、120%以上 → 0点
             budgetScore = (int) Math.max(0, Math.min(25, 25 * (120.0 - avgPct) / 40.0));
         }
 
-        // 3) 貯蓄率 (0〜25): (収支/収入)*100 が20%以上で満点
-        //    収入も支出もない（データなし）場合は中間点12を返す
+        // 3) 貯蓄率 (0〜25)
         int savingsScore;
         if (totalIncome.compareTo(BigDecimal.ZERO) == 0) {
-            // 支出もない場合はデータ不足として中間点、支出だけある場合は0点
             savingsScore = totalExpense.compareTo(BigDecimal.ZERO) == 0 ? 12 : 0;
         } else {
             double savingsRate = netBalance.multiply(BigDecimal.valueOf(100))
@@ -220,14 +240,15 @@ public class AiService {
                     : (int) (savingsRate / 20.0 * 25);
         }
 
-        // 4) 支出安定度 (0〜25): 3ヶ月の月別支出の変動係数
-        //    データのある月が2ヶ月未満の場合はデータ不足として中間点12を返す
+        // 4) 支出安定度 (0〜25): 3ヶ月の月別支出の変動係数（月度開始日を考慮）
         int stabilityScore;
         List<BigDecimal> monthlyExpenses = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             YearMonth m = ym.minusMonths(2 - i);
-            LocalDate mFrom = m.atDay(1);
-            LocalDate mTo   = m.atEndOfMonth();
+            LocalDateRange mRange = LedgerPeriodCalculator.getMonthPeriod(
+                    m.getYear(), m.getMonthValue(), startDay);
+            LocalDate mFrom = mRange.from();
+            LocalDate mTo   = mRange.to();
             BigDecimal exp = threeMoTx.stream()
                     .filter(t -> t.getTransactionType() == TransactionType.EXPENSE
                             && !t.getTransactionDate().isBefore(mFrom)
@@ -241,7 +262,6 @@ public class AiService {
         double mean = monthlyExpenses.stream()
                 .mapToDouble(BigDecimal::doubleValue).average().orElse(0.0);
         if (mean == 0.0 || nonZeroMonths < 2) {
-            // データなし or 1ヶ月分しかデータがない場合は中間点
             stabilityScore = nonZeroMonths == 0 ? 25 : 12;
         } else {
             double variance = monthlyExpenses.stream()
@@ -281,6 +301,9 @@ public class AiService {
                     c.getGeneratedAt(), true);
         }
 
+        // キャッシュミス時のみレート制限を適用する（キャッシュヒットは AI を呼ばないため制限しない）
+        aiRateLimiter.checkAnalyzeLimit(userId);
+
         // ---------- 集計データ取得 ----------
         AiSummaryResponse summary = getSummary(ledgerId, period, userId);
 
@@ -319,20 +342,22 @@ public class AiService {
     }
 
     private List<MonthlyTrendDto> buildMonthlyTrend(
-            List<Transaction> txList, YearMonth startYM, int months) {
-
-        Map<YearMonth, List<Transaction>> byYM = txList.stream()
-                .collect(Collectors.groupingBy(
-                        t -> YearMonth.from(t.getTransactionDate())));
+            List<Transaction> txList, YearMonth startYM, int months, int startDay) {
 
         List<MonthlyTrendDto> result = new ArrayList<>();
         for (int i = 0; i < months; i++) {
             YearMonth ym = startYM.plusMonths(i);
-            List<Transaction> txs = byYM.getOrDefault(ym, List.of());
+            LocalDateRange mRange = LedgerPeriodCalculator.getMonthPeriod(
+                    ym.getYear(), ym.getMonthValue(), startDay);
+            LocalDate mFrom = mRange.from();
+            LocalDate mTo   = mRange.to();
+            List<Transaction> txs = txList.stream()
+                    .filter(t -> !t.getTransactionDate().isBefore(mFrom)
+                            && !t.getTransactionDate().isAfter(mTo))
+                    .toList();
             BigDecimal inc = sumType(txs, TransactionType.INCOME);
             BigDecimal exp = sumType(txs, TransactionType.EXPENSE);
-            result.add(new MonthlyTrendDto(
-                    ym.toString(), inc, exp, inc.subtract(exp)));
+            result.add(new MonthlyTrendDto(ym.toString(), inc, exp, inc.subtract(exp)));
         }
         return result;
     }
@@ -359,15 +384,15 @@ public class AiService {
     }
 
     private List<BudgetComparisonDto> buildBudgetComparison(
-            String ledgerId, List<Transaction> allTxList, YearMonth currentYM) {
+            String ledgerId, List<Transaction> allTxList, YearMonth currentYM,
+            LocalDateRange currentPeriod) {
 
         List<Budget> budgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                 ledgerId, (short) currentYM.getYear(), (short) currentYM.getMonthValue());
         if (budgets.isEmpty()) return List.of();
 
-        // 当月の支出を categoryId でまとめる
-        LocalDate from = currentYM.atDay(1);
-        LocalDate to   = currentYM.atEndOfMonth();
+        LocalDate from = currentPeriod.from();
+        LocalDate to   = currentPeriod.to();
         Map<String, BigDecimal> expByCat = new LinkedHashMap<>();
         for (Transaction t : allTxList) {
             if (t.getTransactionType() == TransactionType.EXPENSE

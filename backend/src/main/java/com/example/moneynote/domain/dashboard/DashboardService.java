@@ -1,5 +1,7 @@
 package com.example.moneynote.domain.dashboard;
 
+import com.example.moneynote.common.util.LedgerPeriodCalculator;
+import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.budget.Budget;
 import com.example.moneynote.domain.budget.BudgetRepository;
@@ -19,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -41,9 +42,11 @@ public class DashboardService {
 
         Ledger ledger = accessValidator.validate(ledgerId, userId);
 
-        YearMonth ym = YearMonth.of(year, month);
-        LocalDate from = ym.atDay(1);
-        LocalDate to   = ym.atEndOfMonth();
+        // 帳簿の月度開始日を使って集計期間を算出する
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                year, month, ledger.getStartDayOfMonth());
+        LocalDate from = period.from();
+        LocalDate to   = period.to();
 
         // 当月の全明細（カテゴリ付きで取得）
         List<Transaction> monthlyTx =
@@ -78,7 +81,7 @@ public class DashboardService {
         BigDecimal initialBalance = ledger.getInitialBalance();
         BigDecimal currentBalance = initialBalance.add(allIncome).subtract(allExpense);
 
-        // carryOver: 月初前の残高
+        // carryOver: 月度開始日より前の残高
         List<Transaction> prevTx = transactionRepository.findByLedgerIdBeforeDate(ledgerId, from);
         BigDecimal prevIncome  = BigDecimal.ZERO;
         BigDecimal prevExpense = BigDecimal.ZERO;
@@ -98,7 +101,7 @@ public class DashboardService {
         // categoryBreakdown: EXPENSE のみ・金額降順・0円除外
         // =========================================================
         Map<String, BigDecimal> categoryAmountMap = new LinkedHashMap<>();
-        Map<String, Transaction> categoryRepMap = new LinkedHashMap<>();  // カテゴリ情報の代表取得
+        Map<String, Transaction> categoryRepMap = new LinkedHashMap<>();
 
         for (Transaction t : monthlyTx) {
             if (t.getTransactionType() != TransactionType.EXPENSE || t.getCategory() == null) {
@@ -139,7 +142,6 @@ public class DashboardService {
         List<Budget> budgets = budgetRepository.findByLedgerLedgerIdAndYearAndMonth(
                 ledgerId, (short) year, (short) month);
 
-        // 当月の支出を categoryId でまとめる（再利用）
         Map<String, BigDecimal> expenseByCat = new LinkedHashMap<>();
         for (Transaction t : monthlyTx) {
             if (t.getTransactionType() == TransactionType.EXPENSE && t.getCategory() != null) {

@@ -2,6 +2,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { CategoryBreakdown } from '@/types/dashboard';
+import { useAuthStore } from '@/stores/authStore';
 
 type Props = {
   data: CategoryBreakdown[];
@@ -11,12 +12,14 @@ type Props = {
 const fmt = (n: number) =>
   n.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' });
 
-const DEFAULT_COLORS = [
+const FALLBACK_COLORS = [
   '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
   '#FF9F40', '#C9CBCF', '#7BC8A4', '#E7E9ED', '#F67019',
 ];
 
 const CategoryPieChart = ({ data, size = 300 }: Props) => {
+  const themeColor = useAuthStore((s) => s.themeColor);
+
   if (data.length === 0) {
     return (
       <div
@@ -28,11 +31,14 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
     );
   }
 
+  // テーマカラーを先頭に置き、残りは固定パレットを使う
+  const defaultColors = [themeColor, ...FALLBACK_COLORS];
+
   const chartData = data.map((item) => ({
     name: item.categoryName,
     value: item.amount,
     percentage: item.percentage,
-    color: item.color ?? DEFAULT_COLORS[data.indexOf(item) % DEFAULT_COLORS.length],
+    color: item.color ?? defaultColors[data.indexOf(item) % defaultColors.length],
   }));
 
   return (

@@ -26,4 +26,8 @@ public class LedgerRequest {
     @Min(value = 1, message = "開始月は1〜12の範囲で入力してください")
     @Max(value = 12, message = "開始月は1〜12の範囲で入力してください")
     private Integer startMonthOfYear;
+
+    /** 省略可・帳簿のテーマカラー（CSS カラー値） */
+    @Size(max = 30, message = "テーマカラーは30文字以内で入力してください")
+    private String themeColor;
 }

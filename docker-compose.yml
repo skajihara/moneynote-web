@@ -1,4 +1,18 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
   db:
     image: postgres:16-alpine
     environment:
@@ -6,39 +20,67 @@ services:
       POSTGRES_USER: moneynote
       POSTGRES_PASSWORD: moneynote
     ports:
-      - "5432:5432"
+      # 開発ツール（DBクライアント等）用にローカルホストのみに公開する
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moneynote -d moneynote"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      # 開発ツール（redis-cli 等）用にローカルホストのみに公開する
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   mailhog:
     image: mailhog/mailhog
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
 
   backend:
     build: ./backend
-    ports:
-      - "8080:8080"
+    # ポートはホストに公開しない（nginx 経由でのみアクセス）
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      AI_MOCK: "true"
+    healthcheck:
+      # eclipse-temurin:24-jre-alpine には curl がないため wget を使用する
+      # /v3/api-docs は dev profile で有効化される Swagger エンドポイント
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v3/api-docs > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:3000"
+    # ポートはホストに公開しない（nginx 経由でのみアクセス）
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   postgres_data:

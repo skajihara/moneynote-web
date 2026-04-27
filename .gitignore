@@ -1,5 +1,7 @@
 # 環境変数（絶対にコミットしない）
 .env
+.env.*
+!.env.example
 
 # Java / Spring Boot
 build/
@@ -19,6 +21,12 @@ out/
 *.iml
 .vscode/settings.json
 
+# nginx SSL 証明書（mkcert で生成するため絶対にコミットしない）
+nginx/certs/*.pem
+
 # OS
 .DS_Store
 Thumbs.db
+
+# MCP
+.mcp.json

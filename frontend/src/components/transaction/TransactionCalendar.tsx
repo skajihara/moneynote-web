@@ -7,6 +7,7 @@ type Props = {
   month: number;
   dailySummaries: DailySummary[];
   onDateClick: (date: string) => void;
+  startDayOfMonth?: number;
 };
 
 const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土'];
@@ -14,28 +15,61 @@ const DAYS_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土'];
 const fmt = (n: number) =>
   n === 0 ? '' : n.toLocaleString('ja-JP');
 
-const TransactionCalendar = ({ year, month, dailySummaries, onDateClick }: Props) => {
-  // dailySummaries を date → DailySummary の Map に変換
+type Cell = { day: number; date: string } | { day: null; date: null };
+
+function buildCells(year: number, month: number, startDayOfMonth: number): Cell[] {
+  const cells: Cell[] = [];
+
+  if (startDayOfMonth <= 1) {
+    const firstDay = new Date(year, month - 1, 1);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const startDow = firstDay.getDay();
+
+    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const mm = String(month).padStart(2, '0');
+      const dd = String(d).padStart(2, '0');
+      cells.push({ day: d, date: `${year}-${mm}-${dd}` });
+    }
+  } else {
+    // 月度期間: prevMonth/startDay 〜 month/(startDay-1)
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+    const prevMonthDays = new Date(prevYear, prevMonth, 0).getDate();
+    const curMonthDays = new Date(year, month, 0).getDate();
+    const fromDay = Math.min(startDayOfMonth, prevMonthDays);
+    const toDay = Math.min(startDayOfMonth - 1, curMonthDays);
+
+    const fromDate = new Date(prevYear, prevMonth - 1, fromDay);
+    const startDow = fromDate.getDay();
+
+    for (let i = 0; i < startDow; i++) cells.push({ day: null, date: null });
+
+    // 前月分: fromDay〜prevMonthDays
+    for (let d = fromDay; d <= prevMonthDays; d++) {
+      const yy = String(prevYear);
+      const mm = String(prevMonth).padStart(2, '0');
+      const dd = String(d).padStart(2, '0');
+      cells.push({ day: d, date: `${yy}-${mm}-${dd}` });
+    }
+
+    // 当月分: 1〜toDay
+    for (let d = 1; d <= toDay; d++) {
+      const mm = String(month).padStart(2, '0');
+      const dd = String(d).padStart(2, '0');
+      cells.push({ day: d, date: `${year}-${mm}-${dd}` });
+    }
+  }
+
+  while (cells.length % 7 !== 0) cells.push({ day: null, date: null });
+
+  return cells;
+}
+
+const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDayOfMonth = 1 }: Props) => {
   const summaryMap = new Map(dailySummaries.map((d) => [d.date, d]));
-
-  const firstDay = new Date(year, month - 1, 1);
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const startDow = firstDay.getDay(); // 0=日
-
-  // カレンダーセルを生成（前月の空セル + 当月の日）
-  const cells: Array<{ day: number | null; date: string | null }> = [];
-  for (let i = 0; i < startDow; i++) {
-    cells.push({ day: null, date: null });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    const mm = String(month).padStart(2, '0');
-    const dd = String(d).padStart(2, '0');
-    cells.push({ day: d, date: `${year}-${mm}-${dd}` });
-  }
-  // 6行になるよう末尾を埋める
-  while (cells.length % 7 !== 0) {
-    cells.push({ day: null, date: null });
-  }
+  const cells = buildCells(year, month, startDayOfMonth);
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -55,8 +89,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick }: Props
       {/* 日付グリッド */}
       <div className="grid grid-cols-7">
         {cells.map((cell, idx) => {
-          const isToday =
-            cell.date === new Date().toISOString().slice(0, 10);
+          const isToday = cell.date === today;
           const summary = cell.date ? summaryMap.get(cell.date) : undefined;
           const dow = idx % 7;
 

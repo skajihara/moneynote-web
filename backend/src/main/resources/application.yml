@@ -5,7 +5,8 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      # セキュリティ: 本番で意図しないスキーマ変更を防ぐため validate に変更。スキーマ変更は Flyway で管理する
+      ddl-auto: validate
     open-in-view: false
   flyway:
     enabled: true
@@ -25,9 +26,17 @@ spring:
           model: claude-sonnet-4-5
           max-tokens: 1000
 
+ai:
+  # デフォルトは本番想定（Claude API を使用する）。開発環境は application-dev.yml で true に上書きする
+  mock: false
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    # セキュリティ: 本番環境では Swagger UI を無効化する。dev profile で上書きして有効化する
+    enabled: false
+  api-docs:
+    enabled: false
 
 app:
   jwt:
@@ -36,3 +45,10 @@ app:
     refresh-token-expiration: 604800000  # 7日（ミリ秒）
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}
+  cookie:
+    # セキュリティ: 本番環境では COOKIE_SECURE=true に設定すること。開発環境(HTTP)では false のまま使用する
+    secure: ${COOKIE_SECURE:false}
+  security:
+    hsts:
+      # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-prod.yml で true に設定する
+      enabled: false

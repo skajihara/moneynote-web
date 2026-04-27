@@ -1,2 +1,17 @@
 ai:
-  mock: false
+  mock: true  # 開発環境では Claude API を呼ばずダミーテキストを返す
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.moneynote: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

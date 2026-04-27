@@ -159,10 +159,14 @@ public class AuthService {
     }
 
     private void checkRateLimit(String failKey) {
-        String countStr = redisTemplate.opsForValue().get(failKey);
+        checkRateLimit(failKey, MAX_LOGIN_FAILURES, LOCK_DURATION, 900);
+    }
+
+    private void checkRateLimit(String key, int maxCount, Duration window, int retryAfterSeconds) {
+        String countStr = redisTemplate.opsForValue().get(key);
         int count = countStr == null ? 0 : Integer.parseInt(countStr);
-        if (count >= MAX_LOGIN_FAILURES) {
-            throw new RateLimitException("ログイン試行回数が上限に達しました。15分後に再試行してください");
+        if (count >= maxCount) {
+            throw new RateLimitException("リクエスト上限に達しました。しばらく後に再試行してください", retryAfterSeconds);
         }
     }
 
@@ -170,6 +174,13 @@ public class AuthService {
         Long count = redisTemplate.opsForValue().increment(failKey);
         if (count != null && count == 1) {
             redisTemplate.expire(failKey, LOCK_DURATION);
+        }
+    }
+
+    private void incrementCount(String key, Duration window) {
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, window);
         }
     }
 
@@ -187,6 +198,10 @@ public class AuthService {
 
     public String refreshAccessToken(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new UnauthorizedException("リフレッシュトークンが無効です");
+        }
+        // セキュリティ: type=REFRESH のトークンのみリフレッシュに使用できる（アクセストークンの流用を防ぐ）
+        if (!"REFRESH".equals(jwtTokenProvider.getTokenType(refreshToken))) {
             throw new UnauthorizedException("リフレッシュトークンが無効です");
         }
 
@@ -207,13 +222,18 @@ public class AuthService {
     public void requestPasswordReset(String email) {
         // メールが存在しない場合も成功レスポンスを返す（ユーザー列挙攻撃対策）
         userRepository.findByEmail(email).ifPresent(user -> {
+            // セキュリティ: ユーザー単位で 1 時間 5 回のレート制限（メール爆撃対策）
+            String resetRateLimitKey = "pwd_reset:req:" + user.getUserId();
+            checkRateLimit(resetRateLimitKey, 5, Duration.ofHours(1), 3600);
+            incrementCount(resetRateLimitKey, Duration.ofHours(1));
+
             String token = UUID.randomUUID().toString();
             redisTemplate.opsForValue().set(resetKey(token), user.getUserId(), RESET_TOKEN_TTL);
-            sendPasswordResetMail(user.getEmail(), token);
+            sendPasswordResetMail(user.getUserId(), user.getEmail(), token);
         });
     }
 
-    private void sendPasswordResetMail(String to, String token) {
+    private void sendPasswordResetMail(String userId, String to, String token) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
@@ -223,7 +243,8 @@ public class AuthService {
                     frontendUrl + "/password-reset/confirm?token=" + token);
             mailSender.send(message);
         } catch (Exception e) {
-            log.error("パスワードリセットメールの送信に失敗しました: {}", to, e);
+            // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
+            log.error("パスワードリセットメールの送信に失敗しました userId={}", userId, e);
         }
     }
 

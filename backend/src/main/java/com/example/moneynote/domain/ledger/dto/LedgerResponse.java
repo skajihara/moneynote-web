@@ -12,6 +12,7 @@ public record LedgerResponse(
         BigDecimal initialBalance,
         short startDayOfMonth,
         short startMonthOfYear,
+        String themeColor,
         boolean isActive,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -24,6 +25,7 @@ public record LedgerResponse(
                 ledger.getInitialBalance(),
                 ledger.getStartDayOfMonth(),
                 ledger.getStartMonthOfYear(),
+                ledger.getThemeColor(),
                 ledger.isActive(),
                 ledger.getCreatedAt(),
                 ledger.getUpdatedAt()

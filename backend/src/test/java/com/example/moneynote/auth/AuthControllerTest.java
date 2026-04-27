@@ -74,12 +74,50 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*"}) {
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "pwd_reset:req:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
             }
         }
+    }
+
+    // =========================================================================
+    // M-6: セキュリティレスポンスヘッダー
+    // =========================================================================
+
+    @Test
+    void securityHeaders_presentOnAuthenticatedResponse() throws Exception {
+        // M-6: 認証済みレスポンスにセキュリティヘッダーが含まれること
+        createUser("header_user", "header@example.com");
+        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "header_user", "password", "Password1")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andReturn();
+
+        // アクセストークンを使った認証済みレスポンスでも同様に含まれること
+        String accessToken = objectMapper
+                .readTree(loginResult.getResponse().getContentAsString())
+                .at("/data/accessToken").asText();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/ledgers")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"));
+    }
+
+    @Test
+    void securityHeaders_presentOnUnauthenticatedResponse() throws Exception {
+        // M-6: 401 レスポンスにもセキュリティヘッダーが含まれること
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/ledgers"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"));
     }
 
     // =========================================================================
@@ -241,6 +279,30 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.error.code").value("E401"));
     }
 
+    @Test
+    void refresh_withAccessToken_returns401() throws Exception {
+        // C-1 補完: アクセストークン（type=ACCESS）をリフレッシュ Cookie として使用しても 401 になること
+        createUser("access_as_refresh", "accessasrefresh@example.com");
+
+        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "access_as_refresh", "password", "Password1")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // レスポンスボディからアクセストークン（type=ACCESS）を取得
+        String accessToken = objectMapper
+                .readTree(loginResult.getResponse().getContentAsString())
+                .at("/data/accessToken").asText();
+        assertThat(accessToken).as("アクセストークンが取得できること").isNotBlank();
+
+        // アクセストークンをリフレッシュトークン Cookie として送信 → type=REFRESH でないため 401
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .cookie(new jakarta.servlet.http.Cookie("refreshToken", accessToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("E401"));
+    }
+
     // =========================================================================
     // POST /api/v1/auth/logout
     // =========================================================================
@@ -292,16 +354,16 @@ class AuthControllerTest {
         assertThat(keys).isNotNull().isNotEmpty();
         String resetToken = keys.iterator().next().replace("password_reset:", "");
 
-        // パスワードリセット確認
+        // C-3: パスワードリセットに新ポリシー準拠パスワードを使用
         mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("token", resetToken, "newPassword", "NewPass123")))
+                        .content(json("token", resetToken, "newPassword", "NewPass1!")))
                 .andExpect(status().isOk());
 
         // 新しいパスワードでログインできる
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "reset_user", "password", "NewPass123")))
+                        .content(json("userId", "reset_user", "password", "NewPass1!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
     }
@@ -317,11 +379,79 @@ class AuthControllerTest {
 
     @Test
     void passwordReset_invalidToken_returns404() throws Exception {
+        // C-3: ポリシー準拠パスワードで無効トークンをテスト
         mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("token", "invalid-token-xyz", "newPassword", "NewPass123")))
+                        .content(json("token", "invalid-token-xyz", "newPassword", "NewPass1!")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("E404"));
+    }
+
+    @Test
+    void passwordReset_weakPassword_returns400() throws Exception {
+        // C-3: パスワードリセット経由でも弱いパスワード ("password") を拒否すること
+        createUser("reset_weak", "resetweak@example.com");
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "resetweak@example.com")))
+                .andExpect(status().isOk());
+
+        var keys = redisTemplate.keys("password_reset:*");
+        assertThat(keys).isNotNull().isNotEmpty();
+        String resetToken = keys.iterator().next().replace("password_reset:", "");
+
+        // "password" は大文字・数字・記号なし → ポリシー違反 → 400
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", resetToken, "newPassword", "password")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
+    void passwordReset_rateLimitedAfter5Requests_returns429() throws Exception {
+        // ユーザー単位で 1 時間 5 回の制限。存在しないメールではカウントされないため実ユーザーで確認する
+        createUser("rate_limit_user", "ratelimit@example.com");
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json("email", "ratelimit@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        // 6回目: 429 + Retry-After
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "ratelimit@example.com")))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("E429"))
+                .andExpect(header().exists("Retry-After"));
+    }
+
+    @Test
+    void refreshToken_cannotAuthenticateApiEndpoint_returns401() throws Exception {
+        // C-1: ログインして取得したリフレッシュトークンを Bearer として使っても 401 になること
+        createUser("token_type_user", "tokentype@example.com");
+
+        // 実際にログインして Cookie からリフレッシュトークンを取得する
+        var loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "token_type_user", "password", "Password1")))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String setCookieHeader = loginResult.getResponse().getHeader("Set-Cookie");
+        String refreshToken = extractCookieValue(setCookieHeader, "refreshToken");
+        assertThat(refreshToken).as("リフレッシュトークンが Cookie に含まれること").isNotBlank();
+
+        // リフレッシュトークン（type=REFRESH）を Authorization: Bearer として使用 → 401
+        // JwtAuthenticationFilter が type=ACCESS のみ通過させるため
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/ledgers")
+                        .header("Authorization", "Bearer " + refreshToken))
+                .andExpect(status().isUnauthorized());
     }
 
     // =========================================================================
