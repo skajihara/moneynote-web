@@ -16,7 +16,6 @@
 | T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合検討 | 予算が左・レポートが右の2カラムレイアウトで統合することを検討する |
 | T-007 | [#7](https://github.com/skajihara/moneynote-web/issues/7) | 機能 | 固定費の登録間隔機能 | 毎日・毎週・隔週・毎月・隔月・四半期・半年・毎年の間隔を選択できるようにする |
 | T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | ledger_permissions テーブルを活用。オーナーが他ユーザーに閲覧/編集/管理権限を付与する |
-| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9) | 品質 | ID重複時の再生成ロジック確認 | 各テーブルのID生成で重複した場合に再生成するロジックが実装されているか確認・修正する |
 | T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | Controller→Service→Repositoryのアクセス制御が全APIで守られているか確認する。サービスからサービスを呼んだりコントローラからリポジトリを直接呼ぶことを禁止する |
 | T-011 | [#11](https://github.com/skajihara/moneynote-web/issues/11) | 品質 | SQLパフォーマンス最適化 | N+1問題・インデックス・キャッシュ活用でパフォーマンス向上の余地がないか調査・改善する |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Phase 1（EC2） | EC2 + Docker Compose で初回デプロイ。RDS・ElastiCache・SES への接続切り替えを含む（Step 17） |
@@ -70,11 +69,6 @@
 
 ## 完了した TODO
 
-| ID | 内容 | 完了時期 |
-|---|---|---|
-| 完了-001 | .claudeignore でコンテキスト最適化 | Step 5 前 |
-| 完了-002 | CURRENT_STATUS.md でコンテキスト管理 | Step 5 前 |
-| 完了-003 | seed.ps1 の文字化け対策（UTF-8 BOM・.gitattributes） | Step 5 |
-| 完了-004 | POST /api/v1/ledgers のカテゴリ重複問題の解消 | Step 5 |
-| 完了-005 | reset.ps1 の作成 → seed.ps1 に統合済み | Step 15 |
-| 完了-006 | seed.sh の削除（seed.ps1 に統合） | Step 15 |
+| ID | [#Num](URL) | 内容 | ブランチ |
+|---|---|---|---|
+| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9)  | ID重複時の再生成ロジック確認 | feature/issue-9-id-regeneration |

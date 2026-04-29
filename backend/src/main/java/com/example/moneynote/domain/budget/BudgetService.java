@@ -84,7 +84,7 @@ public class BudgetService {
                 .findByLedgerLedgerIdAndCategory_CategoryIdAndYearAndMonth(
                         ledgerId, req.categoryId(), (short) req.year(), (short) req.month())
                 .orElseGet(() -> Budget.builder()
-                        .budgetId(IdGenerator.budgetId())
+                        .budgetId(IdGenerator.generateUnique("bgt_", budgetRepository::existsById))
                         .ledger(ledger)
                         .category(category)
                         .year((short) req.year())

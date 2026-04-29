@@ -67,7 +67,7 @@ public class LedgerService {
                 .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
 
         Ledger ledger = Ledger.builder()
-                .ledgerId(IdGenerator.ledgerId())
+                .ledgerId(IdGenerator.generateUnique("ldg_", ledgerRepository::existsById))
                 .owner(owner)
                 .ledgerName(request.getLedgerName())
                 .initialBalance(
@@ -87,7 +87,7 @@ public class LedgerService {
 
         // 作成者に ADMIN 権限を付与する
         ledgerPermissionRepository.save(LedgerPermission.builder()
-                .permissionId(IdGenerator.ledgerPermissionId())
+                .permissionId(IdGenerator.generateUnique("lperm_", ledgerPermissionRepository::existsById))
                 .ledger(ledger)
                 .user(owner)
                 .permissionType(PermissionType.ADMIN)

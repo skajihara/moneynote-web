@@ -178,7 +178,7 @@ public class TransactionService {
         Category category = validateCategory(ledgerId, request.categoryId(), request.transactionType());
 
         Transaction t = Transaction.builder()
-                .transactionId(IdGenerator.transactionId())
+                .transactionId(IdGenerator.generateUnique("txn_", transactionRepository::existsById))
                 .ledger(ledger)
                 .category(category)
                 .transactionType(request.transactionType())
