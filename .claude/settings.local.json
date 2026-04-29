@@ -15,7 +15,11 @@
       "Bash(bash .claude/hooks/check-migration-branch.sh)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Edit(/.claude/skills/prompt-tuning/**)"
+      "Edit(/.claude/skills/prompt-tuning/**)",
+      "mcp__serena__find_symbol",
+      "Bash(gh issue *)",
+      "mcp__github__add_issue_comment",
+      "mcp__github__issue_write"
     ],
     "additionalDirectories": [
       "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks"

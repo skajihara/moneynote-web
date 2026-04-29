@@ -78,14 +78,14 @@ public class AuthService {
         userRepository.save(user);
 
         Ledger ledger = Ledger.builder()
-                .ledgerId(IdGenerator.ledgerId())
+                .ledgerId(IdGenerator.generateUnique("ldg_", ledgerRepository::existsById))
                 .owner(user)
                 .ledgerName("マイ家計簿")
                 .build();
         ledgerRepository.save(ledger);
 
         ledgerPermissionRepository.save(LedgerPermission.builder()
-                .permissionId(IdGenerator.ledgerPermissionId())
+                .permissionId(IdGenerator.generateUnique("lperm_", ledgerPermissionRepository::existsById))
                 .ledger(ledger)
                 .user(user)
                 .permissionType(PermissionType.ADMIN)
@@ -103,7 +103,7 @@ public class AuthService {
         short order = 0;
         for (String name : expenseNames) {
             categoryRepository.save(Category.builder()
-                    .categoryId(IdGenerator.categoryId())
+                    .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                     .ledger(ledger)
                     .categoryName(name)
                     .categoryType(CategoryType.EXPENSE)
@@ -113,7 +113,7 @@ public class AuthService {
         order = 0;
         for (String name : incomeNames) {
             categoryRepository.save(Category.builder()
-                    .categoryId(IdGenerator.categoryId())
+                    .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                     .ledger(ledger)
                     .categoryName(name)
                     .categoryType(CategoryType.INCOME)

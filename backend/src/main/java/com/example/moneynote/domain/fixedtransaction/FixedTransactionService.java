@@ -70,7 +70,7 @@ public class FixedTransactionService {
         Category category = validateCategory(ledgerId, req);
 
         FixedTransaction fixed = FixedTransaction.builder()
-                .fixedTransactionId(IdGenerator.fixedTransactionId())
+                .fixedTransactionId(IdGenerator.generateUnique("fix_", fixedTransactionRepository::existsById))
                 .ledger(ledger)
                 .category(category)
                 .fixedName(req.fixedName())
@@ -174,7 +174,7 @@ public class FixedTransactionService {
                 LocalDate txDate = LocalDate.of(ym.getYear(), ym.getMonthValue(), day);
 
                 Transaction tx = Transaction.builder()
-                        .transactionId(IdGenerator.transactionId())
+                        .transactionId(IdGenerator.generateUnique("txn_", transactionRepository::existsById))
                         .ledger(fixed.getLedger())
                         .category(fixed.getCategory())
                         .fixedTransaction(fixed)

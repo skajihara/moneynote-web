@@ -316,7 +316,7 @@ public class AiService {
         Ledger ledger = accessValidator.validate(ledgerId, userId);
 
         AiAdviceCache cache = AiAdviceCache.builder()
-                .cacheId(IdGenerator.aiAdviceCacheId())
+                .cacheId(IdGenerator.generateUnique("aic_", aiAdviceCacheRepository::existsById))
                 .ledger(ledger)
                 .periodType(period)
                 .adviceType(adviceType)

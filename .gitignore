@@ -5,6 +5,7 @@
 
 # Java / Spring Boot
 build/
+bin/
 *.class
 *.jar
 *.war
@@ -15,6 +16,7 @@ target/
 node_modules/
 .next/
 out/
+frontend/.swc/
 
 # IDE
 .idea/

@@ -69,6 +69,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure("E502", e.getMessage());
     }
 
+    @ExceptionHandler(IdGenerationException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<Void> handleIdGeneration(IdGenerationException e) {
+        log.error("ID generation failed", e);
+        return ApiResponse.failure("E500", e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleGeneral(Exception e) {

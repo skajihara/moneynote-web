@@ -56,7 +56,7 @@ public class CategoryService {
                 : (short) (existing.get(existing.size() - 1).getDisplayOrder() + 1);
 
         Category category = Category.builder()
-                .categoryId(IdGenerator.categoryId())
+                .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                 .ledger(ledger)
                 .categoryName(request.getCategoryName())
                 .categoryType(request.getCategoryType())
