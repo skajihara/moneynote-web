@@ -16,7 +16,6 @@
 | T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合検討 | 予算が左・レポートが右の2カラムレイアウトで統合することを検討する |
 | T-007 | [#7](https://github.com/skajihara/moneynote-web/issues/7) | 機能 | 固定費の登録間隔機能 | 毎日・毎週・隔週・毎月・隔月・四半期・半年・毎年の間隔を選択できるようにする |
 | T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | ledger_permissions テーブルを活用。オーナーが他ユーザーに閲覧/編集/管理権限を付与する |
-| T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | Controller→Service→Repositoryのアクセス制御が全APIで守られているか確認する。サービスからサービスを呼んだりコントローラからリポジトリを直接呼ぶことを禁止する |
 | T-011 | [#11](https://github.com/skajihara/moneynote-web/issues/11) | 品質 | SQLパフォーマンス最適化 | N+1問題・インデックス・キャッシュ活用でパフォーマンス向上の余地がないか調査・改善する |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Phase 1（EC2） | EC2 + Docker Compose で初回デプロイ。RDS・ElastiCache・SES への接続切り替えを含む（Step 17） |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | テスト自動実行・Docker イメージビルド・EC2 への自動デプロイ（Step 18） |
@@ -69,6 +68,7 @@
 
 ## 完了した TODO
 
-| ID | [#Num](URL) | 内容 | ブランチ |
+| ID | [#Num](URL) | カテゴリ | 内容 | ブランチ |
 |---|---|---|---|
-| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9)  | ID重複時の再生成ロジック確認 | feature/issue-9-id-regeneration |
+| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9)  | 品質 | ID重複時の再生成ロジック確認 | feature/issue-9-id-regeneration |
+| T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | feature/issue-10-layered-arch |

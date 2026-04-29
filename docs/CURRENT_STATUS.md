@@ -28,9 +28,9 @@
 
 ## 現在の状態
 
-- Step 15（設定ファイル最適化）完了。現在ブランチ: `feature/step15-config-optimization`
+- ISSUES対応中。現在ブランチ: `feature/issue-XX-XXXXX`
 - 次の作業: 次の作業: Step 16（品質仕上げ）
-- リリース済み: v0.5.0（Step 12〜13）
+- リリース済み: v0.5.0（Step 14〜15）
 
 ---
 

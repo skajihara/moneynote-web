@@ -4,8 +4,8 @@ import com.example.moneynote.common.exception.ConflictException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.UnauthorizedException;
 import com.example.moneynote.common.exception.ValidationException;
+import com.example.moneynote.domain.ledger.LedgerCascadeDeleter;
 import com.example.moneynote.domain.ledger.LedgerRepository;
-import com.example.moneynote.domain.ledger.LedgerService;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
 import com.example.moneynote.domain.user.dto.ChangePasswordRequest;
 import com.example.moneynote.domain.user.dto.UpdateProfileRequest;
@@ -24,7 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final LedgerRepository ledgerRepository;
-    private final LedgerService ledgerService;
+    private final LedgerCascadeDeleter ledgerCascadeDeleter;
     private final LedgerPermissionRepository ledgerPermissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
@@ -80,9 +80,9 @@ public class UserService {
     public void deleteAccount(String userId) {
         findUser(userId);
 
-        // 所有帳簿をカスケード削除（LedgerService に委譲して重複実装を避ける）
+        // 所有帳簿をカスケード削除する
         ledgerRepository.findByOwnerUserId(userId)
-                .forEach(l -> ledgerService.cascadeDeleteLedger(l.getLedgerId()));
+                .forEach(l -> ledgerCascadeDeleter.delete(l.getLedgerId()));
 
         // 他の帳簿への参加権限も削除する
         ledgerPermissionRepository.deleteByUserUserId(userId);
