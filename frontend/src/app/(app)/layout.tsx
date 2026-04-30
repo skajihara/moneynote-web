@@ -8,13 +8,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { refresh } from '@/lib/api/auth';
 import Header from '@/components/layout/Header';
 import SideMenu from '@/components/layout/SideMenu';
+import SubPanel from '@/components/layout/SubPanel';
 import LedgerCreateModal from '@/components/ledger/LedgerCreateModal';
-
-const SubPanel = ({ children }: { children: ReactNode }) => (
-  <aside className="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0">
-    <div className="p-4">{children}</div>
-  </aside>
-);
 
 type AppLayoutProps = {
   children: ReactNode;
