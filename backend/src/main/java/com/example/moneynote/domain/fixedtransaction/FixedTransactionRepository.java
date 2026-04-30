@@ -10,20 +10,27 @@ import java.util.List;
 
 public interface FixedTransactionRepository extends JpaRepository<FixedTransaction, String> {
 
-    List<FixedTransaction> findByLedgerLedgerIdAndIsActiveTrueOrderByFixedNameAsc(String ledgerId);
+    @Query("SELECT f FROM FixedTransaction f LEFT JOIN FETCH f.category " +
+           "WHERE f.ledger.ledgerId = :ledgerId AND f.isActive = true ORDER BY f.fixedName ASC")
+    List<FixedTransaction> findByLedgerLedgerIdAndIsActiveTrueOrderByFixedNameAsc(
+            @Param("ledgerId") String ledgerId);
 
     /** 全件（isActive に関わらず）取得する */
-    List<FixedTransaction> findByLedgerLedgerIdOrderByFixedNameAsc(String ledgerId);
+    @Query("SELECT f FROM FixedTransaction f LEFT JOIN FETCH f.category " +
+           "WHERE f.ledger.ledgerId = :ledgerId ORDER BY f.fixedName ASC")
+    List<FixedTransaction> findByLedgerLedgerIdOrderByFixedNameAsc(@Param("ledgerId") String ledgerId);
 
     /** 終了日が過去（expired）のもの: endDate < today */
-    @Query("SELECT f FROM FixedTransaction f WHERE f.ledger.ledgerId = :ledgerId " +
+    @Query("SELECT f FROM FixedTransaction f LEFT JOIN FETCH f.category " +
+           "WHERE f.ledger.ledgerId = :ledgerId " +
            "AND f.endDate IS NOT NULL AND f.endDate < :today ORDER BY f.fixedName ASC")
     List<FixedTransaction> findExpiredByLedgerId(
             @Param("ledgerId") String ledgerId,
             @Param("today") LocalDate today);
 
     /** 有効なもの: endDate が NULL または endDate >= today */
-    @Query("SELECT f FROM FixedTransaction f WHERE f.ledger.ledgerId = :ledgerId " +
+    @Query("SELECT f FROM FixedTransaction f LEFT JOIN FETCH f.category " +
+           "WHERE f.ledger.ledgerId = :ledgerId " +
            "AND (f.endDate IS NULL OR f.endDate >= :today) ORDER BY f.fixedName ASC")
     List<FixedTransaction> findActiveByLedgerId(
             @Param("ledgerId") String ledgerId,
