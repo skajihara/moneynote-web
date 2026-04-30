@@ -10,7 +10,10 @@ import java.util.Optional;
 
 public interface BudgetRepository extends JpaRepository<Budget, String> {
 
-    List<Budget> findByLedgerLedgerIdAndYearAndMonth(String ledgerId, short year, short month);
+    @Query("SELECT b FROM Budget b JOIN FETCH b.category " +
+           "WHERE b.ledger.ledgerId = :ledgerId AND b.year = :year AND b.month = :month")
+    List<Budget> findByLedgerLedgerIdAndYearAndMonth(
+            @Param("ledgerId") String ledgerId, @Param("year") short year, @Param("month") short month);
 
     Optional<Budget> findByLedgerLedgerIdAndCategory_CategoryIdAndYearAndMonth(
             String ledgerId, String categoryId, short year, short month);

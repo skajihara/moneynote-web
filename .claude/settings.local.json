@@ -19,7 +19,9 @@
       "mcp__serena__find_symbol",
       "Bash(gh issue *)",
       "mcp__github__add_issue_comment",
-      "mcp__github__issue_write"
+      "mcp__github__issue_write",
+      "Bash(../gradlew test *)",
+      "Bash(./gradlew.bat test *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks"
