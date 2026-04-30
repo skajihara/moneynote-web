@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ReactNode } from 'react';
 
-export const DEFAULT_PANEL_WIDTH = 320;
+export const DEFAULT_PANEL_WIDTH = 640;
 
 type SubPanelStore = {
   isOpen: boolean;

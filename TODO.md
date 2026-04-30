@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年4月（Issue #7 完了）
+最終更新: 2026年4月（Issue #8 完了）
 
 ---
 
@@ -8,7 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | ledger_permissions テーブルを活用。オーナーが他ユーザーに閲覧/編集/管理権限を付与する |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Phase 1（EC2） | EC2 + Docker Compose で初回デプロイ。RDS・ElastiCache・SES への接続切り替えを含む（Step 17） |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | テスト自動実行・Docker イメージビルド・EC2 への自動デプロイ（Step 18） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | ECS Fargate 移行 | ECR + ECS Fargate への移行（Step 19） |
@@ -72,3 +71,4 @@
 | T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合 | feature/issue-6-budget-report-layout |
 | T-003 | [#3](https://github.com/skajihara/moneynote-web/issues/3) | UI/UX | サブパネルの幅を可変にする | feature/issue-3-resizable-panel |
 | T-004 | [#4](https://github.com/skajihara/moneynote-web/issues/4) | UI/UX | 検索・固定費・CSVをサイドメニューに移動 | feature/issue-4-search-sidemenu |
+| T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | feature/issue-8-ledger-share |

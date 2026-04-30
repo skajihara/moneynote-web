@@ -118,7 +118,7 @@ public class CsvService {
     @Transactional
     public CsvImportResponse importCsv(String ledgerId, String userId, MultipartFile file) {
 
-        Ledger ledger = ledgerAccessValidator.validate(ledgerId, userId);
+        Ledger ledger = ledgerAccessValidator.validateEditorAccess(ledgerId, userId);
 
         // カテゴリマップを構築 ("name|type" → Category)
         List<Category> existingCategories = categoryRepository

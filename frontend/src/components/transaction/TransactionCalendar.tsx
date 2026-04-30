@@ -6,7 +6,7 @@ type Props = {
   year: number;
   month: number;
   dailySummaries: DailySummary[];
-  onDateClick: (date: string) => void;
+  onDateClick?: (date: string) => void;
   startDayOfMonth?: number;
 };
 
@@ -99,7 +99,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
               className={`min-h-[72px] border-b border-r border-gray-100 p-1 text-xs
                 ${cell.day ? 'cursor-pointer hover:bg-gray-50' : ''}
                 ${isToday ? 'bg-blue-50' : ''}`}
-              onClick={() => cell.date && onDateClick(cell.date)}
+              onClick={() => cell.date && onDateClick?.(cell.date)}
             >
               {cell.day && (
                 <>

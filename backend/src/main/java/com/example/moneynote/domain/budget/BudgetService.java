@@ -68,7 +68,7 @@ public class BudgetService {
 
     @Transactional
     public BudgetResponse upsertBudget(String ledgerId, BudgetRequest req, String userId) {
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validateAdminAccess(ledgerId, userId);
 
         Category category = categoryRepository.findById(req.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("カテゴリが見つかりません"));
@@ -163,7 +163,7 @@ public class BudgetService {
 
     @Transactional
     public void deleteBudget(String ledgerId, String budgetId, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
 
         Budget budget = budgetRepository.findById(budgetId)
                 .orElseThrow(() -> new ResourceNotFoundException("予算が見つかりません"));

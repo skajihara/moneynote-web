@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { getLedgers as getLedgersApi, createLedger as createLedgerApi } from '@/lib/api/ledger';
-import type { Ledger, CreateLedgerRequest } from '@/lib/api/ledger';
+import type { Ledger, CreateLedgerRequest, PermissionType } from '@/lib/api/ledger';
 
 const DEFAULT_THEME_COLOR = '#4A90D9';
 
@@ -22,6 +22,9 @@ type LedgerActions = {
   selectLedger: (ledgerId: string) => void;
   createLedger: (data: CreateLedgerRequest) => Promise<Ledger>;
   getSelectedLedger: () => Ledger | null;
+  getMyPermission: () => PermissionType | null;
+  canEdit: () => boolean;
+  canAdmin: () => boolean;
 };
 
 export const useLedgerStore = create<LedgerState & LedgerActions>()(
@@ -64,6 +67,28 @@ export const useLedgerStore = create<LedgerState & LedgerActions>()(
       getSelectedLedger: () => {
         const { ledgers, selectedLedgerId } = get();
         return ledgers.find((l) => l.ledgerId === selectedLedgerId) ?? null;
+      },
+
+      getMyPermission: () => {
+        const { ledgers, selectedLedgerId } = get();
+        const ledger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
+        return ledger?.myPermissionType ?? null;
+      },
+
+      canEdit: () => {
+        const { ledgers, selectedLedgerId } = get();
+        const ledger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
+        if (!ledger) return false;
+        const pt = ledger.myPermissionType;
+        return pt === 'EDITOR' || pt === 'ADMIN' || pt === 'OWNER';
+      },
+
+      canAdmin: () => {
+        const { ledgers, selectedLedgerId } = get();
+        const ledger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
+        if (!ledger) return false;
+        const pt = ledger.myPermissionType;
+        return pt === 'ADMIN' || pt === 'OWNER';
       },
     }),
     {

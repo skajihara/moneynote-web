@@ -65,7 +65,7 @@ public class FixedTransactionService {
     public FixedTransactionResponse createFixedTransaction(
             String ledgerId, FixedTransactionRequest req, String userId) {
 
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validateAdminAccess(ledgerId, userId);
         validateEndDate(req);
         Category category = validateCategory(ledgerId, req);
 
@@ -99,7 +99,7 @@ public class FixedTransactionService {
     public FixedTransactionResponse updateFixedTransaction(
             String ledgerId, String fixedId, FixedTransactionRequest req, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
         validateEndDate(req);
         FixedTransaction fixed = findAndValidateOwnership(ledgerId, fixedId);
         Category category = validateCategory(ledgerId, req);
@@ -129,7 +129,7 @@ public class FixedTransactionService {
 
     @Transactional
     public void deleteFixedTransaction(String ledgerId, String fixedId, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
         FixedTransaction fixed = findAndValidateOwnership(ledgerId, fixedId);
 
         transactionRepository.deleteByFixedTransactionId(fixedId);
@@ -142,7 +142,7 @@ public class FixedTransactionService {
 
     @Transactional
     public GenerateResult generateTransactions(String ledgerId, String fixedId, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
         FixedTransaction fixed = findAndValidateOwnership(ledgerId, fixedId);
 
         Set<LocalDate> existingDates = transactionRepository.findByFixedTransactionId(fixedId)

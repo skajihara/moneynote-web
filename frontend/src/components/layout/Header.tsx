@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { logout as logoutApi } from '@/lib/api/auth';
+import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
 
 const Header = () => {
   const router = useRouter();
@@ -14,7 +15,8 @@ const Header = () => {
   const { userName, logout: authLogout } = useAuthStore();
   const addToast = useToastStore((state) => state.add);
   const { ledgers, selectedLedgerId, selectLedger } = useLedgerStore();
-  const closePanel = useSubPanelStore((state) => state.close);
+  const canAdmin = useLedgerStore((s) => s.canAdmin)();
+  const { close: closePanel, open: openPanel } = useSubPanelStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const selectedLedger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
@@ -44,6 +46,11 @@ const Header = () => {
     }
   };
 
+  const handleOpenMembers = () => {
+    if (!selectedLedgerId) return;
+    openPanel(<LedgerMemberPanel ledgerId={selectedLedgerId} />);
+  };
+
   return (
     <header
       className="h-14 border-b flex items-center justify-between px-4 shrink-0"
@@ -52,39 +59,53 @@ const Header = () => {
       {/* 左: ロゴ */}
       <span className="font-bold text-white text-lg">MoneyNote Web</span>
 
-      {/* 中央: 帳簿セレクター */}
-      <div className="relative">
-        <button
-          onClick={() => setDropdownOpen((prev) => !prev)}
-          className="flex items-center gap-2 px-4 py-1.5 bg-white/20 border border-white/40 rounded-md text-sm text-white hover:bg-white/30 transition-colors min-w-[180px] justify-between"
-        >
-          <span className="truncate">
-            {selectedLedger ? selectedLedger.ledgerName : '帳簿を選択'}
-          </span>
-          <span className="text-white/70">▾</span>
-        </button>
+      {/* 中央: 帳簿セレクター + メンバー管理ボタン */}
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-2 px-4 py-1.5 bg-white/20 border border-white/40 rounded-md text-sm text-white hover:bg-white/30 transition-colors min-w-[180px] justify-between"
+          >
+            <span className="truncate">
+              {selectedLedger ? selectedLedger.ledgerName : '帳簿を選択'}
+            </span>
+            <span className="text-white/70">▾</span>
+          </button>
 
-        {dropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[180px]">
-            {ledgers.length === 0 ? (
-              <div className="px-4 py-2 text-sm text-gray-400">帳簿がありません</div>
-            ) : (
-              ledgers.map((ledger) => (
-                <button
-                  key={ledger.ledgerId}
-                  onClick={() => handleSelectLedger(ledger.ledgerId)}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-                  style={
-                    ledger.ledgerId === selectedLedgerId
-                      ? { fontWeight: 600, color: 'var(--theme-color)' }
-                      : { color: '#374151' }
-                  }
-                >
-                  {ledger.ledgerName}
-                </button>
-              ))
-            )}
-          </div>
+          {dropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[180px]">
+              {ledgers.length === 0 ? (
+                <div className="px-4 py-2 text-sm text-gray-400">帳簿がありません</div>
+              ) : (
+                ledgers.map((ledger) => (
+                  <button
+                    key={ledger.ledgerId}
+                    onClick={() => handleSelectLedger(ledger.ledgerId)}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    style={
+                      ledger.ledgerId === selectedLedgerId
+                        ? { fontWeight: 600, color: 'var(--theme-color)' }
+                        : { color: '#374151' }
+                    }
+                  >
+                    {ledger.ledgerName}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* メンバー管理ボタン（ADMIN 以上・帳簿選択時のみ表示） */}
+        {selectedLedger && canAdmin && (
+          <button
+            onClick={handleOpenMembers}
+            title="メンバー管理"
+            aria-label="メンバー管理"
+            className="text-sm text-white border border-white/40 rounded-md px-3 py-1 hover:bg-white/20 transition-colors"
+          >
+            メンバー管理
+          </button>
         )}
       </div>
 

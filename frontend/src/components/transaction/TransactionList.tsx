@@ -4,7 +4,7 @@ import type { Transaction } from '@/types/transaction';
 
 type Props = {
   transactions: Transaction[];
-  onEdit: (transaction: Transaction) => void;
+  onEdit?: (transaction: Transaction) => void;
 };
 
 const fmt = (n: number) =>
@@ -64,8 +64,8 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
                 role="button"
                 tabIndex={0}
                 aria-label={`${t.categoryName ?? '（カテゴリなし）'} ${t.amount}円`}
-                onClick={() => onEdit(t)}
-                onKeyDown={(e) => e.key === 'Enter' && onEdit(t)}
+                onClick={() => onEdit?.(t)}
+                onKeyDown={(e) => e.key === 'Enter' && onEdit?.(t)}
                 title={t.isFixedOrigin ? '固定費から自動生成' : undefined}
                 className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-100 cursor-pointer transition-colors ${
                   t.isFixedOrigin ? 'border-l-2 border-l-blue-400' : ''

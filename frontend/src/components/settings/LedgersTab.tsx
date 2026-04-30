@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -38,6 +38,11 @@ import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
+import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
+
+// ─── types ─────────────────────────────────────────────────────────────────
+
+export type SubTab = 'info' | 'categories' | 'members' | 'delete';
 
 // ─── schemas ───────────────────────────────────────────────────────────────
 
@@ -210,7 +215,6 @@ const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
     }
   });
 
-  // 支出: 赤系ヘッダー、収入: 緑系ヘッダー
   const headerClass =
     type === 'EXPENSE'
       ? 'text-red-600 font-semibold'
@@ -272,10 +276,19 @@ type LedgerSettingsViewProps = {
   onBack: () => void;
   onUpdated: () => void;
   onDeleted: () => void;
+  initialSubTab?: SubTab;
 };
 
-const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSettingsViewProps) => {
+const SUB_TAB_CONFIG: { key: SubTab; label: string; isDelete?: boolean }[] = [
+  { key: 'info',       label: '基本情報' },
+  { key: 'categories', label: 'カテゴリ管理' },
+  { key: 'members',    label: 'メンバー管理' },
+  { key: 'delete',     label: '帳簿削除', isDelete: true },
+];
+
+const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted, initialSubTab = 'info' }: LedgerSettingsViewProps) => {
   const addToast = useToastStore((s) => s.add);
+  const [subTab, setSubTab] = useState<SubTab>(initialSubTab);
 
   const form = useForm<LedgerForm>({
     resolver: zodResolver(ledgerSchema),
@@ -315,101 +328,132 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted }: LedgerSett
 
   return (
     <div>
-      <button onClick={onBack} className="text-sm text-theme hover:underline mb-4 block">
+      <button onClick={onBack} className="text-sm text-theme hover:underline mb-3 block">
         ← 帳簿一覧
       </button>
 
-      <h2 className="text-base font-semibold text-gray-800 mb-4">{ledger.ledgerName} の設定</h2>
+      <h2 className="text-base font-semibold text-gray-800 mb-4">{ledger.ledgerName}</h2>
 
-      {/* 基本設定 */}
-      <section className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
-        <h3 className="text-sm font-semibold text-gray-600 mb-4">基本情報</h3>
-        <form onSubmit={onSave} className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">帳簿名</label>
-            <input
-              {...form.register('ledgerName')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
-            />
-            {form.formState.errors.ledgerName && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.ledgerName.message}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">初期残高（円）</label>
-            <input
-              {...form.register('initialBalance')}
-              type="number"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
-            />
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-1">月度開始日</label>
-              <select
-                {...form.register('startDayOfMonth')}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>{d}日</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-1">年度開始月</label>
-              <select
-                {...form.register('startMonthOfYear')}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>{m}月</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">テーマカラー</label>
-            <div className="flex items-center gap-3">
+      {/* サブタブ */}
+      <div className="flex border-b border-gray-200 mb-5 gap-0.5">
+        {SUB_TAB_CONFIG.map(({ key, label, isDelete }) => {
+          const isActive = subTab === key;
+          const colorClass = isDelete ? 'text-red-500' : 'text-blue-600';
+          const inactiveClass = isDelete
+            ? 'border-transparent text-red-400 hover:text-red-500'
+            : 'border-transparent text-gray-500 hover:text-gray-700';
+          return (
+            <button
+              key={key}
+              onClick={() => setSubTab(key)}
+              className={`px-3 py-1.5 text-sm font-medium border-b-2 transition-colors ${
+                isActive ? `border-current ${colorClass}` : inactiveClass
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 基本情報 */}
+      {subTab === 'info' && (
+        <section className="bg-white rounded-lg border border-gray-200 p-5">
+          <form onSubmit={onSave} className="space-y-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">帳簿名</label>
               <input
-                type="color"
-                value={themeColorValue}
-                onChange={(e) => form.setValue('themeColor', e.target.value)}
-                className="w-10 h-9 border border-gray-300 rounded cursor-pointer"
+                {...form.register('ledgerName')}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
               />
-              <span className="text-sm text-gray-500">{themeColorValue}</span>
+              {form.formState.errors.ledgerName && (
+                <p className="text-red-500 text-xs mt-1">{form.formState.errors.ledgerName.message}</p>
+              )}
             </div>
-            <p className="text-xs text-gray-400 mt-1">帳簿切り替え時にアプリ全体の色が変わります</p>
-          </div>
-          <button
-            type="submit"
-            disabled={form.formState.isSubmitting}
-            className="btn-theme px-4 py-2 text-sm rounded-md"
-          >
-            保存
-          </button>
-        </form>
-      </section>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">初期残高（円）</label>
+              <input
+                {...form.register('initialBalance')}
+                type="number"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm text-gray-600 mb-1">月度開始日</label>
+                <select
+                  {...form.register('startDayOfMonth')}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}日</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm text-gray-600 mb-1">年度開始月</label>
+                <select
+                  {...form.register('startMonthOfYear')}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>{m}月</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">テーマカラー</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={themeColorValue}
+                  onChange={(e) => form.setValue('themeColor', e.target.value)}
+                  className="w-10 h-9 border border-gray-300 rounded cursor-pointer"
+                />
+                <span className="text-sm text-gray-500">{themeColorValue}</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">帳簿切り替え時にアプリ全体の色が変わります</p>
+            </div>
+            <button
+              type="submit"
+              disabled={form.formState.isSubmitting}
+              className="btn-theme px-4 py-2 text-sm rounded-md"
+            >
+              保存
+            </button>
+          </form>
+        </section>
+      )}
 
       {/* カテゴリ管理 */}
-      <section className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
-        <h3 className="text-sm font-semibold text-gray-600 mb-4">カテゴリ管理</h3>
-        <CategorySection ledgerId={ledger.ledgerId} type="EXPENSE" label="支出カテゴリ" />
-        <CategorySection ledgerId={ledger.ledgerId} type="INCOME" label="収入カテゴリ" />
-      </section>
+      {subTab === 'categories' && (
+        <section className="bg-white rounded-lg border border-gray-200 p-5">
+          <CategorySection ledgerId={ledger.ledgerId} type="EXPENSE" label="支出カテゴリ" />
+          <CategorySection ledgerId={ledger.ledgerId} type="INCOME" label="収入カテゴリ" />
+        </section>
+      )}
+
+      {/* メンバー管理 */}
+      {subTab === 'members' && (
+        <LedgerMemberPanel ledgerId={ledger.ledgerId} />
+      )}
 
       {/* 帳簿削除 */}
-      <section className="bg-white rounded-lg border border-red-200 p-5">
-        <h3 className="text-sm font-semibold text-red-500 mb-2">帳簿の削除</h3>
-        <p className="text-xs text-gray-500 mb-3">
-          帳簿内の全データ（明細・予算・カテゴリ）が削除されます。この操作は取り消せません。
-        </p>
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 border border-red-400 text-red-500 text-sm rounded-md hover:bg-red-50"
-        >
-          この帳簿を削除する
-        </button>
-      </section>
+      {subTab === 'delete' && (
+        <section className="bg-white rounded-lg border border-red-200 p-5">
+          <h3 className="text-sm font-semibold text-red-500 mb-2">帳簿の削除</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            帳簿内の全データ（明細・予算・カテゴリ）が削除されます。この操作は取り消せません。
+          </p>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 border border-red-400 text-red-500 text-sm rounded-md hover:bg-red-50"
+          >
+            この帳簿を削除する
+          </button>
+        </section>
+      )}
     </div>
   );
 };
@@ -504,22 +548,40 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
 
 // ─── LedgersTab ────────────────────────────────────────────────────────────
 
-const LedgersTab = () => {
+type LedgersTabProps = {
+  openLedgerId?: string;
+  initialSubTab?: SubTab;
+};
+
+const LedgersTab = ({ openLedgerId, initialSubTab }: LedgersTabProps) => {
   const { open: openPanel, close: closePanel } = useSubPanelStore();
   const fetchLedgers = useLedgerStore((s) => s.fetchLedgers);
+  const storeLedgers = useLedgerStore((s) => s.ledgers);
+  const autoOpenDone = useRef(false);
 
-  const openSettings = (ledger: Ledger) => {
+  const openSettings = useCallback((ledger: Ledger, subTab?: SubTab) => {
     openPanel(
       <LedgerSettingsView
         ledger={ledger}
         onBack={closePanel}
         onUpdated={() => { fetchLedgers(); }}
         onDeleted={() => { fetchLedgers(); closePanel(); }}
+        initialSubTab={subTab}
       />
     );
-  };
+  }, [openPanel, closePanel, fetchLedgers]);
 
-  return <LedgerListView onSelect={openSettings} />;
+  useEffect(() => {
+    if (!openLedgerId || autoOpenDone.current) return;
+    const ledger = storeLedgers.find((l) => l.ledgerId === openLedgerId);
+    if (ledger) {
+      autoOpenDone.current = true;
+      openSettings(ledger, initialSubTab);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeLedgers]);
+
+  return <LedgerListView onSelect={(l) => openSettings(l)} />;
 };
 
 export default LedgersTab;

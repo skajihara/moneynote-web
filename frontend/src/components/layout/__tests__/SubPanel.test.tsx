@@ -28,21 +28,21 @@ describe('SubPanel', () => {
     render(<SubPanel><div>content</div></SubPanel>);
     const handle = screen.getByRole('separator');
 
-    // startWidth=320, startX=800, moveX=760 → delta=40 → 360
+    // startWidth=640, startX=800, moveX=760 → delta=40 → 680
     fireEvent.mouseDown(handle, { clientX: 800 });
     fireEvent.mouseMove(window, { clientX: 760 });
     fireEvent.mouseUp(window);
 
-    expect(useSubPanelStore.getState().panelWidth).toBe(360);
+    expect(useSubPanelStore.getState().panelWidth).toBe(680);
   });
 
   it('右方向ドラッグで幅が縮まり最小幅にクランプされる', () => {
     render(<SubPanel><div>content</div></SubPanel>);
     const handle = screen.getByRole('separator');
 
-    // startWidth=320, startX=400, moveX=460 → delta=-60 → 260 → min=280
+    // startWidth=640, startX=400, moveX=900 → delta=-500 → 140 → min=280
     fireEvent.mouseDown(handle, { clientX: 400 });
-    fireEvent.mouseMove(window, { clientX: 460 });
+    fireEvent.mouseMove(window, { clientX: 900 });
     fireEvent.mouseUp(window);
 
     expect(useSubPanelStore.getState().panelWidth).toBe(280);
@@ -77,7 +77,7 @@ describe('SubPanel', () => {
     render(<SubPanel><div>content</div></SubPanel>);
     const handle = screen.getByRole('separator');
 
-    // startWidth=320, delta=50 → 370
+    // startWidth=640, startX=800, moveX=750 → delta=50 → 690
     fireEvent.mouseDown(handle, { clientX: 800 });
     fireEvent.mouseMove(window, { clientX: 750 });
     fireEvent.mouseUp(window);

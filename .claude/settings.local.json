@@ -22,7 +22,17 @@
       "mcp__github__issue_write",
       "Bash(../gradlew test *)",
       "Bash(./gradlew.bat test *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__replace_symbol_body",
+      "mcp__serena__replace_content",
+      "Bash(sed -n '40,60p' backend/src/main/java/com/example/moneynote/domain/budget/BudgetService.java)",
+      "Bash(sed -n '60,80p' backend/src/main/java/com/example/moneynote/domain/budget/BudgetService.java)",
+      "Bash(sed -n '110,125p' backend/src/main/java/com/example/moneynote/domain/budget/BudgetService.java)",
+      "Bash(sed -n '160,170p' backend/src/main/java/com/example/moneynote/domain/budget/BudgetService.java)",
+      "Bash(sed -n '60,75p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)",
+      "Bash(sed -n '95,110p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)",
+      "Bash(sed -n '125,150p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks",
