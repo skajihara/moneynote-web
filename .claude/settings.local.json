@@ -24,7 +24,8 @@
       "Bash(./gradlew.bat test *)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks"
+      "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks",
+      "c:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app\\(app)\\search"
     ]
   }
 }
