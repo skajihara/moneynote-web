@@ -51,6 +51,11 @@ public class FixedTransaction {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interval_type", length = 20, nullable = false)
+    @Builder.Default
+    private IntervalType intervalType = IntervalType.MONTHLY;
+
     @Column(name = "memo", length = 500)
     private String memo;
 

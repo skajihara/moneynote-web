@@ -41,8 +41,10 @@ const makeFixed = (overrides: Partial<FixedTransaction> = {}): FixedTransaction 
   dayOfMonth: 10,
   startDate: '2026-01-01',
   endDate: null,
+  intervalType: 'MONTHLY' as const,
   isActive: true,
   isExpired: false,
+  memo: null,
   ...overrides,
 });
 
@@ -115,5 +117,66 @@ describe('FixedTransactionForm', () => {
     await waitFor(() =>
       expect(screen.getByText('名称を入力してください')).toBeInTheDocument()
     );
+  });
+
+  it('登録間隔セレクターが表示され全8種類の選択肢がある', async () => {
+    render(
+      <FixedTransactionForm
+        ledgerId="ldg_1"
+        onSaved={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('食費');
+    expect(screen.getByText('登録間隔')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '毎日' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '毎週' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '隔週' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '毎月' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '隔月' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '四半期' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '半年' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '毎年' })).toBeInTheDocument();
+  });
+
+  it('MONTHLY のとき引落日フィールドが表示される', async () => {
+    render(
+      <FixedTransactionForm
+        ledgerId="ldg_1"
+        onSaved={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('食費');
+    // デフォルトは MONTHLY
+    expect(screen.getByText('引落日（毎月何日）')).toBeInTheDocument();
+  });
+
+  it('DAILY を選択すると引落日フィールドが非表示になる', async () => {
+    render(
+      <FixedTransactionForm
+        ledgerId="ldg_1"
+        onSaved={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('食費');
+    const intervalSelect = screen.getByRole('combobox', { name: /登録間隔/ });
+    await userEvent.selectOptions(intervalSelect, '毎日');
+    expect(screen.queryByText('引落日（毎月何日）')).not.toBeInTheDocument();
+  });
+
+  it('編集時に既存の intervalType が選択される', async () => {
+    render(
+      <FixedTransactionForm
+        ledgerId="ldg_1"
+        editing={makeFixed({ intervalType: 'QUARTERLY' })}
+        onSaved={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('食費');
+    const select = screen.getByRole('combobox', { name: /登録間隔/ }) as HTMLSelectElement;
+    expect(select.value).toBe('QUARTERLY');
   });
 });

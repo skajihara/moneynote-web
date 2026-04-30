@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.fixedtransaction.dto;
 
 import com.example.moneynote.domain.fixedtransaction.FixedTransaction;
+import com.example.moneynote.domain.fixedtransaction.IntervalType;
 import com.example.moneynote.domain.transaction.TransactionType;
 
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ public record FixedTransactionResponse(
         int dayOfMonth,
         LocalDate startDate,
         LocalDate endDate,
+        IntervalType intervalType,
         boolean isActive,
         boolean isExpired,
         String memo
@@ -37,6 +39,7 @@ public record FixedTransactionResponse(
                 f.getDayOfMonth(),
                 f.getStartDate(),
                 f.getEndDate(),
+                f.getIntervalType(),
                 f.isActive(),
                 expired,
                 f.getMemo()
