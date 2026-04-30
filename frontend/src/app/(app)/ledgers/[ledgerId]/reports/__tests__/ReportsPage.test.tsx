@@ -26,6 +26,12 @@ jest.mock('recharts', () => {
 });
 
 jest.mock('@/lib/api/report');
+jest.mock('@/components/budget/BudgetPanel', () => {
+  return function MockBudgetPanel() {
+    return <div data-testid="budget-panel" />;
+  };
+});
+
 const mockGetMonthlyReport = jest.mocked(reportApi.getMonthlyReport);
 const mockGetAnnualReport = jest.mocked(reportApi.getAnnualReport);
 const mockGetCategorySummary = jest.mocked(reportApi.getCategorySummary);
@@ -206,6 +212,14 @@ describe('ReportsPage', () => {
     render(<ReportsPage />);
     await waitFor(() => {
       expect(mockGetAnnualReport).toHaveBeenCalledWith('ldg_test01', 2025);
+    });
+  });
+
+  it('予算パネルとレポートが同一ページに表示される', async () => {
+    render(<ReportsPage />);
+    expect(screen.getByTestId('budget-panel')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '月別' })).toBeInTheDocument();
     });
   });
 });

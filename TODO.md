@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年4月（Issue #1 完了）
+最終更新: 2026年4月（Issue #6 完了）
 
 ---
 
@@ -11,7 +11,6 @@
 | T-003 | [#3](https://github.com/skajihara/moneynote-web/issues/3) | UI/UX | サブパネルの幅を可変にする | 明細編集などのサブパネル幅をドラッグで変更できるようにする。コンテンツのサイズもレスポンシブ対応する |
 | T-004 | [#4](https://github.com/skajihara/moneynote-web/issues/4) | UI/UX | 検索をサイドメニューに移動 | 設定画面の検索タブをサイドメニューの独立ページに移動する。他の画面と同様に明細一覧表示・編集・削除ができること |
 | T-005 | [#5](https://github.com/skajihara/moneynote-web/issues/5) | 機能 | レポートページの拡張 | 全期間を対象とした残高推移折れ線グラフ・全期間レポートを追加する |
-| T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合検討 | 予算が左・レポートが右の2カラムレイアウトで統合することを検討する |
 | T-007 | [#7](https://github.com/skajihara/moneynote-web/issues/7) | 機能 | 固定費の登録間隔機能 | 毎日・毎週・隔週・毎月・隔月・四半期・半年・毎年の間隔を選択できるようにする |
 | T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | ledger_permissions テーブルを活用。オーナーが他ユーザーに閲覧/編集/管理権限を付与する |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Phase 1（EC2） | EC2 + Docker Compose で初回デプロイ。RDS・ElastiCache・SES への接続切り替えを含む（Step 17） |
@@ -65,10 +64,11 @@
 
 ## 完了した TODO
 
-| ID | [#Num](URL) | カテゴリ | 内容 | ブランチ |
+| ID | Issue | カテゴリ | 内容 | ブランチ |
 |---|---|---|---|---|
 | T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9)  | 品質 | ID重複時の再生成ロジック確認 | feature/issue-9-id-regeneration |
 | T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | feature/issue-10-layered-arch |
 | T-011 | [#11](https://github.com/skajihara/moneynote-web/issues/11) | 品質 | SQLパフォーマンス最適化 | feature/issue-11-sql-performance |
 | T-002 | [#2](https://github.com/skajihara/moneynote-web/issues/2) | UI/UX | 円グラフの凡例を右側に表示 | feature/issue-2-pie-chart-legend |
 | T-001 | [#1](https://github.com/skajihara/moneynote-web/issues/1) | UI/UX | レスポンシブ対応（文字崩れ修正） | feature/issue-1-responsive |
+| T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合 | feature/issue-6-budget-report-layout |
