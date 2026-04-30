@@ -2,33 +2,24 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useLedgerStore } from '@/stores/ledgerStore';
-import FixedTransactionList from '@/components/fixed/FixedTransactionList';
-import CsvExport from '@/components/csv/CsvExport';
-import CsvImport from '@/components/csv/CsvImport';
 import AccountTab from '@/components/settings/AccountTab';
 import LedgersTab from '@/components/settings/LedgersTab';
 
-type Tab = 'account' | 'ledgers' | 'fixed' | 'csv';
+type Tab = 'account' | 'ledgers';
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
   { key: 'account', label: 'アカウント' },
   { key: 'ledgers', label: '帳簿管理' },
-  { key: 'fixed', label: '固定費' },
-  { key: 'csv', label: 'CSV' },
 ];
 
 const SettingsContent = () => {
   const searchParams = useSearchParams();
-  const selectedLedgerId = useLedgerStore((s) => s.selectedLedgerId);
   const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab) ?? 'account');
 
   useEffect(() => {
     const t = searchParams.get('tab') as Tab | null;
     if (t) setTab(t);
   }, [searchParams]);
-
-  const needsLedger = tab === 'fixed' || tab === 'csv';
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto">
@@ -51,35 +42,11 @@ const SettingsContent = () => {
         ))}
       </div>
 
-      {/* 帳簿未選択の警告 */}
-      {needsLedger && !selectedLedgerId && (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <p className="text-gray-400 text-sm">帳簿を選択してください</p>
-        </div>
-      )}
-
       {/* アカウント設定タブ */}
       {tab === 'account' && <AccountTab />}
 
       {/* 帳簿管理タブ */}
       {tab === 'ledgers' && <LedgersTab />}
-
-      {/* 固定費タブ */}
-      {tab === 'fixed' && selectedLedgerId && (
-        <FixedTransactionList ledgerId={selectedLedgerId} />
-      )}
-
-      {/* CSVタブ */}
-      {tab === 'csv' && selectedLedgerId && (
-        <div className="space-y-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <CsvExport ledgerId={selectedLedgerId} />
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <CsvImport ledgerId={selectedLedgerId} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

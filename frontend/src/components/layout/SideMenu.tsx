@@ -37,6 +37,16 @@ const menuItems: MenuItem[] = [
     requiresLedger: true,
   },
   {
+    label: '固定費',
+    href: '/fixed-transactions',
+    requiresLedger: true,
+  },
+  {
+    label: 'CSV',
+    href: '/csv',
+    requiresLedger: true,
+  },
+  {
     label: '設定',
     href: '/settings',
     requiresLedger: false,
