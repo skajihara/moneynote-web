@@ -262,14 +262,14 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={comparisonData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <XAxis dataKey="name" tick={{ fontSize: 16 }} />
               <YAxis
                 tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 16 }}
                 width={40}
               />
               <Tooltip formatter={(value: number) => fmt(value)} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 16 }} />
               <Bar dataKey="income" name="収入" fill="#16A34A" radius={[3, 3, 0, 0]} />
               <Bar dataKey="expense" name="支出" fill="#EF4444" radius={[3, 3, 0, 0]} />
             </BarChart>
@@ -282,10 +282,10 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={lineData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+              <XAxis dataKey="label" tick={{ fontSize: 16 }} />
               <YAxis
                 tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 16 }}
                 width={40}
               />
               <Tooltip formatter={(value: number) => fmt(value)} />

@@ -54,8 +54,8 @@ const BalanceLineChart = ({ data, height = 240 }: Props) => {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-        <YAxis tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} tick={{ fontSize: 12 }} />
+        <XAxis dataKey="label" tick={{ fontSize: 16 }} />
+        <YAxis tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} tick={{ fontSize: 16 }} />
         <Tooltip formatter={(value: number) => fmt(value)} />
         <ReferenceLine y={0} stroke="#9CA3AF" strokeDasharray="4 4" />
         <Line
