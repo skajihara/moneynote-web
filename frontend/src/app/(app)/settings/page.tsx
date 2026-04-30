@@ -3,15 +3,13 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AccountTab from '@/components/settings/AccountTab';
-import LedgersTab from '@/components/settings/LedgersTab';
-import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
+import LedgersTab, { type SubTab } from '@/components/settings/LedgersTab';
 
-type Tab = 'account' | 'ledgers' | 'members';
+type Tab = 'account' | 'ledgers';
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
   { key: 'account', label: 'アカウント' },
   { key: 'ledgers', label: '帳簿管理' },
-  { key: 'members', label: 'メンバー管理' },
 ];
 
 const SettingsContent = () => {
@@ -20,8 +18,16 @@ const SettingsContent = () => {
 
   useEffect(() => {
     const t = searchParams.get('tab') as Tab | null;
-    if (t) setTab(t);
+    if (t && (t === 'account' || t === 'ledgers')) setTab(t);
   }, [searchParams]);
+
+  const openLedgerId = searchParams.get('openLedger') ?? undefined;
+  const subtabParam  = searchParams.get('subtab');
+  const initialSubTab: SubTab | undefined =
+    subtabParam === 'members' || subtabParam === 'info' ||
+    subtabParam === 'categories' || subtabParam === 'delete'
+      ? (subtabParam as SubTab)
+      : undefined;
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto">
@@ -48,10 +54,9 @@ const SettingsContent = () => {
       {tab === 'account' && <AccountTab />}
 
       {/* 帳簿管理タブ */}
-      {tab === 'ledgers' && <LedgersTab />}
-
-      {/* メンバー管理タブ */}
-      {tab === 'members' && <LedgerMemberPanel />}
+      {tab === 'ledgers' && (
+        <LedgersTab openLedgerId={openLedgerId} initialSubTab={initialSubTab} />
+      )}
     </div>
   );
 };

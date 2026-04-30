@@ -30,13 +30,20 @@ const inviteSchema = z.object({
 });
 type InviteForm = z.infer<typeof inviteSchema>;
 
-const LedgerMemberPanel = () => {
-  const addToast      = useToastStore((s) => s.add);
-  const selectedId    = useLedgerStore((s) => s.selectedLedgerId);
-  const canAdmin      = useLedgerStore((s) => s.canAdmin)();
+type LedgerMemberPanelProps = {
+  ledgerId: string;
+};
 
-  const [members,  setMembers]  = useState<LedgerMember[]>([]);
-  const [loading,  setLoading]  = useState(false);
+const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
+  const addToast = useToastStore((s) => s.add);
+  const canAdmin = useLedgerStore((s) => {
+    const ledger = s.ledgers.find((l) => l.ledgerId === ledgerId);
+    if (!ledger) return false;
+    return ledger.myPermissionType === 'ADMIN' || ledger.myPermissionType === 'OWNER';
+  });
+
+  const [members,   setMembers]   = useState<LedgerMember[]>([]);
+  const [loading,   setLoading]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPerm,  setEditPerm]  = useState<Exclude<PermissionType, 'OWNER'>>('VIEWER');
 
@@ -47,24 +54,22 @@ const LedgerMemberPanel = () => {
     });
 
   const load = useCallback(async () => {
-    if (!selectedId) return;
     setLoading(true);
     try {
-      const res = await getMembers(selectedId);
+      const res = await getMembers(ledgerId);
       setMembers(res.data);
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, [ledgerId]);
 
   useEffect(() => { load(); }, [load]);
 
   const onInvite = async (values: InviteForm) => {
-    if (!selectedId) return;
     try {
-      await addMember(selectedId, {
+      await addMember(ledgerId, {
         userId: values.userId,
         permissionType: values.permissionType,
       });
@@ -78,9 +83,8 @@ const LedgerMemberPanel = () => {
   };
 
   const onUpdatePerm = async (userId: string) => {
-    if (!selectedId) return;
     try {
-      await updateMember(selectedId, userId, { permissionType: editPerm });
+      await updateMember(ledgerId, userId, { permissionType: editPerm });
       addToast('success', '権限を変更しました');
       setEditingId(null);
       load();
@@ -91,10 +95,9 @@ const LedgerMemberPanel = () => {
   };
 
   const onRemove = async (userId: string) => {
-    if (!selectedId) return;
     if (!confirm(`${userId} をメンバーから削除しますか？`)) return;
     try {
-      await removeMember(selectedId, userId);
+      await removeMember(ledgerId, userId);
       addToast('success', 'メンバーを削除しました');
       load();
     } catch (e) {
@@ -102,10 +105,6 @@ const LedgerMemberPanel = () => {
       addToast('error', msg);
     }
   };
-
-  if (!selectedId) {
-    return <p className="text-sm text-gray-400">帳簿を選択してください</p>;
-  }
 
   return (
     <div className="flex flex-col gap-6">
