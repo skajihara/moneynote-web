@@ -65,7 +65,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const showCreateModal = !loading && ledgers.length === 0;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden min-w-[1280px]">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <SideMenu />

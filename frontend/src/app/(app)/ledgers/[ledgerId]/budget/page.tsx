@@ -411,10 +411,10 @@ const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
     <ResponsiveContainer width="100%" height={160}>
       <BarChart data={items} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+        <XAxis dataKey="label" tick={{ fontSize: 16 }} />
         <YAxis
           tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 16 }}
           width={36}
         />
         <Tooltip formatter={(v: number) => [fmt(v), v >= 0 ? '余剰' : '超過']} />
