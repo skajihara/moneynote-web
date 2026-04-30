@@ -55,6 +55,19 @@ public class CategoryReportService {
         return buildCategorySummary(transactions);
     }
 
+    @Transactional(readOnly = true)
+    public List<CategorySummaryDto> getAllTimeCategorySummary(
+            String ledgerId, CategoryType type, String userId) {
+
+        accessValidator.validate(ledgerId, userId);
+        List<Transaction> allTx = transactionRepository.findAllByLedgerIdOrderByDateAsc(ledgerId);
+        if (type != null) {
+            TransactionType txType = TransactionType.valueOf(type.name());
+            allTx = allTx.stream().filter(t -> t.getTransactionType() == txType).toList();
+        }
+        return buildCategorySummary(allTx);
+    }
+
     // -------------------------------------------------------------------------
     // private helpers
     // -------------------------------------------------------------------------

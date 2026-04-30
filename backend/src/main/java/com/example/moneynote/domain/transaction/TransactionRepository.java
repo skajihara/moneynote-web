@@ -85,6 +85,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
     @Query("SELECT t FROM Transaction t WHERE t.fixedTransaction.fixedTransactionId = :fixedTransactionId")
     List<Transaction> findByFixedTransactionId(@Param("fixedTransactionId") String fixedTransactionId);
 
+    /** 全期間残高推移・全期間カテゴリ集計用: 対象帳簿の全明細を日付昇順で取得する */
+    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.fixedTransaction " +
+           "WHERE t.ledger.ledgerId = :ledgerId " +
+           "ORDER BY t.transactionDate ASC, t.createdAt ASC")
+    List<Transaction> findAllByLedgerIdOrderByDateAsc(@Param("ledgerId") String ledgerId);
+
     /** CSV エクスポート用: 日付昇順で取得する（全カテゴリ） */
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.fixedTransaction " +
            "WHERE t.ledger.ledgerId = :ledgerId " +
