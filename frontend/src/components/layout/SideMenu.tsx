@@ -22,13 +22,8 @@ const menuItems: MenuItem[] = [
     requiresLedger: true,
   },
   {
-    label: 'レポート',
+    label: '予算・レポート',
     href: (id) => `/ledgers/${id}/reports`,
-    requiresLedger: true,
-  },
-  {
-    label: '予算',
-    href: (id) => `/ledgers/${id}/budget`,
     requiresLedger: true,
   },
   {

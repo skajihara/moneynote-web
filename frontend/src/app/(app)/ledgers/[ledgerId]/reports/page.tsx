@@ -20,6 +20,7 @@ import BalanceLineChart from '@/components/charts/BalanceLineChart';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
+import BudgetPanel from '@/components/budget/BudgetPanel';
 import type { BarItem } from '@/components/charts/MonthlyBarChart';
 import type { LineItem } from '@/components/charts/BalanceLineChart';
 import type { CategoryBreakdown } from '@/types/dashboard';
@@ -50,12 +51,10 @@ type ComparisonRowProps = {
   label: string;
   change: number;
   rate: number;
-  isIncome: boolean; // 収入行かどうかでカラーを反転
+  isIncome: boolean;
 };
 
 const ComparisonRow = ({ label, change, rate, isIncome }: ComparisonRowProps) => {
-  // 収入: 増加→緑、減少→赤
-  // 支出: 増加→赤、減少→緑
   let color = 'text-gray-600';
   if (change !== 0) {
     const positive = isIncome ? change > 0 : change < 0;
@@ -224,7 +223,7 @@ const CategorySection = ({
 );
 
 // =========================================================================
-// メインページコンテンツ
+// レポートコンテンツ（右カラム）
 // =========================================================================
 const ReportsContent = () => {
   const params = useParams<{ ledgerId: string }>();
@@ -417,7 +416,6 @@ const ReportsContent = () => {
             <div className="text-center text-gray-400 py-8">読み込み中...</div>
           ) : (
             <>
-              {/* 収支サマリー */}
               <SummaryCards
                 totalIncome={monthlyData.totalIncome}
                 totalExpense={monthlyData.totalExpense}
@@ -426,7 +424,6 @@ const ReportsContent = () => {
                 carryOver={monthlyData.carryOver}
               />
 
-              {/* 前月比 */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">前月比</h3>
                 <ComparisonRow
@@ -443,7 +440,6 @@ const ReportsContent = () => {
                 />
               </div>
 
-              {/* 前年同月比 */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">前年同月比</h3>
                 <ComparisonRow
@@ -460,7 +456,6 @@ const ReportsContent = () => {
                 />
               </div>
 
-              {/* カテゴリ別集計 */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">カテゴリ別集計</h3>
                 <CategorySection
@@ -480,7 +475,6 @@ const ReportsContent = () => {
       {/* ===== 年別タブ ===== */}
       {tab === 'annual' && (
         <>
-          {/* 年セレクター */}
           <div className="flex items-center gap-4 justify-center">
             <button onClick={prevYear} className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors" aria-label="前年">◀</button>
             <span className="text-lg font-semibold text-gray-800 w-24 text-center">{year}年</span>
@@ -491,26 +485,22 @@ const ReportsContent = () => {
             <div className="text-center text-gray-400 py-8">読み込み中...</div>
           ) : (
             <>
-              {/* 年間サマリー */}
               <SummaryCards
                 totalIncome={annualData.annualSummary.totalIncome}
                 totalExpense={annualData.annualSummary.totalExpense}
                 netBalance={annualData.annualSummary.netBalance}
               />
 
-              {/* 月別収支棒グラフ */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">月別収支</h3>
                 <MonthlyBarChart data={barData} height={280} />
               </div>
 
-              {/* 残高推移折れ線グラフ */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">残高推移</h3>
                 <BalanceLineChart data={lineData} height={240} />
               </div>
 
-              {/* 年間カテゴリ別集計 */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">年間カテゴリ別集計</h3>
                 <CategorySection
@@ -530,10 +520,31 @@ const ReportsContent = () => {
   );
 };
 
-const ReportsPage = () => (
+// =========================================================================
+// 2カラムレイアウト（予算 40% | レポート 60%）
+// =========================================================================
+const BudgetReportContent = () => {
+  const params = useParams<{ ledgerId: string }>();
+  const ledgerId = params.ledgerId;
+
+  return (
+    <div className="flex gap-6 items-start">
+      {/* 左カラム: 予算管理 */}
+      <div className="w-2/5 shrink-0 min-w-0">
+        <BudgetPanel ledgerId={ledgerId} />
+      </div>
+      {/* 右カラム: レポート */}
+      <div className="flex-1 min-w-0">
+        <ReportsContent />
+      </div>
+    </div>
+  );
+};
+
+const BudgetReportPage = () => (
   <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
-    <ReportsContent />
+    <BudgetReportContent />
   </Suspense>
 );
 
-export default ReportsPage;
+export default BudgetReportPage;
