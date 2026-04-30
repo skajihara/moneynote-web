@@ -45,6 +45,13 @@ export type AnnualReport = {
   balanceHistory: BalanceHistory[];
 };
 
+export type BalanceHistoryItem = {
+  yearMonth: string;
+  income: number;
+  expense: number;
+  balance: number;
+};
+
 export type CategorySummary = {
   categoryId: string;
   categoryName: string;

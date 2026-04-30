@@ -21,7 +21,8 @@
       "mcp__github__add_issue_comment",
       "mcp__github__issue_write",
       "Bash(../gradlew test *)",
-      "Bash(./gradlew.bat test *)"
+      "Bash(./gradlew.bat test *)",
+      "Bash(gh auth *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks",

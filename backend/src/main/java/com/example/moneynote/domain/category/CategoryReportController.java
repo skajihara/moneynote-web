@@ -50,6 +50,20 @@ public class CategoryReportController {
     }
 
     /**
+     * GET /api/v1/ledgers/{ledgerId}/categories/summary/all-time
+     * 全期間カテゴリ別集計（金額降順・0円除外）。
+     */
+    @GetMapping("/summary/all-time")
+    public ApiResponse<List<CategorySummaryDto>> getAllTimeCategorySummary(
+            @PathVariable String ledgerId,
+            @RequestParam(required = false) CategoryType type,
+            Principal principal) {
+        return ApiResponse.success(
+                categoryReportService.getAllTimeCategorySummary(
+                        ledgerId, type, principal.getName()));
+    }
+
+    /**
      * GET /api/v1/ledgers/{ledgerId}/categories/{categoryId}/transactions
      * カテゴリ別明細 + 月別推移。
      * month を省略した場合は year 全体（1〜12月）を対象とする。

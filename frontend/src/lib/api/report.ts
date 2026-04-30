@@ -2,6 +2,7 @@ import { apiClient } from './client';
 import type {
   MonthlyReport,
   AnnualReport,
+  BalanceHistoryItem,
   CategorySummary,
   CategoryTransactions,
 } from '@/types/report';
@@ -44,6 +45,23 @@ export const getAnnualCategorySummary = (
   if (type) query.set('type', type);
   return apiClient<ApiResponse<CategorySummary[]>>(
     `/api/v1/ledgers/${ledgerId}/categories/summary/annual?${query.toString()}`
+  );
+};
+
+export const getBalanceHistory = (ledgerId: string) =>
+  apiClient<ApiResponse<BalanceHistoryItem[]>>(
+    `/api/v1/ledgers/${ledgerId}/reports/balance-history`
+  );
+
+export const getAllTimeCategorySummary = (
+  ledgerId: string,
+  type?: 'INCOME' | 'EXPENSE'
+) => {
+  const query = new URLSearchParams();
+  if (type) query.set('type', type);
+  const qs = query.toString();
+  return apiClient<ApiResponse<CategorySummary[]>>(
+    `/api/v1/ledgers/${ledgerId}/categories/summary/all-time${qs ? `?${qs}` : ''}`
   );
 };
 

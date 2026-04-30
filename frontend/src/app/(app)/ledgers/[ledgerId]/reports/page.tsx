@@ -8,15 +8,18 @@ import { useSubPanelStore } from '@/stores/subPanelStore';
 import {
   getMonthlyReport,
   getAnnualReport,
+  getBalanceHistory,
   getCategorySummary,
   getAnnualCategorySummary,
+  getAllTimeCategorySummary,
   getCategoryTransactions,
 } from '@/lib/api/report';
-import type { MonthlyReport, AnnualReport, CategorySummary, CategoryTransactions } from '@/types/report';
+import type { MonthlyReport, AnnualReport, BalanceHistoryItem, CategorySummary, CategoryTransactions } from '@/types/report';
 import type { Transaction } from '@/types/transaction';
 import SummaryCards from '@/components/ui/SummaryCards';
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart';
 import BalanceLineChart from '@/components/charts/BalanceLineChart';
+import AllPeriodLineChart from '@/components/charts/AllPeriodLineChart';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
@@ -25,7 +28,7 @@ import type { BarItem } from '@/components/charts/MonthlyBarChart';
 import type { LineItem } from '@/components/charts/BalanceLineChart';
 import type { CategoryBreakdown } from '@/types/dashboard';
 
-type Tab = 'monthly' | 'annual';
+type Tab = 'monthly' | 'annual' | 'all';
 type CategoryTab = 'EXPENSE' | 'INCOME';
 
 const fmt = (n: number) =>
@@ -244,9 +247,14 @@ const ReportsContent = () => {
   const [annualData, setAnnualData] = useState<AnnualReport | null>(null);
   const [categorySummaries, setCategorySummaries] = useState<CategorySummary[]>([]);
   const [annualCategorySummaries, setAnnualCategorySummaries] = useState<CategorySummary[]>([]);
+  const [allPeriodData, setAllPeriodData] = useState<BalanceHistoryItem[]>([]);
+  const [allTimeCategorySummaries, setAllTimeCategorySummaries] = useState<CategorySummary[]>([]);
+  const [allTimeCategoryTab, setAllTimeCategoryTab] = useState<CategoryTab>('EXPENSE');
+  const [selectedAllTimeCategoryId, setSelectedAllTimeCategoryId] = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [annualCategoryLoading, setAnnualCategoryLoading] = useState(false);
+  const [allTimeCategoryLoading, setAllTimeCategoryLoading] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedAnnualCategoryId, setSelectedAnnualCategoryId] = useState<string | null>(null);
 
@@ -295,19 +303,44 @@ const ReportsContent = () => {
     }
   }, [ledgerId, year, annualCategoryTab]);
 
+  const fetchAllPeriod = useCallback(async () => {
+    setReportLoading(true);
+    try {
+      const res = await getBalanceHistory(ledgerId);
+      setAllPeriodData(res.data);
+    } finally {
+      setReportLoading(false);
+    }
+  }, [ledgerId]);
+
+  const fetchAllTimeCategorySummary = useCallback(async () => {
+    setAllTimeCategoryLoading(true);
+    try {
+      const res = await getAllTimeCategorySummary(ledgerId, allTimeCategoryTab);
+      setAllTimeCategorySummaries(res.data);
+    } finally {
+      setAllTimeCategoryLoading(false);
+    }
+  }, [ledgerId, allTimeCategoryTab]);
+
   useEffect(() => {
     if (tab === 'monthly') {
       fetchMonthly();
       fetchCategorySummary();
       setSelectedCategoryId(null);
       closePanel();
-    } else {
+    } else if (tab === 'annual') {
       fetchAnnual();
       fetchAnnualCategorySummary();
       setSelectedAnnualCategoryId(null);
       closePanel();
+    } else {
+      fetchAllPeriod();
+      fetchAllTimeCategorySummary();
+      setSelectedAllTimeCategoryId(null);
+      closePanel();
     }
-  }, [tab, fetchMonthly, fetchAnnual, fetchCategorySummary, fetchAnnualCategorySummary, closePanel]);
+  }, [tab, fetchMonthly, fetchAnnual, fetchCategorySummary, fetchAnnualCategorySummary, fetchAllPeriod, fetchAllTimeCategorySummary, closePanel]);
 
   const handleTabChange = (t: Tab) => {
     setTab(t);
@@ -337,6 +370,12 @@ const ReportsContent = () => {
     closePanel();
   };
 
+  const handleAllTimeCategoryTabChange = (t: CategoryTab) => {
+    setAllTimeCategoryTab(t);
+    setSelectedAllTimeCategoryId(null);
+    closePanel();
+  };
+
   const handleCategoryClick = (item: CategorySummary) => {
     setSelectedCategoryId(item.categoryId);
     openPanel(
@@ -362,6 +401,18 @@ const ReportsContent = () => {
     );
   };
 
+  const handleAllTimeCategoryClick = (item: CategorySummary) => {
+    setSelectedAllTimeCategoryId(item.categoryId);
+    openPanel(
+      <CategoryDetailPanel
+        ledgerId={ledgerId}
+        categoryId={item.categoryId}
+        categoryName={item.categoryName}
+        year={year}
+      />
+    );
+  };
+
   const barData: BarItem[] = annualData?.months.map((m) => ({
     label: MONTH_NAMES[m.month - 1],
     income: m.totalIncome,
@@ -377,7 +428,7 @@ const ReportsContent = () => {
     <div className="flex flex-col gap-4">
       {/* タブ */}
       <div className="flex border-b border-gray-200">
-        {(['monthly', 'annual'] as Tab[]).map((t) => (
+        {(['monthly', 'annual', 'all'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => handleTabChange(t)}
@@ -387,7 +438,7 @@ const ReportsContent = () => {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'monthly' ? '月別' : '年別'}
+            {t === 'monthly' ? '月別' : t === 'annual' ? '年別' : '全期間'}
           </button>
         ))}
       </div>
@@ -514,6 +565,31 @@ const ReportsContent = () => {
               </div>
             </>
           )}
+        </>
+      )}
+      {/* ===== 全期間タブ ===== */}
+      {tab === 'all' && (
+        <>
+          {reportLoading ? (
+            <div className="text-center text-gray-400 py-8">読み込み中...</div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">月次残高推移（全期間）</h3>
+              <AllPeriodLineChart data={allPeriodData} height={300} />
+            </div>
+          )}
+
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">全期間カテゴリ別集計</h3>
+            <CategorySection
+              summaries={allTimeCategorySummaries}
+              loading={allTimeCategoryLoading}
+              categoryTab={allTimeCategoryTab}
+              selectedCategoryId={selectedAllTimeCategoryId}
+              onTabChange={handleAllTimeCategoryTabChange}
+              onCategoryClick={handleAllTimeCategoryClick}
+            />
+          </div>
         </>
       )}
     </div>
