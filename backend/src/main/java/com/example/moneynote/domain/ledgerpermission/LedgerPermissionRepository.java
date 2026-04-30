@@ -12,6 +12,8 @@ public interface LedgerPermissionRepository extends JpaRepository<LedgerPermissi
 
     Optional<LedgerPermission> findByLedgerLedgerIdAndUserUserId(String ledgerId, String userId);
 
+    List<LedgerPermission> findByLedgerLedgerId(String ledgerId);
+
     List<LedgerPermission> findByUserUserId(String userId);
 
     boolean existsByLedgerLedgerIdAndUserUserId(String ledgerId, String userId);

@@ -67,7 +67,22 @@ beforeEach(() => {
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
-  useLedgerStore.setState({ ledgers: [], selectedLedgerId: null });
+  useLedgerStore.setState({
+    ledgers: [{
+      ledgerId: 'ldg_test01',
+      ownerUserId: 'user1',
+      ledgerName: 'テスト帳簿',
+      initialBalance: 0,
+      startDayOfMonth: 1,
+      startMonthOfYear: 1,
+      themeColor: null,
+      isActive: true,
+      createdAt: '2026-01-01T00:00:00',
+      updatedAt: '2026-01-01T00:00:00',
+      myPermissionType: 'OWNER',
+    }],
+    selectedLedgerId: 'ldg_test01',
+  });
 });
 
 describe('TransactionsPage', () => {

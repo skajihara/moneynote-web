@@ -4,12 +4,14 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AccountTab from '@/components/settings/AccountTab';
 import LedgersTab from '@/components/settings/LedgersTab';
+import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
 
-type Tab = 'account' | 'ledgers';
+type Tab = 'account' | 'ledgers' | 'members';
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
   { key: 'account', label: 'アカウント' },
   { key: 'ledgers', label: '帳簿管理' },
+  { key: 'members', label: 'メンバー管理' },
 ];
 
 const SettingsContent = () => {
@@ -47,6 +49,9 @@ const SettingsContent = () => {
 
       {/* 帳簿管理タブ */}
       {tab === 'ledgers' && <LedgersTab />}
+
+      {/* メンバー管理タブ */}
+      {tab === 'members' && <LedgerMemberPanel />}
     </div>
   );
 };
