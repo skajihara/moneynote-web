@@ -46,7 +46,7 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
       <PieChart>
         <Pie
           data={chartData}
-          cx="50%"
+          cx="35%"
           cy="50%"
           outerRadius={size / 3}
           dataKey="value"
@@ -62,6 +62,11 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
           formatter={(value: number) => fmt(value)}
         />
         <Legend
+          layout="vertical"
+          verticalAlign="middle"
+          align="right"
+          iconSize={10}
+          wrapperStyle={{ fontSize: '12px', maxWidth: '55%', overflowWrap: 'break-word', lineHeight: '1.6' }}
           formatter={(value, entry) => {
             const payload = entry.payload as { percentage: number; value: number } | undefined;
             const pct = payload?.percentage?.toFixed(1) ?? '0.0';
