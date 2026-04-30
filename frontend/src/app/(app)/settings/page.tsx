@@ -8,15 +8,13 @@ import CsvExport from '@/components/csv/CsvExport';
 import CsvImport from '@/components/csv/CsvImport';
 import AccountTab from '@/components/settings/AccountTab';
 import LedgersTab from '@/components/settings/LedgersTab';
-import SearchTab from '@/components/settings/SearchTab';
 
-type Tab = 'account' | 'ledgers' | 'fixed' | 'search' | 'csv';
+type Tab = 'account' | 'ledgers' | 'fixed' | 'csv';
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
   { key: 'account', label: 'アカウント' },
   { key: 'ledgers', label: '帳簿管理' },
   { key: 'fixed', label: '固定費' },
-  { key: 'search', label: '取引検索' },
   { key: 'csv', label: 'CSV' },
 ];
 
@@ -30,7 +28,7 @@ const SettingsContent = () => {
     if (t) setTab(t);
   }, [searchParams]);
 
-  const needsLedger = tab === 'fixed' || tab === 'search' || tab === 'csv';
+  const needsLedger = tab === 'fixed' || tab === 'csv';
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-3xl mx-auto">
@@ -69,11 +67,6 @@ const SettingsContent = () => {
       {/* 固定費タブ */}
       {tab === 'fixed' && selectedLedgerId && (
         <FixedTransactionList ledgerId={selectedLedgerId} />
-      )}
-
-      {/* 取引検索タブ */}
-      {tab === 'search' && selectedLedgerId && (
-        <SearchTab ledgerId={selectedLedgerId} />
       )}
 
       {/* CSVタブ */}
