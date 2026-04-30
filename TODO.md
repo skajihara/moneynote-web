@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年4月（Issue #8 完了）
+最終更新: 2026年5月（Issue #21 完了）
 
 ---
 
@@ -28,7 +28,6 @@
 | T-018 | [#18](https://github.com/skajihara/moneynote-web/issues/18) | 機能 | 週次・日次サマリー | 週・日単位での集計レポートを追加 |
 | T-019 | [#19](https://github.com/skajihara/moneynote-web/issues/19) | 機能 | データインポート（他アプリ） | MoneyForward・Zaim 等のエクスポート CSV に対応したインポート機能 |
 | T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | 暗黙の仕様・注意点・全画面へのリンクを含むマニュアルを GitHub Pages で公開する |
-| T-021 | [#21](https://github.com/skajihara/moneynote-web/issues/21) | ドキュメント | 仕様書・ドキュメントの最新化 | 設計書・API仕様書・アーキテクチャ図を最新の実装に合わせて更新する |
 | T-022 | [#22](https://github.com/skajihara/moneynote-web/issues/22) | UI/UX | ダークモード | テーマカラーに加えてダークモードを追加 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
@@ -72,3 +71,4 @@
 | T-003 | [#3](https://github.com/skajihara/moneynote-web/issues/3) | UI/UX | サブパネルの幅を可変にする | feature/issue-3-resizable-panel |
 | T-004 | [#4](https://github.com/skajihara/moneynote-web/issues/4) | UI/UX | 検索・固定費・CSVをサイドメニューに移動 | feature/issue-4-search-sidemenu |
 | T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | feature/issue-8-ledger-share |
+| T-021 | [#21](https://github.com/skajihara/moneynote-web/issues/21) | ドキュメント | 仕様書・ドキュメントの最新化 | feature/issue-21-documentation |
