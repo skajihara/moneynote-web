@@ -3,6 +3,8 @@ package com.example.moneynote.domain.auth;
 import com.example.moneynote.common.exception.UnauthorizedException;
 import com.example.moneynote.common.response.ApiResponse;
 import com.example.moneynote.domain.auth.dto.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.time.Duration;
 
+@Tag(name = "認証", description = "ユーザー登録・ログイン・ログアウト・トークン更新・パスワードリセット")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class AuthController {
     @Value("${app.cookie.secure}")
     private boolean cookieSecure;
 
+    @Operation(summary = "ユーザー登録", description = "新規ユーザーを登録する。ユーザーIDは一意である必要がある。")
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
@@ -38,6 +42,7 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
+    @Operation(summary = "ログイン", description = "ユーザーIDとパスワードで認証する。アクセストークンをレスポンスボディで、リフレッシュトークンを HttpOnly Cookie で返す。同一IPからのログイン失敗5回で15分ロック。")
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                              HttpServletRequest servletRequest,
@@ -52,6 +57,7 @@ public class AuthController {
         return ApiResponse.success(token);
     }
 
+    @Operation(summary = "ログアウト", description = "リフレッシュトークン Cookie をクリアする。")
     @PostMapping("/logout")
     public ApiResponse<Void> logout(Principal principal, HttpServletResponse response) {
         if (principal != null) {
@@ -61,6 +67,7 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
+    @Operation(summary = "アクセストークン更新", description = "Cookie のリフレッシュトークンを使って新しいアクセストークンを発行する。")
     @PostMapping("/refresh")
     public ApiResponse<TokenResponse> refresh(
             @CookieValue(name = REFRESH_COOKIE_NAME, required = false) String refreshToken,
@@ -72,6 +79,7 @@ public class AuthController {
         return ApiResponse.success(new TokenResponse(accessToken));
     }
 
+    @Operation(summary = "パスワードリセットメール送信", description = "登録済みメールアドレス宛にパスワードリセットリンクを送信する。")
     @PostMapping("/password-reset/request")
     public ApiResponse<Void> passwordResetRequest(
             @Valid @RequestBody PasswordResetRequestDto request) {
@@ -79,6 +87,7 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
+    @Operation(summary = "パスワードリセット確定", description = "メールのリセットトークンと新しいパスワードでパスワードを更新する。")
     @PostMapping("/password-reset/confirm")
     public ApiResponse<Void> passwordResetConfirm(
             @Valid @RequestBody PasswordResetConfirmDto request) {

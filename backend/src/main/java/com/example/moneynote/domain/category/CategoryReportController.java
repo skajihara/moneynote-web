@@ -3,6 +3,8 @@ package com.example.moneynote.domain.category;
 import com.example.moneynote.common.response.ApiResponse;
 import com.example.moneynote.domain.category.dto.CategorySummaryDto;
 import com.example.moneynote.domain.category.dto.CategoryTransactionsResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 
+@Tag(name = "カテゴリ分析", description = "カテゴリ別集計・明細・月別推移の取得")
 @RestController
 @RequestMapping("/api/v1/ledgers/{ledgerId}/categories")
 @RequiredArgsConstructor
@@ -18,10 +21,7 @@ public class CategoryReportController {
 
     private final CategoryReportService categoryReportService;
 
-    /**
-     * GET /api/v1/ledgers/{ledgerId}/categories/summary
-     * カテゴリ別集計（金額降順・0円除外）。
-     */
+    @Operation(summary = "月次カテゴリ別集計", description = "指定した年月のカテゴリ別集計（金額降順・0円除外）を返す。type（INCOME/EXPENSE）でフィルタリング可能。")
     @GetMapping("/summary")
     public ApiResponse<List<CategorySummaryDto>> getCategorySummary(
             @PathVariable String ledgerId,
@@ -34,10 +34,7 @@ public class CategoryReportController {
                         ledgerId, year, month, type, principal.getName()));
     }
 
-    /**
-     * GET /api/v1/ledgers/{ledgerId}/categories/summary/annual
-     * 年間カテゴリ別集計（金額降順・0円除外）。
-     */
+    @Operation(summary = "年間カテゴリ別集計", description = "指定した年のカテゴリ別集計（金額降順・0円除外）を返す。type（INCOME/EXPENSE）でフィルタリング可能。")
     @GetMapping("/summary/annual")
     public ApiResponse<List<CategorySummaryDto>> getAnnualCategorySummary(
             @PathVariable String ledgerId,
@@ -49,10 +46,7 @@ public class CategoryReportController {
                         ledgerId, year, type, principal.getName()));
     }
 
-    /**
-     * GET /api/v1/ledgers/{ledgerId}/categories/summary/all-time
-     * 全期間カテゴリ別集計（金額降順・0円除外）。
-     */
+    @Operation(summary = "全期間カテゴリ別集計", description = "帳簿全期間のカテゴリ別集計（金額降順・0円除外）を返す。type（INCOME/EXPENSE）でフィルタリング可能。")
     @GetMapping("/summary/all-time")
     public ApiResponse<List<CategorySummaryDto>> getAllTimeCategorySummary(
             @PathVariable String ledgerId,
@@ -63,11 +57,7 @@ public class CategoryReportController {
                         ledgerId, type, principal.getName()));
     }
 
-    /**
-     * GET /api/v1/ledgers/{ledgerId}/categories/{categoryId}/transactions
-     * カテゴリ別明細 + 月別推移。
-     * month を省略した場合は year 全体（1〜12月）を対象とする。
-     */
+    @Operation(summary = "カテゴリ別明細取得", description = "指定カテゴリの明細一覧と月別推移を返す。month を省略すると year 全体（1〜12月）が対象になる。")
     @GetMapping("/{categoryId}/transactions")
     public ApiResponse<CategoryTransactionsResponse> getCategoryTransactions(
             @PathVariable String ledgerId,
