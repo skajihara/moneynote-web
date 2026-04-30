@@ -528,13 +528,13 @@ const BudgetReportContent = () => {
   const ledgerId = params.ledgerId;
 
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex items-stretch divide-x divide-gray-200">
       {/* 左カラム: 予算管理 */}
-      <div className="w-2/5 shrink-0 min-w-0">
+      <div className="w-2/5 shrink-0 min-w-0 pr-5">
         <BudgetPanel ledgerId={ledgerId} />
       </div>
       {/* 右カラム: レポート */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pl-5">
         <ReportsContent />
       </div>
     </div>
