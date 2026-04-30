@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.fixedtransaction.dto;
 
+import com.example.moneynote.domain.fixedtransaction.IntervalType;
 import com.example.moneynote.domain.transaction.TransactionType;
 import jakarta.validation.constraints.*;
 
@@ -14,5 +15,6 @@ public record FixedTransactionRequest(
         @NotNull @Min(1) @Max(28) int dayOfMonth,
         @NotNull LocalDate startDate,
         @NotNull LocalDate endDate,
+        IntervalType intervalType,
         @Size(max = 500) String memo
 ) {}

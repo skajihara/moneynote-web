@@ -69,6 +69,8 @@ public class FixedTransactionService {
         validateEndDate(req);
         Category category = validateCategory(ledgerId, req);
 
+        IntervalType intervalType = req.intervalType() != null ? req.intervalType() : IntervalType.MONTHLY;
+
         FixedTransaction fixed = FixedTransaction.builder()
                 .fixedTransactionId(IdGenerator.generateUnique("fix_", fixedTransactionRepository::existsById))
                 .ledger(ledger)
@@ -79,6 +81,7 @@ public class FixedTransactionService {
                 .dayOfMonth((short) req.dayOfMonth())
                 .startDate(req.startDate())
                 .endDate(req.endDate())
+                .intervalType(intervalType)
                 .memo(req.memo())
                 .isActive(true)
                 .build();
@@ -101,6 +104,8 @@ public class FixedTransactionService {
         FixedTransaction fixed = findAndValidateOwnership(ledgerId, fixedId);
         Category category = validateCategory(ledgerId, req);
 
+        IntervalType intervalType = req.intervalType() != null ? req.intervalType() : IntervalType.MONTHLY;
+
         fixed.setFixedName(req.fixedName());
         fixed.setTransactionType(req.transactionType());
         fixed.setCategory(category);
@@ -108,6 +113,7 @@ public class FixedTransactionService {
         fixed.setDayOfMonth((short) req.dayOfMonth());
         fixed.setStartDate(req.startDate());
         fixed.setEndDate(req.endDate());
+        fixed.setIntervalType(intervalType);
         fixed.setMemo(req.memo());
 
         // 既存の固定費由来明細を全削除して再生成
@@ -139,13 +145,12 @@ public class FixedTransactionService {
         accessValidator.validate(ledgerId, userId);
         FixedTransaction fixed = findAndValidateOwnership(ledgerId, fixedId);
 
-        // 既存の生成済み月を収集
-        Set<YearMonth> existingMonths = transactionRepository.findByFixedTransactionId(fixedId)
+        Set<LocalDate> existingDates = transactionRepository.findByFixedTransactionId(fixedId)
                 .stream()
-                .map(t -> YearMonth.from(t.getTransactionDate()))
+                .map(Transaction::getTransactionDate)
                 .collect(Collectors.toSet());
 
-        return generateTransactionsInternal(fixed, existingMonths);
+        return generateTransactionsInternal(fixed, existingDates);
     }
 
     // -------------------------------------------------------------------------
@@ -153,26 +158,18 @@ public class FixedTransactionService {
     // -------------------------------------------------------------------------
 
     private GenerateResult generateTransactionsInternal(
-            FixedTransaction fixed, Set<YearMonth> existingMonths) {
+            FixedTransaction fixed, Set<LocalDate> existingDates) {
 
-        LocalDate endLimit = fixed.getEndDate();
-
-        LocalDate cursor = fixed.getStartDate().withDayOfMonth(1);
-        LocalDate end    = endLimit.withDayOfMonth(1);
+        List<LocalDate> targetDates = computeTargetDates(fixed);
 
         int generated = 0;
         int skipped   = 0;
         List<Transaction> toSave = new ArrayList<>();
 
-        while (!cursor.isAfter(end)) {
-            YearMonth ym = YearMonth.from(cursor);
-
-            if (existingMonths.contains(ym)) {
+        for (LocalDate date : targetDates) {
+            if (existingDates.contains(date)) {
                 skipped++;
             } else {
-                int day = Math.min(fixed.getDayOfMonth(), ym.lengthOfMonth());
-                LocalDate txDate = LocalDate.of(ym.getYear(), ym.getMonthValue(), day);
-
                 Transaction tx = Transaction.builder()
                         .transactionId(IdGenerator.generateUnique("txn_", transactionRepository::existsById))
                         .ledger(fixed.getLedger())
@@ -180,15 +177,13 @@ public class FixedTransactionService {
                         .fixedTransaction(fixed)
                         .transactionType(fixed.getTransactionType())
                         .amount(fixed.getAmount())
-                        .transactionDate(txDate)
+                        .transactionDate(date)
                         .memo(fixed.getMemo())
                         .isFixedOrigin(true)
                         .build();
                 toSave.add(tx);
                 generated++;
             }
-
-            cursor = cursor.plusMonths(1);
         }
 
         if (!toSave.isEmpty()) {
@@ -196,6 +191,62 @@ public class FixedTransactionService {
         }
 
         return new GenerateResult(generated, skipped);
+    }
+
+    private List<LocalDate> computeTargetDates(FixedTransaction fixed) {
+        LocalDate start = fixed.getStartDate();
+        LocalDate end   = fixed.getEndDate();
+        IntervalType interval = fixed.getIntervalType() != null
+                ? fixed.getIntervalType() : IntervalType.MONTHLY;
+
+        return switch (interval) {
+            case DAILY     -> computeDailyDates(start, end);
+            case WEEKLY    -> computeStepDates(start, end, 7);
+            case BIWEEKLY  -> computeStepDates(start, end, 14);
+            case MONTHLY   -> computeMonthlyDates(start, end, 1, fixed.getDayOfMonth());
+            case BIMONTHLY -> computeMonthlyDates(start, end, 2, fixed.getDayOfMonth());
+            case QUARTERLY -> computeMonthlyDates(start, end, 3, fixed.getDayOfMonth());
+            case SEMIANNUAL -> computeMonthlyDates(start, end, 6, fixed.getDayOfMonth());
+            case ANNUAL    -> computeMonthlyDates(start, end, 12, fixed.getDayOfMonth());
+        };
+    }
+
+    /** DAILY: startDate から endDate まで毎日 */
+    private List<LocalDate> computeDailyDates(LocalDate start, LocalDate end) {
+        List<LocalDate> dates = new ArrayList<>();
+        LocalDate cursor = start;
+        while (!cursor.isAfter(end)) {
+            dates.add(cursor);
+            cursor = cursor.plusDays(1);
+        }
+        return dates;
+    }
+
+    /** WEEKLY / BIWEEKLY: startDate から dayStep 日ごと */
+    private List<LocalDate> computeStepDates(LocalDate start, LocalDate end, int dayStep) {
+        List<LocalDate> dates = new ArrayList<>();
+        LocalDate cursor = start;
+        while (!cursor.isAfter(end)) {
+            dates.add(cursor);
+            cursor = cursor.plusDays(dayStep);
+        }
+        return dates;
+    }
+
+    /** MONTHLY 以上: monthStep ヶ月ごと、dayOfMonth 日 */
+    private List<LocalDate> computeMonthlyDates(
+            LocalDate start, LocalDate end, int monthStep, int dayOfMonth) {
+        List<LocalDate> dates = new ArrayList<>();
+        LocalDate cursor = start.withDayOfMonth(1);
+        LocalDate endCursor = end.withDayOfMonth(1);
+
+        while (!cursor.isAfter(endCursor)) {
+            YearMonth ym = YearMonth.from(cursor);
+            int day = Math.min(dayOfMonth, ym.lengthOfMonth());
+            dates.add(LocalDate.of(ym.getYear(), ym.getMonthValue(), day));
+            cursor = cursor.plusMonths(monthStep);
+        }
+        return dates;
     }
 
     private FixedTransaction findAndValidateOwnership(String ledgerId, String fixedId) {

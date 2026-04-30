@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { FixedTransaction } from '@/types/fixed';
+import { INTERVAL_TYPE_LABELS } from '@/types/fixed';
 import {
   getFixedTransactions,
   deleteFixedTransaction,
@@ -187,7 +188,11 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
                       {item.transactionType === 'INCOME' ? '+' : '-'}
                       {fmt(item.amount)}
                     </span>
-                    <span>毎月{item.dayOfMonth}日</span>
+                    <span>
+                      {INTERVAL_TYPE_LABELS[item.intervalType]}
+                      {['MONTHLY','BIMONTHLY','QUARTERLY','SEMIANNUAL','ANNUAL'].includes(item.intervalType)
+                        ? `${item.dayOfMonth}日` : ''}
+                    </span>
                   </div>
                   <div className="text-xs text-gray-400 mt-0.5">
                     {item.startDate} 〜 {item.endDate ?? '終了日なし'}

@@ -24,8 +24,10 @@ const makeFixed = (overrides: Partial<FixedTransaction> = {}): FixedTransaction 
   dayOfMonth: 25,
   startDate: '2026-01-01',
   endDate: null,
+  intervalType: 'MONTHLY' as const,
   isActive: true,
   isExpired: false,
+  memo: null,
   ...overrides,
 });
 
