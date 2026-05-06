@@ -467,6 +467,7 @@ Write-Host "==================================================" -ForegroundColor
 Write-Host "=== シードデータの投入が完了しました ===" -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host "■ ログイン情報:" -ForegroundColor Yellow
+Write-Host "  システム管理者:       admin              / Admin1234!  (SYSTEM_ADMIN・管理者画面 /admin にアクセス可能)"
 Write-Host "  正常系ユーザー:       user_normal        / Password123"
 Write-Host "  予算超過ユーザー:     user_over_budget   / Password123"
 Write-Host "  データなしユーザー:   user_no_data       / Password123"

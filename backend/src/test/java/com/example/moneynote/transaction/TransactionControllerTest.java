@@ -34,6 +34,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
@@ -129,8 +130,8 @@ class TransactionControllerTest {
                 .categoryType(CategoryType.INCOME).displayOrder((short) 2).build());
         incCategoryId = incCat.getCategoryId();
 
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -299,10 +300,16 @@ class TransactionControllerTest {
 
     @Test
     void getBalance_calculatesCorrectly() throws Exception {
-        createTx("INCOME",  50000, "2026-03-25", incCategoryId); // 前月
-        createTx("EXPENSE", 30000, "2026-03-31", expCategoryId); // 前月
-        createTx("INCOME",  80000, "2026-04-10", incCategoryId); // 今月
-        createTx("EXPENSE", 20000, "2026-04-15", expCategoryId); // 今月
+        // Use dynamic dates so the test stays valid regardless of when it runs
+        String prevMonth15 = LocalDate.now().minusMonths(1).withDayOfMonth(15).toString();
+        String prevMonth25 = LocalDate.now().minusMonths(1).withDayOfMonth(25).toString();
+        String thisMonth5  = LocalDate.now().withDayOfMonth(5).toString();
+        String thisMonth10 = LocalDate.now().withDayOfMonth(10).toString();
+
+        createTx("INCOME",  50000, prevMonth15, incCategoryId); // 前月
+        createTx("EXPENSE", 30000, prevMonth25, expCategoryId); // 前月
+        createTx("INCOME",  80000, thisMonth5,  incCategoryId); // 今月
+        createTx("EXPENSE", 20000, thisMonth10, expCategoryId); // 今月
 
         mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/balance")
                         .header("Authorization", "Bearer " + token1))

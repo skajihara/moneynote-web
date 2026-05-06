@@ -9,13 +9,15 @@ type AuthState = {
   accessToken: string | null;
   isAuthenticated: boolean;
   themeColor: string;
+  role: string | null;
 };
 
 type AuthActions = {
-  login: (userId: string, userName: string, accessToken: string) => void;
+  login: (userId: string, userName: string, accessToken: string, role?: string) => void;
   logout: () => void;
   setAccessToken: (token: string) => void;
   setThemeColor: (color: string) => void;
+  setRole: (role: string) => void;
 };
 
 const initialState: AuthState = {
@@ -24,18 +26,19 @@ const initialState: AuthState = {
   accessToken: null,
   isAuthenticated: false,
   themeColor: DEFAULT_THEME_COLOR,
+  role: null,
 };
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(
     (set) => ({
       ...initialState,
-      login: (userId, userName, accessToken) => {
+      login: (userId, userName, accessToken, role) => {
         // isLoggedIn cookie をセット（middleware でのルートガード用）
         if (typeof document !== 'undefined') {
           document.cookie = 'isLoggedIn=true; path=/; SameSite=Strict';
         }
-        set({ userId, userName, accessToken, isAuthenticated: true });
+        set({ userId, userName, accessToken, isAuthenticated: true, role: role ?? null });
       },
       logout: () => {
         // isLoggedIn cookie をクリア
@@ -47,6 +50,9 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
       setAccessToken: (token) => {
         set({ accessToken: token });
+      },
+      setRole: (role) => {
+        set({ role });
       },
       setThemeColor: (color) => {
         set({ themeColor: color });

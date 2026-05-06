@@ -93,11 +93,11 @@ class LedgerMemberControllerTest {
         createUser("viewer1", "viewer1@example.com");
         createUser("outsider", "outsider@example.com");
 
-        ownerToken   = jwtTokenProvider.generateAccessToken("owner1");
-        adminToken   = jwtTokenProvider.generateAccessToken("admin1");
-        editorToken  = jwtTokenProvider.generateAccessToken("editor1");
-        viewerToken  = jwtTokenProvider.generateAccessToken("viewer1");
-        outsiderToken = jwtTokenProvider.generateAccessToken("outsider");
+        ownerToken   = jwtTokenProvider.generateAccessToken("owner1", "USER");
+        adminToken   = jwtTokenProvider.generateAccessToken("admin1", "USER");
+        editorToken  = jwtTokenProvider.generateAccessToken("editor1", "USER");
+        viewerToken  = jwtTokenProvider.generateAccessToken("viewer1", "USER");
+        outsiderToken = jwtTokenProvider.generateAccessToken("outsider", "USER");
 
         // owner1 が帳簿を作成する
         ledgerId = createLedger(ownerToken, "共有テスト帳簿");

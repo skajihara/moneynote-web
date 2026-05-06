@@ -79,8 +79,8 @@ class LedgerControllerTest {
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         createUser("user1", "user1@example.com");
         createUser("user2", "user2@example.com");
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -295,7 +295,7 @@ class LedgerControllerTest {
     void deleteLedger_cascadesRelatedData() throws Exception {
         // register 経由で帳簿＋デフォルトカテゴリを作成する
         String ledgerId = registerAndGetLedgerId("user3", "user3@example.com");
-        String token3 = jwtTokenProvider.generateAccessToken("user3");
+        String token3 = jwtTokenProvider.generateAccessToken("user3", "USER");
 
         // カテゴリIDを取得する
         String catBody = mockMvc.perform(get("/api/v1/ledgers/" + ledgerId + "/categories")
@@ -354,7 +354,7 @@ class LedgerControllerTest {
                                 "email", email,
                                 "password", "Password1"))))
                 .andExpect(status().isCreated());
-        String token = jwtTokenProvider.generateAccessToken(userId);
+        String token = jwtTokenProvider.generateAccessToken(userId, "USER");
         String body = mockMvc.perform(get("/api/v1/ledgers")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
