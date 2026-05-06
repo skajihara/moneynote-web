@@ -14,6 +14,7 @@ import { getBudgets, getBudgetHeatmap, upsertBudget, deleteBudget } from '@/lib/
 import { getCurrentYearMonth } from '@/lib/periodUtils';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useToastStore } from '@/stores/toastStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -76,14 +77,14 @@ const BudgetAddModal = ({ ledgerId, year, month, categories, onClose, onSaved }:
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-5 w-full max-w-sm mx-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">予算を追加</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 w-full max-w-sm mx-4">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">予算を追加</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">カテゴリ（支出）</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">カテゴリ（支出）</label>
             <select
               {...register('categoryId')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">選択してください</option>
               {categories.map((c) => (
@@ -95,13 +96,13 @@ const BudgetAddModal = ({ ledgerId, year, month, categories, onClose, onSaved }:
             {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId.message}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">予算金額</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">予算金額</label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number"
               min="1"
               placeholder="0"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
           </div>
@@ -116,7 +117,7 @@ const BudgetAddModal = ({ ledgerId, year, month, categories, onClose, onSaved }:
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル
             </button>
@@ -186,19 +187,19 @@ const BudgetEditDialog = ({ ledgerId, year, month, budget, onClose, onSaved }: E
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-5 w-full max-w-sm mx-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-1">予算を編集</h3>
-        <p className="text-xs text-gray-500 mb-3">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 w-full max-w-sm mx-4">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">予算を編集</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
           {budget.categoryIcon ? `${budget.categoryIcon} ` : ''}{budget.categoryName}
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">予算金額</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">予算金額</label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number"
               min="1"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
           </div>
@@ -213,7 +214,7 @@ const BudgetEditDialog = ({ ledgerId, year, month, budget, onClose, onSaved }: E
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル
             </button>
@@ -247,27 +248,27 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left px-3 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="w-full text-left px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
     >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-gray-800">
+        <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
           {b.categoryIcon ? `${b.categoryIcon} ` : ''}{b.categoryName}
         </span>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-          isOver ? 'bg-red-100 text-red-600' : b.status === 'WARNING' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-700'
+          isOver ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : b.status === 'WARNING' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
         }`}>
           {isOver ? '超過' : b.status === 'WARNING' ? '注意' : '正常'}
         </span>
       </div>
       <div className="flex items-center gap-2 mb-1">
-        <div className={`flex-1 rounded-full h-1.5 overflow-hidden ${isOver ? 'bg-red-100' : 'bg-gray-100'}`}>
+        <div className={`flex-1 rounded-full h-1.5 overflow-hidden ${isOver ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
           <div className={`h-1.5 rounded-full ${barColor} ${isOver ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
         </div>
         <span className={`text-xs w-12 text-right font-medium ${isOver ? 'text-red-500' : 'text-gray-500'}`}>
           {b.percentage.toFixed(1)}%
         </span>
       </div>
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>実績: <span className="text-red-500 font-medium">{fmt(b.actualAmount)}</span></span>
         <span>
           {isOver
@@ -285,7 +286,7 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
 const HEATMAP_MONTHS = 12;
 
 const cellColor = (pct: number | null): string => {
-  if (pct === null) return 'bg-gray-100 text-gray-400';
+  if (pct === null) return 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500';
   if (pct >= 100) return 'bg-red-400 text-white';
   if (pct >= 80)  return 'bg-yellow-300 text-yellow-900';
   return 'bg-green-300 text-green-900';
@@ -302,14 +303,14 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 py-4 text-center">読み込み中...</div>;
+  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
 
   const categoryNames = Array.from(
     new Set(data.flatMap((d) => d.budgets.map((b) => b.categoryName)))
   );
 
   if (categoryNames.length === 0) {
-    return <p className="text-xs text-gray-400 py-2">予算データがありません</p>;
+    return <p className="text-xs text-gray-400 dark:text-gray-500 py-2">予算データがありません</p>;
   }
 
   const displayData = [...data].reverse();
@@ -349,7 +350,7 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
           ))}
         </tbody>
       </table>
-      <div className="flex gap-3 mt-2 text-xs text-gray-500">
+      <div className="flex gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-300 inline-block" />80%未満</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-300 inline-block" />80〜99%</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-400 inline-block" />100%以上</span>
@@ -368,6 +369,7 @@ type SurplusItem = { label: string; surplus: number };
 const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
   const [items, setItems] = useState<SurplusItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const isDark = useThemeStore((s) => s.isDark);
 
   useEffect(() => {
     const months = getPastMonths(SURPLUS_MONTHS);
@@ -384,22 +386,30 @@ const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 py-4 text-center">読み込み中...</div>;
+  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
 
   const hasData = items.some((d) => d.surplus !== 0);
-  if (!hasData) return <p className="text-xs text-gray-400 py-2">予算データがありません</p>;
+  if (!hasData) return <p className="text-xs text-gray-400 dark:text-gray-500 py-2">予算データがありません</p>;
+
+  const gridColor = isDark ? '#374151' : '#E5E7EB';
+  const tickColor = isDark ? '#9CA3AF' : '#6B7280';
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#1F2937' : '#ffffff',
+    borderColor: isDark ? '#374151' : '#E5E7EB',
+    color: isDark ? '#F9FAFB' : '#111827',
+  };
 
   return (
     <ResponsiveContainer width="100%" height={160}>
       <BarChart data={items} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ fontSize: 16 }} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+        <XAxis dataKey="label" tick={{ fontSize: 16, fill: tickColor }} />
         <YAxis
           tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-          tick={{ fontSize: 16 }}
+          tick={{ fontSize: 16, fill: tickColor }}
           width={36}
         />
-        <Tooltip formatter={(v: number) => [fmt(v), v >= 0 ? '余剰' : '超過']} />
+        <Tooltip formatter={(v: number) => [fmt(v), v >= 0 ? '余剰' : '超過']} contentStyle={tooltipStyle} />
         <Bar dataKey="surplus" name="余剰/超過" radius={[2, 2, 0, 0]}>
           {items.map((d, i) => (
             <Cell key={i} fill={d.surplus >= 0 ? '#16A34A' : '#EF4444'} />
@@ -465,7 +475,7 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
     <div className="flex flex-col gap-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">予算管理</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">予算管理</h2>
         <button
           onClick={() => setShowAddModal(true)}
           disabled={availableCategories.length === 0}
@@ -476,9 +486,9 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
       </div>
 
       {/* 月選択 */}
-      <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-2 self-start">
+      <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 self-start">
         <button onClick={handlePrevMonth} className="text-gray-500 hover:text-gray-700 px-1" aria-label="前月">◀</button>
-        <span className="text-sm font-semibold text-gray-800 w-20 text-center">{year}年{month}月</span>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 w-20 text-center">{year}年{month}月</span>
         <button onClick={handleNextMonth} className="text-gray-500 hover:text-gray-700 px-1" aria-label="翌月">▶</button>
       </div>
 
@@ -490,8 +500,8 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
             { label: '実績合計', val: totalActual, color: 'text-red-500' },
             { label: '残り合計', val: totalBudget - totalActual, color: totalBudget - totalActual >= 0 ? 'text-green-600' : 'text-red-500' },
           ].map(({ label, val, color }) => (
-            <div key={label} className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-              <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+            <div key={label} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{label}</p>
               <p className={`text-base font-bold ${color}`}>{fmt(val)}</p>
             </div>
           ))}
@@ -502,12 +512,12 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
       {loading ? (
         <div className="text-center text-gray-400 py-8 text-sm">読み込み中...</div>
       ) : budgets.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">この月の予算がまだ設定されていません</p>
           <p className="text-gray-300 text-xs mt-1">「予算を追加」ボタンから設定してください</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
           {budgets.map((b) => (
             <BudgetRow key={b.budgetId} budget={b} onClick={() => setEditingBudget(b)} />
           ))}
@@ -515,15 +525,15 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
       )}
 
       {/* 予算達成率ヒートマップ（過去12ヶ月） */}
-      <section className="bg-white rounded-lg border border-gray-200 p-3">
-        <h3 className="text-base font-semibold text-gray-700 mb-3">予算達成率ヒートマップ（過去12ヶ月）</h3>
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">予算達成率ヒートマップ（過去12ヶ月）</h3>
         <BudgetHeatmap ledgerId={ledgerId} />
       </section>
 
       {/* 予算余剰・超過グラフ（直近6ヶ月） */}
-      <section className="bg-white rounded-lg border border-gray-200 p-3">
-        <h3 className="text-base font-semibold text-gray-700 mb-2">予算余剰・超過（直近6ヶ月）</h3>
-        <p className="text-xs text-gray-400 mb-2">緑: 余剰（予算内）　赤: 超過（予算超え）</p>
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-2">予算余剰・超過（直近6ヶ月）</h3>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">緑: 余剰（予算内）　赤: 超過（予算超え）</p>
         <BudgetSurplusChart ledgerId={ledgerId} />
       </section>
 

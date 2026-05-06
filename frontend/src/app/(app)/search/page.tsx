@@ -84,8 +84,8 @@ const SearchPage = () => {
   if (!selectedLedgerId) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-bold text-gray-800 mb-6">取引検索</h1>
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">取引検索</h1>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">帳簿を選択してください</p>
         </div>
       </div>
@@ -96,16 +96,16 @@ const SearchPage = () => {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-xl font-bold text-gray-800">
+      <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
         取引検索
         {ledgerName && <span className="text-sm font-normal text-gray-400 ml-2">（{ledgerName}）</span>}
       </h1>
 
       {/* フィルターフォーム */}
-      <div className="bg-white rounded-lg border border-gray-200 p-5">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">キーワード（メモ）</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">キーワード（メモ）</label>
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
@@ -116,11 +116,11 @@ const SearchPage = () => {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">カテゴリ</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">カテゴリ</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">すべて</option>
               <optgroup label="支出">
@@ -136,21 +136,21 @@ const SearchPage = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">開始日</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">開始日</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">終了日</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">終了日</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
         </div>
@@ -167,9 +167,9 @@ const SearchPage = () => {
       {/* 検索結果 */}
       {results !== null && (
         <div>
-          <p className="text-xs text-gray-400 mb-2">{results.length} 件</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">{results.length} 件</p>
           {results.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
               <p className="text-gray-400 text-sm">該当する明細がありません</p>
             </div>
           ) : (

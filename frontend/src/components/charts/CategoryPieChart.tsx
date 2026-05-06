@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { CategoryBreakdown } from '@/types/dashboard';
 import { useAuthStore } from '@/stores/authStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 type Props = {
   data: CategoryBreakdown[];
@@ -19,11 +20,12 @@ const FALLBACK_COLORS = [
 
 const CategoryPieChart = ({ data, size = 300 }: Props) => {
   const themeColor = useAuthStore((s) => s.themeColor);
+  const isDark = useThemeStore((s) => s.isDark);
 
   if (data.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-gray-400 text-sm"
+        className="flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm"
         style={{ height: size }}
       >
         データがありません
@@ -40,6 +42,12 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
     percentage: item.percentage,
     color: item.color ?? defaultColors[data.indexOf(item) % defaultColors.length],
   }));
+
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#1F2937' : '#ffffff',
+    borderColor: isDark ? '#374151' : '#E5E7EB',
+    color: isDark ? '#F9FAFB' : '#111827',
+  };
 
   return (
     <ResponsiveContainer width="100%" height={size}>
@@ -60,13 +68,20 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
         </Pie>
         <Tooltip
           formatter={(value: number) => fmt(value)}
+          contentStyle={tooltipStyle}
         />
         <Legend
           layout="vertical"
           verticalAlign="middle"
           align="right"
           iconSize={10}
-          wrapperStyle={{ fontSize: '16px', maxWidth: '55%', overflowWrap: 'break-word', lineHeight: '1.6' }}
+          wrapperStyle={{
+            fontSize: '16px',
+            maxWidth: '55%',
+            overflowWrap: 'break-word',
+            lineHeight: '1.6',
+            color: isDark ? '#D1D5DB' : '#374151',
+          }}
           formatter={(value, entry) => {
             const payload = entry.payload as { percentage: number; value: number } | undefined;
             const pct = payload?.percentage?.toFixed(1) ?? '0.0';

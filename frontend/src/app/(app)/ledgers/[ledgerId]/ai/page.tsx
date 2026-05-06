@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { getAiSummary, analyzeAi, getAiScore } from '@/lib/api/ai';
 import { useToastStore } from '@/stores/toastStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
 import type { AiSummary, AiAnalysisResult, AiScore, PeriodType, AdviceType } from '@/types/ai';
 
@@ -67,7 +68,7 @@ const ScoreBar = ({ score, max = 25 }: { score: number; max?: number }) => {
   const pct = Math.min(100, (score / max) * 100);
   const color = pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-400' : 'bg-red-400';
   return (
-    <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+    <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
       <div className={`${color} h-1.5 rounded-full`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -99,18 +100,18 @@ const ScoreCard = ({ score }: { score: AiScore }) => {
   return (
     <section className={`rounded-lg border p-4 ${cfg.bg} ${cfg.border}`}>
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-base font-semibold text-gray-700">家計健全度スコア</h2>
+        <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">家計健全度スコア</h2>
         {score.scoreDiff !== null && (
           <span className={`text-xs font-medium ${score.scoreDiff >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             先月比 {score.scoreDiff >= 0 ? '+' : ''}{score.scoreDiff}点 {score.scoreDiff >= 0 ? '↑' : '↓'}
           </span>
         )}
       </div>
-      <p className="text-xs text-gray-500 mb-3">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
         収支バランス・予算達成率・貯蓄率・支出安定度の4項目から家計の健全度を100点満点で評価します。
       </p>
       <div className="flex items-end gap-3 mb-4">
-        <span className="text-5xl font-bold text-gray-800">{score.totalScore}</span>
+        <span className="text-5xl font-bold text-gray-800 dark:text-gray-100">{score.totalScore}</span>
         <div className="mb-1">
           <span className="text-base">{cfg.emoji}</span>
           <span className={`ml-1 text-sm font-semibold ${cfg.text}`}>{cfg.label}</span>
@@ -125,14 +126,14 @@ const ScoreCard = ({ score }: { score: AiScore }) => {
         ].map(({ label, val }) => (
           <div key={label}>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-xs font-medium text-gray-600 w-20 shrink-0">{label}</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-20 shrink-0">{label}</span>
               <ScoreBar score={val} />
-              <span className="text-xs font-medium text-gray-700 w-8 text-right">{val}/25</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-8 text-right">{val}/25</span>
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed pl-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 leading-relaxed pl-0.5">
               {SCORE_DESCRIPTIONS[label].summary}
             </p>
-            <p className="text-xs text-gray-300 font-mono leading-relaxed pl-0.5">
+            <p className="text-xs text-gray-300 dark:text-gray-600 dark:text-gray-600 font-mono leading-relaxed pl-0.5">
               {SCORE_DESCRIPTIONS[label].formula}
             </p>
           </div>
@@ -175,6 +176,14 @@ const CHART_DESCRIPTIONS: Record<PeriodType, string> = {
 
 const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
   const period = summary.period;
+  const isDark = useThemeStore((s) => s.isDark);
+  const gridColor = isDark ? '#374151' : '#E5E7EB';
+  const tickColor = isDark ? '#9CA3AF' : '#6B7280';
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#1F2937' : '#ffffff',
+    borderColor: isDark ? '#374151' : '#E5E7EB',
+    color: isDark ? '#F9FAFB' : '#111827',
+  };
 
   // カテゴリ別増減バッジ（全期間共通）
   const currentMap = new Map(summary.categoryBreakdown.map((c) => [c.categoryName, c.totalAmount]));
@@ -221,14 +230,14 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
   }
 
   return (
-    <section className="bg-white rounded-lg border border-gray-200 p-3 space-y-4">
-      <h2 className="text-base font-semibold text-gray-700">トレンド分析</h2>
-      <p className="text-xs text-gray-400 leading-relaxed">{CHART_DESCRIPTIONS[period]}</p>
+    <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-4">
+      <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">トレンド分析</h2>
+      <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 leading-relaxed">{CHART_DESCRIPTIONS[period]}</p>
 
       {/* カテゴリ別増減バッジ */}
       {categoryChanges.length > 0 && (
         <div>
-          <p className="text-xs text-gray-400 mb-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
             {period === 'ONE_MONTH' ? '今月 vs 先月 カテゴリ別支出変化' : '当期 vs 前期 カテゴリ別支出変化'}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -240,10 +249,10 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
                   key={name}
                   className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
                     zero
-                      ? 'bg-gray-100 text-gray-500'
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       : up
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-green-100 text-green-700'
+                      ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                   }`}
                 >
                   {name} {zero ? '→' : up ? '↑' : '↓'}{Math.abs(changeRate).toFixed(0)}%
@@ -258,18 +267,18 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
       {period === 'ONE_MONTH' ? (
         /* 今月 vs 先月 比較棒グラフ */
         <div>
-          <p className="text-xs text-gray-400 mb-1">収入・支出 今月 vs 先月</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">収入・支出 今月 vs 先月</p>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={comparisonData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 16 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fontSize: 16, fill: tickColor }} />
               <YAxis
                 tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-                tick={{ fontSize: 16 }}
+                tick={{ fontSize: 16, fill: tickColor }}
                 width={40}
               />
-              <Tooltip formatter={(value: number) => fmt(value)} />
-              <Legend wrapperStyle={{ fontSize: 16 }} />
+              <Tooltip formatter={(value: number) => fmt(value)} contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ fontSize: 16, color: isDark ? '#D1D5DB' : '#374151' }} />
               <Bar dataKey="income" name="収入" fill="#16A34A" radius={[3, 3, 0, 0]} />
               <Bar dataKey="expense" name="支出" fill="#EF4444" radius={[3, 3, 0, 0]} />
             </BarChart>
@@ -278,17 +287,17 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
       ) : (
         /* 収支傾向ライン＋予測 */
         <div>
-          <p className="text-xs text-gray-400 mb-1">月次収支（収入−支出）と来月予測（点線）</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">月次収支（収入−支出）と来月予測（点線）</p>
           <ResponsiveContainer width="100%" height={180}>
             <ComposedChart data={lineData} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 16 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="label" tick={{ fontSize: 16, fill: tickColor }} />
               <YAxis
                 tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
-                tick={{ fontSize: 16 }}
+                tick={{ fontSize: 16, fill: tickColor }}
                 width={40}
               />
-              <Tooltip formatter={(value: number) => fmt(value)} />
+              <Tooltip formatter={(value: number) => fmt(value)} contentStyle={tooltipStyle} />
               <Line
                 type="monotone"
                 dataKey="netBalance"
@@ -345,7 +354,7 @@ const AdviceCard = ({ ledgerId, period, adviceType, label, description }: Advice
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
       <button
         onClick={handleClick}
         disabled={loading}
@@ -356,20 +365,20 @@ const AdviceCard = ({ ledgerId, period, adviceType, label, description }: Advice
           ? <span className="inline-flex items-center gap-2"><span className="animate-spin inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full" />分析中...</span>
           : label}
       </button>
-      <p className="text-xs text-gray-500 leading-relaxed">{description}</p>
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{description}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500">
         送信データ: 直近{PERIOD_LABEL[period]}の収支・カテゴリ・予算データ
       </p>
 
       {result && (
         <div className="space-y-1 pt-1 border-t border-gray-100">
           {result.fromCache && (
-            <p className="text-xs text-gray-400">キャッシュから取得</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">キャッシュから取得</p>
           )}
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
             {result.adviceText}
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             生成日時: {new Date(result.generatedAt).toLocaleString('ja-JP')}
           </p>
         </div>
@@ -417,7 +426,7 @@ const AiContent = () => {
 
       {/* 期間セレクター */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-500">期間:</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">期間:</span>
         {PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -443,8 +452,8 @@ const AiContent = () => {
 
           {/* AI アドバイス */}
           <section className="space-y-2">
-            <h2 className="text-base font-semibold text-gray-700">AIアドバイス</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">AIアドバイス</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
               ボタンを押すと AI が分析します。結果は24時間キャッシュされます。
             </p>
             {ADVICE_BUTTONS.map((btn) => (

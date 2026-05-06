@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { logout as logoutApi } from '@/lib/api/auth';
 import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
 
@@ -17,6 +18,7 @@ const Header = () => {
   const { ledgers, selectedLedgerId, selectLedger } = useLedgerStore();
   const canAdmin = useLedgerStore((s) => s.canAdmin)();
   const { close: closePanel, open: openPanel } = useSubPanelStore();
+  const { isDark, toggle: toggleDark } = useThemeStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const selectedLedger = ledgers.find((l) => l.ledgerId === selectedLedgerId);
@@ -73,19 +75,19 @@ const Header = () => {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[180px]">
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 min-w-[180px]">
               {ledgers.length === 0 ? (
-                <div className="px-4 py-2 text-sm text-gray-400">帳簿がありません</div>
+                <div className="px-4 py-2 text-sm text-gray-400 dark:text-gray-500">帳簿がありません</div>
               ) : (
                 ledgers.map((ledger) => (
                   <button
                     key={ledger.ledgerId}
                     onClick={() => handleSelectLedger(ledger.ledgerId)}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     style={
                       ledger.ledgerId === selectedLedgerId
                         ? { fontWeight: 600, color: 'var(--theme-color)' }
-                        : { color: '#374151' }
+                        : { color: isDark ? '#D1D5DB' : '#374151' }
                     }
                   >
                     {ledger.ledgerName}
@@ -109,8 +111,18 @@ const Header = () => {
         )}
       </div>
 
-      {/* 右: ユーザー名・ログアウト */}
+      {/* 右: ダークモード切り替え・ユーザー名・ログアウト */}
       <div className="flex items-center gap-3">
+        {/* ダークモード切り替えボタン */}
+        <button
+          onClick={toggleDark}
+          title={isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+          aria-label={isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+          className="text-white border border-white/40 rounded-md px-2 py-1 hover:bg-white/20 transition-colors text-base leading-none"
+        >
+          {isDark ? '☀️' : '🌙'}
+        </button>
+
         {userName && (
           <span className="text-sm text-white/80">{userName}</span>
         )}

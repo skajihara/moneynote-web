@@ -48,7 +48,7 @@ const SubPanel = ({ children }: SubPanelProps) => {
   return (
     <aside
       style={{ width: panelWidth }}
-      className="relative bg-white border-l border-gray-200 flex flex-col shrink-0"
+      className="relative bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col shrink-0"
     >
       <div
         role="separator"
@@ -57,9 +57,9 @@ const SubPanel = ({ children }: SubPanelProps) => {
         className="absolute left-0 top-0 bottom-0 w-3 cursor-col-resize z-10 group flex items-center justify-center"
       >
         <div className="flex flex-col gap-0.5">
-          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[var(--theme-color)] transition-colors" />
-          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[var(--theme-color)] transition-colors" />
-          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[var(--theme-color)] transition-colors" />
+          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-[var(--theme-color)] transition-colors" />
+          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-[var(--theme-color)] transition-colors" />
+          <span className="block w-0.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-[var(--theme-color)] transition-colors" />
         </div>
       </div>
       <div className="p-4 pl-5 overflow-y-auto flex-1">{children}</div>

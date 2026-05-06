@@ -162,21 +162,21 @@ const TransactionEditForm = ({
       <div className="flex flex-col gap-4">
         {/* ヘッダー: タイトルと × ボタン */}
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-800">
+          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
             {isEdit ? '明細を編集' : '明細を追加'}
           </h3>
           <button
             type="button"
             onClick={onCancel}
             aria-label="閉じる"
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none p-1 rounded hover:bg-gray-100 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             ×
           </button>
         </div>
 
         {/* 種別切り替え */}
-        <div className="flex rounded-md overflow-hidden border border-gray-300">
+        <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
           {(['EXPENSE', 'INCOME'] as const).map((t) => (
             <button
               key={t}
@@ -195,11 +195,11 @@ const TransactionEditForm = ({
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           {/* 日付 */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">日付</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">日付</label>
             <input
               {...register('transactionDate')}
               type="date"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.transactionDate && (
               <p className="text-red-500 text-xs mt-1">{errors.transactionDate.message}</p>
@@ -208,13 +208,13 @@ const TransactionEditForm = ({
 
           {/* 金額 */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">金額</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">金額</label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number"
               min="1"
               placeholder="0"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
@@ -223,10 +223,10 @@ const TransactionEditForm = ({
 
           {/* カテゴリ */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">カテゴリ</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">カテゴリ</label>
             <select
               {...register('categoryId')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">選択してください</option>
               {categories.map((c) => (
@@ -242,12 +242,12 @@ const TransactionEditForm = ({
 
           {/* メモ */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">メモ（任意）</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">メモ（任意）</label>
             <textarea
               {...register('memo')}
               rows={2}
               placeholder="メモを入力..."
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.memo && (
               <p className="text-red-500 text-xs mt-1">{errors.memo.message}</p>
@@ -266,7 +266,7 @@ const TransactionEditForm = ({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               キャンセル
             </button>
