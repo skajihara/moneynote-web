@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年4月（Issue #8 帳簿共有機能 完了）
+最終更新: 2026年5月（Issue #22 ダークモード 完了）
 
 ---
 
@@ -28,7 +28,7 @@
 
 ## 現在の状態
 
-- ISSUES対応中。直近完了ブランチ: `feature/issue-8-ledger-share`
+- ISSUES対応中。直近完了ブランチ: `feature/issue-22-dark-mode`
 - 次の作業: develop へのマージ後、次の Issue 対応へ
 - リリース済み: v0.5.0（Step 14〜15）
 
@@ -38,6 +38,11 @@
 
 | 決定 | 理由 |
 |---|---|
+| ダークモードは Tailwind `darkMode: 'class'` で実装。`<html>` に `dark` クラスを付与 | システム設定連動・localStorage 永続化・アンチフラッシュのために class 方式が最適 |
+| アンチフラッシュスクリプトを root `layout.tsx` の `<head>` にインライン `<script>` で注入 | Next.js App Router の root layout はサーバーコンポーネントのため useEffect 不可。React ハイドレーション前に DOM を操作するためインラインスクリプトが必要 |
+| ダークモード状態は `themeStore`（Zustand）で管理。`init()` は DOM から読取り同期 | アンチフラッシュスクリプトが先に DOM を設定するため、ストアは DOM に合わせて後から同期する |
+| Recharts チャートの暗色化は `useThemeStore` で `isDark` を取得して JS で色を条件分岐 | Tailwind `dark:` クラスは SVG インラインスタイルには効かないため |
+| `<html suppressHydrationWarning>` を付与 | アンチフラッシュスクリプトがサーバー/クライアントで HTML の `class` 属性を変更するためハイドレーションミスマッチ警告を抑制する必要がある |
 | 取引検索の `keyword`・`categoryId` は空文字列センチネル値を使用（`= ''` で全件） | Hibernate 6 + PostgreSQL で null String を `lower()` に渡すと bytea 型エラーになるため |
 | Docker ビルド時は `next/font/google` を使用しない（CSS システムフォントで代替） | Docker ビルド環境は Google Fonts にアクセスできないためビルド失敗する |
 | 帳簿削除の物理削除カスケード順: `ai_cache→budgets→transactions→fixed→categories→perms→ledger` | DB に CASCADE DELETE なし。FK 制約違反を防ぐため順序が重要 |

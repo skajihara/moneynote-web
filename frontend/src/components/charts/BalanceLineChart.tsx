@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Dot,
 } from 'recharts';
+import { useThemeStore } from '@/stores/themeStore';
 
 export type LineItem = {
   label: string;
@@ -39,10 +40,12 @@ const CustomDot = (props: {
 };
 
 const BalanceLineChart = ({ data, height = 240 }: Props) => {
+  const isDark = useThemeStore((s) => s.isDark);
+
   if (data.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-gray-400 text-sm"
+        className="flex items-center justify-center text-gray-400 dark:text-gray-500 text-sm"
         style={{ height }}
       >
         データがありません
@@ -50,13 +53,24 @@ const BalanceLineChart = ({ data, height = 240 }: Props) => {
     );
   }
 
+  const gridColor = isDark ? '#374151' : '#E5E7EB';
+  const tickColor = isDark ? '#9CA3AF' : '#6B7280';
+  const tooltipStyle = {
+    backgroundColor: isDark ? '#1F2937' : '#ffffff',
+    borderColor: isDark ? '#374151' : '#E5E7EB',
+    color: isDark ? '#F9FAFB' : '#111827',
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" tick={{ fontSize: 16 }} />
-        <YAxis tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} tick={{ fontSize: 16 }} />
-        <Tooltip formatter={(value: number) => fmt(value)} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+        <XAxis dataKey="label" tick={{ fontSize: 16, fill: tickColor }} />
+        <YAxis
+          tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`}
+          tick={{ fontSize: 16, fill: tickColor }}
+        />
+        <Tooltip formatter={(value: number) => fmt(value)} contentStyle={tooltipStyle} />
         <ReferenceLine y={0} stroke="#9CA3AF" strokeDasharray="4 4" />
         <Line
           type="monotone"

@@ -110,16 +110,16 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
     <div className="flex flex-col gap-6">
       {/* メンバー一覧 */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">メンバー一覧</h2>
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">メンバー一覧</h2>
         {loading ? (
-          <p className="text-sm text-gray-400">読み込み中...</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">読み込み中...</p>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
             {members.map((m) => (
               <div key={m.userId} className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800">{m.userName}</p>
-                  <p className="text-xs text-gray-400">{m.userId}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{m.userName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{m.userId}</p>
                 </div>
 
                 {/* 権限表示 or 編集 */}
@@ -128,7 +128,7 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
                     <select
                       value={editPerm}
                       onChange={(e) => setEditPerm(e.target.value as Exclude<PermissionType, 'OWNER'>)}
-                      className="border border-gray-300 rounded px-2 py-1 text-xs"
+                      className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs dark:bg-gray-700 dark:text-gray-100"
                     >
                       {ASSIGNABLE.map((p) => (
                         <option key={p} value={p}>{PERMISSION_LABELS[p]}</option>
@@ -142,7 +142,7 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="text-xs text-gray-500 hover:text-gray-700"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700"
                     >
                       取消
                     </button>
@@ -151,8 +151,8 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     m.permissionType === 'OWNER'  ? 'bg-purple-100 text-purple-700' :
                     m.permissionType === 'ADMIN'  ? 'bg-blue-100 text-blue-700'   :
-                    m.permissionType === 'EDITOR' ? 'bg-green-100 text-green-700' :
-                    'bg-gray-100 text-gray-600'
+                    m.permissionType === 'EDITOR' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                    'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                   }`}>
                     {PERMISSION_LABELS[m.permissionType]}
                   </span>
@@ -184,25 +184,25 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
       {/* 招待フォーム（ADMIN以上のみ） */}
       {canAdmin && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">メンバーを招待</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">メンバーを招待</h2>
           <form onSubmit={handleSubmit(onInvite)} className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">ユーザーID</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">ユーザーID</label>
               <input
                 {...register('userId')}
                 type="text"
                 placeholder="招待するユーザーのIDを入力"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
               />
               {errors.userId && (
                 <p className="text-red-500 text-xs mt-1">{errors.userId.message}</p>
               )}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">権限</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">権限</label>
               <select
                 {...register('permissionType')}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 {ASSIGNABLE.map((p) => (
                   <option key={p} value={p}>{PERMISSION_LABELS[p]}</option>

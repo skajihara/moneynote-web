@@ -140,12 +140,12 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       {/* 名称 */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">名称</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
         <input
           {...register('fixedName')}
           type="text"
           placeholder="家賃、電気代..."
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
         {errors.fixedName && (
           <p className="text-red-500 text-xs mt-1">{errors.fixedName.message}</p>
@@ -154,8 +154,8 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* 種別切り替え */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">種別</label>
-        <div className="flex rounded-md overflow-hidden border border-gray-300">
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">種別</label>
+        <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
           {(['EXPENSE', 'INCOME'] as const).map((t) => (
             <button
               key={t}
@@ -174,10 +174,10 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* カテゴリ */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">カテゴリ</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">カテゴリ</label>
         <select
           {...register('categoryId')}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         >
           <option value="">選択してください</option>
           {categories.map((c) => (
@@ -194,13 +194,13 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* 金額 */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">金額</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">金額</label>
         <input
           {...register('amount', { valueAsNumber: true })}
           type="number"
           min="1"
           placeholder="0"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
         {errors.amount && (
           <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
@@ -209,11 +209,11 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* 登録間隔 */}
       <div>
-        <label htmlFor="intervalType" className="block text-xs font-medium text-gray-700 mb-1">登録間隔</label>
+        <label htmlFor="intervalType" className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">登録間隔</label>
         <select
           {...register('intervalType')}
           id="intervalType"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         >
           {INTERVAL_TYPES.map((it) => (
             <option key={it} value={it}>
@@ -229,7 +229,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
       {/* 引落日（月単位インターバルのみ表示） */}
       {showDayOfMonth && (
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
             引落日（毎月何日）
           </label>
           <input
@@ -238,7 +238,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
             min="1"
             max="28"
             placeholder="1〜28"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.dayOfMonth && (
             <p className="text-red-500 text-xs mt-1">{errors.dayOfMonth.message}</p>
@@ -248,11 +248,11 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* 開始日 */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">開始日</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">開始日</label>
         <input
           {...register('startDate')}
           type="date"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
         {errors.startDate && (
           <p className="text-red-500 text-xs mt-1">{errors.startDate.message}</p>
@@ -261,11 +261,11 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* 終了日 */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">終了日</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">終了日</label>
         <input
           {...register('endDate')}
           type="date"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
         {errors.endDate && (
           <p className="text-red-500 text-xs mt-1">{errors.endDate.message}</p>
@@ -274,12 +274,12 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* メモ */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">メモ（任意）</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">メモ（任意）</label>
         <textarea
           {...register('memo')}
           rows={2}
           placeholder="メモを入力..."
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-700 dark:text-gray-100"
         />
         {errors.memo && (
           <p className="text-red-500 text-xs mt-1">{errors.memo.message}</p>
@@ -298,7 +298,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors"
+          className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 py-2 rounded-md text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           キャンセル
         </button>

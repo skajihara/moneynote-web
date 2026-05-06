@@ -44,8 +44,8 @@ const FixedEditDialog = ({ ledgerId, item, onClose, onSaved }: DialogProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 py-8 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 my-auto">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">固定費を編集</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 my-auto">
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">固定費を編集</h3>
         <FixedTransactionForm
           ledgerId={ledgerId}
           editing={item}
@@ -79,8 +79,8 @@ type AddDialogProps = {
 
 const FixedAddDialog = ({ ledgerId, onClose, onSaved }: AddDialogProps) => (
   <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 py-8 overflow-y-auto">
-    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4 my-auto">
-      <h3 className="text-base font-semibold text-gray-800 mb-4">固定費を追加</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 my-auto">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">固定費を追加</h3>
       <FixedTransactionForm
         ledgerId={ledgerId}
         onSaved={onSaved}
@@ -147,33 +147,33 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
       {loading ? (
         <div className="text-center text-gray-400 py-6 text-sm">読み込み中...</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">固定費が登録されていません</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
           {items.map((item) => (
             <button
               key={item.fixedTransactionId}
               onClick={() => setEditingItem(item)}
-              className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium text-gray-800 truncate">
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
                       {item.fixedName}
                     </span>
                     {item.isExpired && (
-                      <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded shrink-0">
+                      <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded shrink-0">
                         期限切れ
                       </span>
                     )}
                   </div>
                   {item.memo && (
-                    <p className="text-xs text-gray-400 truncate mb-0.5">{item.memo}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mb-0.5">{item.memo}</p>
                   )}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                     <span>
                       {item.categoryIcon ? `${item.categoryIcon} ` : ''}
                       {item.categoryName}
@@ -194,11 +194,11 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
                         ? `${item.dayOfMonth}日` : ''}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     {item.startDate} 〜 {item.endDate ?? '終了日なし'}
                   </div>
                 </div>
-                <span className="text-xs text-gray-300 shrink-0 mt-1">›</span>
+                <span className="text-xs text-gray-300 dark:text-gray-600 shrink-0 mt-1">›</span>
               </div>
             </button>
           ))}

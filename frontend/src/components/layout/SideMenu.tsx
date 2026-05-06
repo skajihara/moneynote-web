@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 type MenuItem = {
   label: string;
@@ -56,9 +57,10 @@ const menuItems: MenuItem[] = [
 const SideMenu = () => {
   const pathname = usePathname();
   const selectedLedgerId = useLedgerStore((state) => state.selectedLedgerId);
+  const { isDark } = useThemeStore();
 
   return (
-    <aside className="w-56 bg-white border-r border-gray-200 flex flex-col shrink-0">
+    <aside className="w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0">
       <nav className="p-2 flex flex-col gap-0.5">
         {menuItems.map((item) => {
           // 帳簿が必要なメニューかつ未選択の場合は無効化する
@@ -66,7 +68,7 @@ const SideMenu = () => {
             return (
               <span
                 key={item.label}
-                className="px-3 py-2 text-sm text-gray-300 rounded-md cursor-not-allowed"
+                className="px-3 py-2 text-sm text-gray-300 dark:text-gray-600 rounded-md cursor-not-allowed"
               >
                 {item.label}
               </span>
@@ -88,11 +90,13 @@ const SideMenu = () => {
               style={
                 isActive
                   ? {
-                      backgroundColor: 'color-mix(in srgb, var(--theme-color) 12%, white)',
+                      backgroundColor: isDark
+                        ? 'color-mix(in srgb, var(--theme-color) 20%, #1F2937)'
+                        : 'color-mix(in srgb, var(--theme-color) 12%, white)',
                       color: 'var(--theme-color)',
                       fontWeight: 600,
                     }
-                  : { color: '#4B5563' }
+                  : { color: isDark ? '#D1D5DB' : '#4B5563' }
               }
             >
               {item.label}

@@ -33,11 +33,13 @@
       "Bash(sed -n '60,75p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)",
       "Bash(sed -n '95,110p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)",
       "Bash(sed -n '125,150p' backend/src/main/java/com/example/moneynote/domain/fixedtransaction/FixedTransactionService.java)",
-      "mcp__github__issue_read"
+      "mcp__github__issue_read",
+      "Bash(py \"c:/Users/ruri3/git/moneynote-web/add_dark_mode.py\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\ruri3\\git\\moneynote-web\\.claude\\hooks",
-      "c:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app\\(app)\\search"
+      "c:\\Users\\ruri3\\git\\moneynote-web\\frontend\\src\\app\\(app)\\search",
+      "c:\\Users\\ruri3\\git\\moneynote-web"
     ]
   }
 }

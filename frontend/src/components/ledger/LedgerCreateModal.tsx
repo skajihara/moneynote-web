@@ -52,22 +52,22 @@ const LedgerCreateModal = ({ onCreated }: Props) => {
   return (
     // 背景オーバーレイ（キャンセル不可なのでクリックしても閉じない）
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-1">帳簿を作成する</h2>
-        <p className="text-sm text-gray-500 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">帳簿を作成する</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           MoneyNote Web を使うには帳簿が必要です。最初の帳簿を作成してください。
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-300 mb-1">
               帳簿名 <span className="text-red-500">*</span>
             </label>
             <input
               {...register('ledgerName')}
               type="text"
               placeholder="例: 家計簿"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             {errors.ledgerName && (
               <p className="text-red-500 text-xs mt-1">{errors.ledgerName.message}</p>
@@ -75,14 +75,14 @@ const LedgerCreateModal = ({ onCreated }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-300 mb-1">
               初期残高（任意）
             </label>
             <input
               {...register('initialBalance')}
               type="number"
               placeholder="0"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
           </div>
 

@@ -64,15 +64,15 @@ const CsvExport = ({ ledgerId }: Props) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-gray-800">CSVエクスポート</h2>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">CSVエクスポート</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
         明細データをCSVファイルとしてダウンロードします。
       </p>
 
       {/* 日付範囲 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-sm text-gray-600" htmlFor="csv-start-date">
+          <label className="text-sm text-gray-600 dark:text-gray-300" htmlFor="csv-start-date">
             開始日
           </label>
           <input
@@ -80,11 +80,11 @@ const CsvExport = ({ ledgerId }: Props) => {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm text-gray-600" htmlFor="csv-end-date">
+          <label className="text-sm text-gray-600 dark:text-gray-300" htmlFor="csv-end-date">
             終了日
           </label>
           <input
@@ -92,7 +92,7 @@ const CsvExport = ({ ledgerId }: Props) => {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
         </div>
       </div>
@@ -101,7 +101,7 @@ const CsvExport = ({ ledgerId }: Props) => {
       {categories.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <p className="text-sm text-gray-600">カテゴリ絞り込み</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">カテゴリ絞り込み</p>
             <button
               type="button"
               onClick={selectAll}
@@ -129,7 +129,7 @@ const CsvExport = ({ ledgerId }: Props) => {
                       onChange={() => toggleCategory(c.categoryId)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-700">{c.categoryName}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{c.categoryName}</span>
                   </label>
                 ))}
               </div>
@@ -147,7 +147,7 @@ const CsvExport = ({ ledgerId }: Props) => {
                       onChange={() => toggleCategory(c.categoryId)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-700">{c.categoryName}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{c.categoryName}</span>
                   </label>
                 ))}
               </div>
@@ -164,7 +164,7 @@ const CsvExport = ({ ledgerId }: Props) => {
           onChange={(e) => setIncludeFixed(e.target.checked)}
           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
-        <span className="text-sm text-gray-700">固定費を含める</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">固定費を含める</span>
       </label>
 
       {error && (

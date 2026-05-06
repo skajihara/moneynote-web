@@ -21,29 +21,29 @@ const SummaryCards = ({ totalIncome, totalExpense, netBalance, currentBalance, c
 
   return (
     <div className={`grid ${colsClass} gap-3`}>
-      <div className="bg-white rounded-lg border border-gray-200 p-3">
-        <p className="text-xs text-gray-500 mb-1">収入</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">収入</p>
         <p className="text-sm font-semibold text-green-600">{fmt(totalIncome)}</p>
       </div>
-      <div className="bg-white rounded-lg border border-gray-200 p-3">
-        <p className="text-xs text-gray-500 mb-1">支出</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">支出</p>
         <p className="text-sm font-semibold text-red-500">{fmt(totalExpense)}</p>
       </div>
-      <div className="bg-white rounded-lg border border-gray-200 p-3">
-        <p className="text-xs text-gray-500 mb-1">収支</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">収支</p>
         <p className={`text-sm font-semibold ${netBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
           {fmt(netBalance)}
         </p>
       </div>
       {carryOver !== undefined && (
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <p className="text-xs text-gray-500 mb-1">繰り越し</p>
-          <p className="text-sm font-semibold text-gray-800">{fmt(carryOver)}</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">繰り越し</p>
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(carryOver)}</p>
         </div>
       )}
       {currentBalance !== undefined && (
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
-          <p className="text-xs text-gray-500 mb-1">残高</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">残高</p>
           <p className={`text-sm font-semibold ${currentBalance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {fmt(currentBalance)}
           </p>
