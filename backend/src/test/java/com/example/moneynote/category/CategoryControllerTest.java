@@ -81,8 +81,8 @@ class CategoryControllerTest {
         // register 経由で帳簿を作成する（AuthService がデフォルトカテゴリを生成するため）
         ledgerId1 = registerAndGetLedgerId("user1", "user1@example.com");
         createUser("user2", "user2@example.com");
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -327,7 +327,7 @@ class CategoryControllerTest {
                                 "email", email,
                                 "password", "Password1"))))
                 .andExpect(status().isCreated());
-        String token = jwtTokenProvider.generateAccessToken(userId);
+        String token = jwtTokenProvider.generateAccessToken(userId, "USER");
         String body = mockMvc.perform(get("/api/v1/ledgers")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())

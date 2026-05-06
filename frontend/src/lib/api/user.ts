@@ -11,6 +11,7 @@ export type UserProfile = {
   userName: string;
   email: string;
   themeColor: string | null;
+  role: string;
 };
 
 export type UpdateProfileRequest = {

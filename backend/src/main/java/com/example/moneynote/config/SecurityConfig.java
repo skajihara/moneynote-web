@@ -75,6 +75,8 @@ public class SecurityConfig {
                         "/v3/api-docs/**"
                     ).permitAll();
                 }
+                // セキュリティ: 管理者専用 API は SYSTEM_ADMIN ロールのみ許可する
+                auth.requestMatchers("/api/v1/admin/**").hasAuthority("SYSTEM_ADMIN");
                 auth.anyRequest().authenticated();
             })
             // セキュリティ: 未認証リクエストは 403 ではなく 401 を返す

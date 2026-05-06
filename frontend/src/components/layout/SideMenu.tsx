@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useThemeStore } from '@/stores/themeStore';
+import { useAuthStore } from '@/stores/authStore';
 
 type MenuItem = {
   label: string;
@@ -58,6 +59,7 @@ const SideMenu = () => {
   const pathname = usePathname();
   const selectedLedgerId = useLedgerStore((state) => state.selectedLedgerId);
   const { isDark } = useThemeStore();
+  const role = useAuthStore((s) => s.role);
 
   return (
     <aside className="w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0">
@@ -103,6 +105,27 @@ const SideMenu = () => {
             </Link>
           );
         })}
+
+        {/* SYSTEM_ADMIN のみ管理者画面リンクを表示する */}
+        {role === 'SYSTEM_ADMIN' && (
+          <Link
+            href="/admin"
+            className="px-3 py-2 text-sm rounded-md transition-colors mt-2 border-t border-gray-100 dark:border-gray-700 pt-3"
+            style={
+              pathname === '/admin'
+                ? {
+                    backgroundColor: isDark
+                      ? 'color-mix(in srgb, var(--theme-color) 20%, #1F2937)'
+                      : 'color-mix(in srgb, var(--theme-color) 12%, white)',
+                    color: 'var(--theme-color)',
+                    fontWeight: 600,
+                  }
+                : { color: isDark ? '#D1D5DB' : '#4B5563' }
+            }
+          >
+            🔧 管理者画面
+          </Link>
+        )}
       </nav>
     </aside>
   );

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login } from '@/lib/api/auth';
+import { getProfile } from '@/lib/api/user';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
@@ -33,8 +34,11 @@ const LoginPage = () => {
   const onSubmit = async (values: FormValues) => {
     try {
       const result = await login(values);
-      authLogin(values.userId, values.userId, result.data.accessToken);
-      router.push('/dashboard');
+      // アクセストークンをセットしてからプロフィール（ロール含む）を取得する
+      useAuthStore.getState().setAccessToken(result.data.accessToken);
+      const profile = await getProfile();
+      authLogin(values.userId, profile.data.userName, result.data.accessToken, profile.data.role);
+      router.push(profile.data.role === 'SYSTEM_ADMIN' ? '/admin' : '/dashboard');
     } catch (e) {
       const message =
         e instanceof ApiClientError

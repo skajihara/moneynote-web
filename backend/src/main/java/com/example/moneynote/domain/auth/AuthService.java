@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.auth;
 
+import com.example.moneynote.common.exception.AccessDeniedException;
 import com.example.moneynote.common.exception.RateLimitException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.UnauthorizedException;
@@ -141,10 +142,15 @@ public class AuthService {
             throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
         }
 
+        // セキュリティ: 無効化されたアカウントはログイン不可
+        if (!user.isActive()) {
+            throw new AccessDeniedException("アカウントが無効化されています");
+        }
+
         // 成功 → 失敗カウントをリセット
         redisTemplate.delete(failKey);
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
 
         // リフレッシュトークンを Redis に保存
@@ -212,7 +218,10 @@ public class AuthService {
             throw new UnauthorizedException("リフレッシュトークンが一致しません");
         }
 
-        return jwtTokenProvider.generateAccessToken(userId);
+        // ロールを最新 DB 値から取得して新しいアクセストークンに埋め込む
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("ユーザーが見つかりません"));
+        return jwtTokenProvider.generateAccessToken(userId, user.getRole().name());
     }
 
     // -------------------------------------------------------------------------

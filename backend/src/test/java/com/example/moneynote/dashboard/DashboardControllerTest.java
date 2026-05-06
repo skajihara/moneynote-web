@@ -133,8 +133,8 @@ class DashboardControllerTest {
                 .categoryType(CategoryType.INCOME).displayOrder((short) 3).build());
         incCategoryId = incCat.getCategoryId();
 
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================

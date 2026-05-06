@@ -25,8 +25,16 @@ public class JwtTokenProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String generateAccessToken(String userId) {
-        return generate(userId, "ACCESS", accessTokenExpiration);
+    public String generateAccessToken(String userId, String role) {
+        Date now = new Date();
+        return Jwts.builder()
+                .subject(userId)
+                .claim("type", "ACCESS")
+                .claim("role", role)
+                .issuedAt(now)
+                .expiration(new Date(now.getTime() + accessTokenExpiration))
+                .signWith(secretKey)
+                .compact();
     }
 
     public String generateRefreshToken(String userId) {
@@ -64,6 +72,16 @@ public class JwtTokenProvider {
             return type != null ? type.toString() : "";
         } catch (JwtException | IllegalArgumentException e) {
             return "";
+        }
+    }
+
+    /** トークンの role クレームを返す。存在しない場合は "USER" を返す */
+    public String getRole(String token) {
+        try {
+            Object role = getClaims(token).get("role");
+            return role != null ? role.toString() : "USER";
+        } catch (JwtException | IllegalArgumentException e) {
+            return "USER";
         }
     }
 

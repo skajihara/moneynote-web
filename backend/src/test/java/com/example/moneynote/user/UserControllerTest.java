@@ -77,8 +77,8 @@ class UserControllerTest {
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         createUser("user1", "user1@example.com", "Password1");
         createUser("user2", "user2@example.com", "Password2");
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -150,7 +150,7 @@ class UserControllerTest {
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         createUserWithStrongPassword("user1", "user1@example.com");
         createUserWithStrongPassword("user2", "user2@example.com");
-        token1 = jwtTokenProvider.generateAccessToken("user1");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
 
         mockMvc.perform(put("/api/v1/users/me/password")
                         .header("Authorization", "Bearer " + token1)
@@ -177,7 +177,7 @@ class UserControllerTest {
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         createUserWithStrongPassword("user1", "user1@example.com");
         createUserWithStrongPassword("user2", "user2@example.com");
-        token1 = jwtTokenProvider.generateAccessToken("user1");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
 
         mockMvc.perform(put("/api/v1/users/me/password")
                         .header("Authorization", "Bearer " + token1)
@@ -258,7 +258,7 @@ class UserControllerTest {
                                 "email", "user3@example.com",
                                 "password", "Password3"))))
                 .andExpect(status().isCreated());
-        String token3 = jwtTokenProvider.generateAccessToken("user3");
+        String token3 = jwtTokenProvider.generateAccessToken("user3", "USER");
 
         // 帳簿IDとカテゴリIDを取得する
         String ledgerBody = mockMvc.perform(get("/api/v1/ledgers")

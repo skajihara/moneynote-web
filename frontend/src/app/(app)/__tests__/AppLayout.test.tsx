@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import AppLayout from '../layout';
 import * as authApi from '@/lib/api/auth';
 import * as ledgerApi from '@/lib/api/ledger';
+import * as userApi from '@/lib/api/user';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
@@ -17,10 +18,12 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/lib/api/auth');
 jest.mock('@/lib/api/ledger');
+jest.mock('@/lib/api/user');
 
 const mockRefresh = jest.mocked(authApi.refresh);
 const mockLogout = jest.mocked(authApi.logout);
 const mockGetLedgers = jest.mocked(ledgerApi.getLedgers);
+const mockGetProfile = jest.mocked(userApi.getProfile);
 
 const refreshResponse = { data: { accessToken: 'refreshed-token' }, error: null, timestamp: '' };
 const emptyLedgersResponse = { data: [], error: null, timestamp: '' };
@@ -43,14 +46,22 @@ const ledgersResponse = {
   timestamp: '',
 };
 
+const profileResponse = {
+  data: { userId: 'test_user', userName: 'テストユーザー', email: 'test@example.com', themeColor: null, role: 'USER' },
+  error: null,
+  timestamp: '',
+};
+
 beforeEach(() => {
   mockPush.mockReset();
   mockLogout.mockReset();
   mockRefresh.mockReset();
   mockGetLedgers.mockReset();
+  mockGetProfile.mockReset();
   mockPathname = '/dashboard';
   mockRefresh.mockResolvedValue(refreshResponse);
   mockGetLedgers.mockResolvedValue(ledgersResponse);
+  mockGetProfile.mockResolvedValue(profileResponse);
   useAuthStore.setState({
     userId: 'test_user',
     userName: 'テストユーザー',
@@ -170,6 +181,22 @@ describe('AppLayout 帳簿作成モーダル', () => {
   });
 
   it('帳簿が1件以上の場合はモーダルが表示されない', async () => {
+    render(<AppLayout><div>コンテンツ</div></AppLayout>);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: '帳簿を作成する' })).not.toBeInTheDocument();
+    });
+  });
+
+  it('SYSTEM_ADMIN は帳簿が0件でもモーダルが表示されない', async () => {
+    mockGetLedgers.mockResolvedValueOnce(emptyLedgersResponse);
+    mockGetProfile.mockResolvedValueOnce({
+      data: { userId: 'admin', userName: '管理者', email: 'admin@example.com', themeColor: null, role: 'SYSTEM_ADMIN' },
+      error: null,
+      timestamp: '',
+    });
+    useAuthStore.setState({ ...useAuthStore.getState(), role: 'SYSTEM_ADMIN' });
+
     render(<AppLayout><div>コンテンツ</div></AppLayout>);
 
     await waitFor(() => {

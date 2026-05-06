@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from '../page';
 import * as authApi from '@/lib/api/auth';
+import * as userApi from '@/lib/api/user';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
@@ -14,11 +15,21 @@ jest.mock('next/navigation', () => ({
 
 // API をモック
 jest.mock('@/lib/api/auth');
+jest.mock('@/lib/api/user');
 const mockLogin = jest.mocked(authApi.login);
+const mockGetProfile = jest.mocked(userApi.getProfile);
+
+const profileResponse = {
+  data: { userId: 'valid_user', userName: 'テストユーザー', email: 'test@example.com', themeColor: null, role: 'USER' },
+  error: null,
+  timestamp: '',
+};
 
 beforeEach(() => {
   mockPush.mockReset();
   mockLogin.mockReset();
+  mockGetProfile.mockReset();
+  mockGetProfile.mockResolvedValue(profileResponse);
   useAuthStore.setState({ userId: null, userName: null, accessToken: null, isAuthenticated: false });
   useToastStore.setState({ toasts: [] });
 });

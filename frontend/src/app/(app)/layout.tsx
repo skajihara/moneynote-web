@@ -7,6 +7,7 @@ import { useLedgerStore } from '@/stores/ledgerStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { refresh } from '@/lib/api/auth';
+import { getProfile } from '@/lib/api/user';
 import Header from '@/components/layout/Header';
 import SideMenu from '@/components/layout/SideMenu';
 import SubPanel from '@/components/layout/SubPanel';
@@ -20,6 +21,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { isOpen, content, contentKey, close } = useSubPanelStore();
   const { ledgers, fetchLedgers } = useLedgerStore();
   const themeColor = useAuthStore((s) => s.themeColor);
+  const role = useAuthStore((s) => s.role);
   const initTheme = useThemeStore((s) => s.init);
   const [initialized, setInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,9 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         // HttpOnly Cookie のリフレッシュトークンを使って再取得する
         const res = await refresh();
         useAuthStore.getState().setAccessToken(res.data.accessToken);
+        // プロフィールからロールを取得してストアに格納する
+        const profile = await getProfile();
+        useAuthStore.getState().setRole(profile.data.role);
         // children のレンダリングをトークン取得後まで遅延させ、
         // 子コンポーネントの API 呼び出しが必ずトークン付きで行われるようにする
         setInitialized(true);
@@ -63,8 +68,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     close();
   }, [pathname, close]);
 
-  // ローディング中はモーダル判定を保留する
-  const showCreateModal = !loading && ledgers.length === 0;
+  // ローディング中はモーダル判定を保留する。SYSTEM_ADMIN は帳簿不要のためスキップ
+  const showCreateModal = !loading && ledgers.length === 0 && role !== 'SYSTEM_ADMIN';
 
   return (
     <div className="flex flex-col h-screen overflow-hidden min-w-[1280px]">
