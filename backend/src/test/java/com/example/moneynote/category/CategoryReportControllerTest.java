@@ -119,8 +119,8 @@ class CategoryReportControllerTest {
                 .displayOrder((short) 3).build());
         incCatId = incCat.getCategoryId();
 
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -337,6 +337,55 @@ class CategoryReportControllerTest {
         mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/summary/annual")
                         .header("Authorization", "Bearer " + token2)
                         .param("year", "2026"))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
+    // GET /categories/summary/all-time
+    // =========================================================================
+
+    @Test
+    void getAllTimeCategorySummary_spansMultipleYears() throws Exception {
+        createTx("EXPENSE", 20000, "2024-06-10", expCat1Id);
+        createTx("EXPENSE", 30000, "2025-03-15", expCat1Id);
+        createTx("INCOME",  100000, "2026-01-20", incCatId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/summary/all-time")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                // 食費: 20000+30000=50000, 給与: 100000
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].categoryName").value("給与"))
+                .andExpect(jsonPath("$.data[0].amount").value(100000))
+                .andExpect(jsonPath("$.data[1].categoryName").value("食費"))
+                .andExpect(jsonPath("$.data[1].amount").value(50000));
+    }
+
+    @Test
+    void getAllTimeCategorySummary_filterByType() throws Exception {
+        createTx("EXPENSE", 20000, "2024-06-10", expCat1Id);
+        createTx("INCOME",  100000, "2026-01-20", incCatId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/summary/all-time")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("type", "EXPENSE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].categoryType").value("EXPENSE"));
+    }
+
+    @Test
+    void getAllTimeCategorySummary_empty_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/summary/all-time")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(0)));
+    }
+
+    @Test
+    void getAllTimeCategorySummary_otherUser_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/categories/summary/all-time")
+                        .header("Authorization", "Bearer " + token2))
                 .andExpect(status().isForbidden());
     }
 

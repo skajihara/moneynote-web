@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import ReportsPage from '../page';
 import * as reportApi from '@/lib/api/report';
 import { useSubPanelStore } from '@/stores/subPanelStore';
-import type { MonthlyReport, AnnualReport, CategorySummary } from '@/types/report';
+import type { MonthlyReport, AnnualReport, BalanceHistoryItem, CategorySummary } from '@/types/report';
 
 const mockReplace = jest.fn();
 let mockSearchParams = new URLSearchParams();
@@ -26,12 +26,26 @@ jest.mock('recharts', () => {
 });
 
 jest.mock('@/lib/api/report');
+jest.mock('@/components/budget/BudgetPanel', () => {
+  return function MockBudgetPanel() {
+    return <div data-testid="budget-panel" />;
+  };
+});
+
 const mockGetMonthlyReport = jest.mocked(reportApi.getMonthlyReport);
 const mockGetAnnualReport = jest.mocked(reportApi.getAnnualReport);
 const mockGetCategorySummary = jest.mocked(reportApi.getCategorySummary);
 const mockGetAnnualCategorySummary = jest.mocked(reportApi.getAnnualCategorySummary);
+const mockGetBalanceHistory = jest.mocked(reportApi.getBalanceHistory);
+const mockGetAllTimeCategorySummary = jest.mocked(reportApi.getAllTimeCategorySummary);
 
 const emptyCategoryResponse: { data: CategorySummary[]; error: null; timestamp: string } = {
+  data: [],
+  error: null,
+  timestamp: '',
+};
+
+const emptyBalanceHistoryResponse: { data: BalanceHistoryItem[]; error: null; timestamp: string } = {
   data: [],
   error: null,
   timestamp: '',
@@ -112,6 +126,8 @@ beforeEach(() => {
   mockGetAnnualReport.mockResolvedValue(annualResponse);
   mockGetCategorySummary.mockResolvedValue(emptyCategoryResponse);
   mockGetAnnualCategorySummary.mockResolvedValue(emptyCategoryResponse);
+  mockGetBalanceHistory.mockResolvedValue(emptyBalanceHistoryResponse);
+  mockGetAllTimeCategorySummary.mockResolvedValue(emptyCategoryResponse);
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
@@ -206,6 +222,41 @@ describe('ReportsPage', () => {
     render(<ReportsPage />);
     await waitFor(() => {
       expect(mockGetAnnualReport).toHaveBeenCalledWith('ldg_test01', 2025);
+    });
+  });
+
+  it('予算パネルとレポートが同一ページに表示される', async () => {
+    render(<ReportsPage />);
+    expect(screen.getByTestId('budget-panel')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '月別' })).toBeInTheDocument();
+    });
+  });
+
+  it('全期間タブが表示される', async () => {
+    render(<ReportsPage />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '全期間' })).toBeInTheDocument();
+    });
+  });
+
+  it('全期間タブに切り替えると getBalanceHistory と getAllTimeCategorySummary が呼ばれる', async () => {
+    render(<ReportsPage />);
+    const allTab = await screen.findByRole('button', { name: '全期間' });
+    await userEvent.click(allTab);
+    await waitFor(() => {
+      expect(mockGetBalanceHistory).toHaveBeenCalledWith('ldg_test01');
+      expect(mockGetAllTimeCategorySummary).toHaveBeenCalled();
+    });
+  });
+
+  it('全期間タブ: 月次残高推移セクションが表示される', async () => {
+    render(<ReportsPage />);
+    const allTab = await screen.findByRole('button', { name: '全期間' });
+    await userEvent.click(allTab);
+    await waitFor(() => {
+      expect(screen.getByText('月次残高推移（全期間）')).toBeInTheDocument();
+      expect(screen.getByText('全期間カテゴリ別集計')).toBeInTheDocument();
     });
   });
 });

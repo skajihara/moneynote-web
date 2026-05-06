@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年4月（Step 15 作業中 / GitHub Issues #1〜#31 登録済み）
+最終更新: 2026年5月（Issue #37 完了）
 
 ---
 
@@ -8,17 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-001 | [#1](https://github.com/skajihara/moneynote-web/issues/1) | UI/UX | レスポンシブ対応（文字崩れ修正） | ウィンドウサイズを小さくすると文字が崩れる問題を修正。文字サイズを小さくするかレイアウトを調整する |
-| T-002 | [#2](https://github.com/skajihara/moneynote-web/issues/2) | UI/UX | 円グラフの凡例を右側に表示 | 現状はグラフの下に表示されている項目名をグラフの右側に表示する |
-| T-003 | [#3](https://github.com/skajihara/moneynote-web/issues/3) | UI/UX | サブパネルの幅を可変にする | 明細編集などのサブパネル幅をドラッグで変更できるようにする。コンテンツのサイズもレスポンシブ対応する |
-| T-004 | [#4](https://github.com/skajihara/moneynote-web/issues/4) | UI/UX | 検索をサイドメニューに移動 | 設定画面の検索タブをサイドメニューの独立ページに移動する。他の画面と同様に明細一覧表示・編集・削除ができること |
-| T-005 | [#5](https://github.com/skajihara/moneynote-web/issues/5) | 機能 | レポートページの拡張 | 全期間を対象とした残高推移折れ線グラフ・全期間レポートを追加する |
-| T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合検討 | 予算が左・レポートが右の2カラムレイアウトで統合することを検討する |
-| T-007 | [#7](https://github.com/skajihara/moneynote-web/issues/7) | 機能 | 固定費の登録間隔機能 | 毎日・毎週・隔週・毎月・隔月・四半期・半年・毎年の間隔を選択できるようにする |
-| T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | ledger_permissions テーブルを活用。オーナーが他ユーザーに閲覧/編集/管理権限を付与する |
-| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9) | 品質 | ID重複時の再生成ロジック確認 | 各テーブルのID生成で重複した場合に再生成するロジックが実装されているか確認・修正する |
-| T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | Controller→Service→Repositoryのアクセス制御が全APIで守られているか確認する。サービスからサービスを呼んだりコントローラからリポジトリを直接呼ぶことを禁止する |
-| T-011 | [#11](https://github.com/skajihara/moneynote-web/issues/11) | 品質 | SQLパフォーマンス最適化 | N+1問題・インデックス・キャッシュ活用でパフォーマンス向上の余地がないか調査・改善する |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Phase 1（EC2） | EC2 + Docker Compose で初回デプロイ。RDS・ElastiCache・SES への接続切り替えを含む（Step 17） |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | テスト自動実行・Docker イメージビルド・EC2 への自動デプロイ（Step 18） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | ECS Fargate 移行 | ECR + ECS Fargate への移行（Step 19） |
@@ -27,7 +16,6 @@
 | T-030 | [#33](https://github.com/skajihara/moneynote-web/issues/33) | インフラ | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | openssl rand -base64 64 で生成した256bit以上の文字列を Secrets Manager で管理する |
 | T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | CI/CD（T-013）に COOKIE_SECURE=true の環境変数設定を追加する |
 | T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager 等によるクレデンシャル管理の導入 | JWT_SECRET・CLAUDE_API_KEY 等の機密情報を AWS Secrets Manager で管理する（Step 21） |
-
 ---
 
 ## 優先度：中
@@ -39,8 +27,6 @@
 | T-018 | [#18](https://github.com/skajihara/moneynote-web/issues/18) | 機能 | 週次・日次サマリー | 週・日単位での集計レポートを追加 |
 | T-019 | [#19](https://github.com/skajihara/moneynote-web/issues/19) | 機能 | データインポート（他アプリ） | MoneyForward・Zaim 等のエクスポート CSV に対応したインポート機能 |
 | T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | 暗黙の仕様・注意点・全画面へのリンクを含むマニュアルを GitHub Pages で公開する |
-| T-021 | [#21](https://github.com/skajihara/moneynote-web/issues/21) | ドキュメント | 仕様書・ドキュメントの最新化 | 設計書・API仕様書・アーキテクチャ図を最新の実装に合わせて更新する |
-| T-022 | [#22](https://github.com/skajihara/moneynote-web/issues/22) | UI/UX | ダークモード | テーマカラーに加えてダークモードを追加 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
 
@@ -70,11 +56,19 @@
 
 ## 完了した TODO
 
-| ID | 内容 | 完了時期 |
-|---|---|---|
-| 完了-001 | .claudeignore でコンテキスト最適化 | Step 5 前 |
-| 完了-002 | CURRENT_STATUS.md でコンテキスト管理 | Step 5 前 |
-| 完了-003 | seed.ps1 の文字化け対策（UTF-8 BOM・.gitattributes） | Step 5 |
-| 完了-004 | POST /api/v1/ledgers のカテゴリ重複問題の解消 | Step 5 |
-| 完了-005 | reset.ps1 の作成 → seed.ps1 に統合済み | Step 15 |
-| 完了-006 | seed.sh の削除（seed.ps1 に統合） | Step 15 |
+| ID | Issue | カテゴリ | 内容 | ブランチ |
+|---|---|---|---|---|
+| T-009 | [#9](https://github.com/skajihara/moneynote-web/issues/9)  | 品質 | ID重複時の再生成ロジック確認 | feature/issue-9-id-regeneration |
+| T-010 | [#10](https://github.com/skajihara/moneynote-web/issues/10) | 品質 | レイヤードアーキテクチャ遵守の確認 | feature/issue-10-layered-arch |
+| T-011 | [#11](https://github.com/skajihara/moneynote-web/issues/11) | 品質 | SQLパフォーマンス最適化 | feature/issue-11-sql-performance |
+| T-002 | [#2](https://github.com/skajihara/moneynote-web/issues/2) | UI/UX | 円グラフの凡例を右側に表示 | feature/issue-2-pie-chart-legend |
+| T-007 | [#7](https://github.com/skajihara/moneynote-web/issues/7) | 機能 | 固定費の登録間隔機能 | feature/issue-7-recurring-interval |
+| T-005 | [#5](https://github.com/skajihara/moneynote-web/issues/5) | 機能 | レポートページの拡張 | feature/issue-5-report-expansion |
+| T-001 | [#1](https://github.com/skajihara/moneynote-web/issues/1) | UI/UX | レスポンシブ対応（文字崩れ修正） | feature/issue-1-responsive |
+| T-006 | [#6](https://github.com/skajihara/moneynote-web/issues/6) | 機能 | 予算とレポートのページ統合 | feature/issue-6-budget-report-layout |
+| T-003 | [#3](https://github.com/skajihara/moneynote-web/issues/3) | UI/UX | サブパネルの幅を可変にする | feature/issue-3-resizable-panel |
+| T-004 | [#4](https://github.com/skajihara/moneynote-web/issues/4) | UI/UX | 検索・固定費・CSVをサイドメニューに移動 | feature/issue-4-search-sidemenu |
+| T-008 | [#8](https://github.com/skajihara/moneynote-web/issues/8) | 機能 | 帳簿共有機能 | feature/issue-8-ledger-share |
+| T-021 | [#21](https://github.com/skajihara/moneynote-web/issues/21) | ドキュメント | 仕様書・ドキュメントの最新化 | feature/issue-21-documentation |
+| T-022 | [#22](https://github.com/skajihara/moneynote-web/issues/22) | UI/UX | ダークモード | feature/issue-22-dark-mode |
+| T-033 | [#37](https://github.com/skajihara/moneynote-web/issues/37) | 機能 | システム管理者機能 | feature/issue-33-system-admin |

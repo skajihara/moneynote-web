@@ -3,16 +3,11 @@ package com.example.moneynote.domain.ledger;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
-import com.example.moneynote.domain.aiadvicecache.AiAdviceCacheRepository;
-import com.example.moneynote.domain.budget.BudgetRepository;
-import com.example.moneynote.domain.category.CategoryRepository;
-import com.example.moneynote.domain.fixedtransaction.FixedTransactionRepository;
 import com.example.moneynote.domain.ledger.dto.LedgerRequest;
 import com.example.moneynote.domain.ledger.dto.LedgerResponse;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermission;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
 import com.example.moneynote.domain.ledgerpermission.PermissionType;
-import com.example.moneynote.domain.transaction.TransactionRepository;
 import com.example.moneynote.domain.user.User;
 import com.example.moneynote.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 // Lombok @Builder の戻り値に対する IDE の Null 型安全警告を抑制する（実行時は問題なし）
 @SuppressWarnings("null")
@@ -32,20 +29,27 @@ public class LedgerService {
     private final LedgerPermissionRepository ledgerPermissionRepository;
     private final UserRepository userRepository;
     private final LedgerAccessValidator accessValidator;
-    private final AiAdviceCacheRepository aiAdviceCacheRepository;
-    private final BudgetRepository budgetRepository;
-    private final TransactionRepository transactionRepository;
-    private final FixedTransactionRepository fixedTransactionRepository;
-    private final CategoryRepository categoryRepository;
+    private final LedgerCascadeDeleter ledgerCascadeDeleter;
 
     /**
      * ログインユーザーがアクセス可能な帳簿一覧を取得する（所有または権限あり）。
+     * バッチで権限を取得し N+1 を回避する。
      */
     @Transactional(readOnly = true)
     public List<LedgerResponse> getLedgers(String userId) {
-        return ledgerRepository.findAccessibleLedgers(userId)
+        List<Ledger> ledgers = ledgerRepository.findAccessibleLedgers(userId);
+        Map<String, PermissionType> permMap = ledgerPermissionRepository.findByUserUserId(userId)
                 .stream()
-                .map(LedgerResponse::from)
+                .collect(Collectors.toMap(
+                        lp -> lp.getLedger().getLedgerId(),
+                        LedgerPermission::getPermissionType));
+        return ledgers.stream()
+                .map(l -> {
+                    PermissionType pt = l.getOwner().getUserId().equals(userId)
+                            ? PermissionType.OWNER
+                            : permMap.getOrDefault(l.getLedgerId(), PermissionType.VIEWER);
+                    return LedgerResponse.from(l, pt);
+                })
                 .toList();
     }
 
@@ -55,7 +59,8 @@ public class LedgerService {
     @Transactional(readOnly = true)
     public LedgerResponse getLedger(String ledgerId, String userId) {
         Ledger ledger = accessValidator.validate(ledgerId, userId);
-        return LedgerResponse.from(ledger);
+        PermissionType pt = accessValidator.resolvePermission(ledger, userId);
+        return LedgerResponse.from(ledger, pt);
     }
 
     /**
@@ -67,7 +72,7 @@ public class LedgerService {
                 .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
 
         Ledger ledger = Ledger.builder()
-                .ledgerId(IdGenerator.ledgerId())
+                .ledgerId(IdGenerator.generateUnique("ldg_", ledgerRepository::existsById))
                 .owner(owner)
                 .ledgerName(request.getLedgerName())
                 .initialBalance(
@@ -85,27 +90,19 @@ public class LedgerService {
                 .build();
         ledgerRepository.save(ledger);
 
-        // 作成者に ADMIN 権限を付与する
-        ledgerPermissionRepository.save(LedgerPermission.builder()
-                .permissionId(IdGenerator.ledgerPermissionId())
-                .ledger(ledger)
-                .user(owner)
-                .permissionType(PermissionType.ADMIN)
-                .build());
-
         // 案B採用: POST /api/v1/ledgers ではカテゴリを自動生成しない。
         // デフォルトカテゴリは register 時（AuthService）のみ生成する。
         // 追加帳簿は用途が異なる場合が多く、設定画面から手動で追加する。
 
-        return LedgerResponse.from(ledger);
+        return LedgerResponse.from(ledger, PermissionType.OWNER);
     }
 
     /**
-     * 帳簿情報を更新する。アクセス権限を検証する。
+     * 帳簿情報を更新する。ADMIN以上の権限を検証する。
      */
     @Transactional
     public LedgerResponse updateLedger(String ledgerId, LedgerRequest request, String userId) {
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validateAdminAccess(ledgerId, userId);
 
         ledger.setLedgerName(request.getLedgerName());
         if (request.getInitialBalance() != null) {
@@ -119,31 +116,17 @@ public class LedgerService {
         }
         ledger.setThemeColor(request.getThemeColor());
 
-        return LedgerResponse.from(ledgerRepository.save(ledger));
+        Ledger saved = ledgerRepository.save(ledger);
+        PermissionType pt = accessValidator.resolvePermission(saved, userId);
+        return LedgerResponse.from(saved, pt);
     }
 
     /**
-     * 帳簿と全関連データを物理削除する。
-     * FK制約の順序に従い: ai_cache → budgets → transactions → fixed_transactions
-     *                    → categories → ledger_permissions → ledger
+     * 帳簿と全関連データを物理削除する。OWNERのみ実行可能。
      */
     @Transactional
     public void deleteLedger(String ledgerId, String userId) {
-        accessValidator.validate(ledgerId, userId);
-        cascadeDeleteLedger(ledgerId);
-    }
-
-    /**
-     * 帳簿に紐づく全データをFK順に削除してから帳簿本体を削除する。
-     * UserService.deleteAccount からも呼び出せるようパッケージスコープで公開する。
-     */
-    public void cascadeDeleteLedger(String ledgerId) {
-        aiAdviceCacheRepository.deleteByLedgerLedgerId(ledgerId);
-        budgetRepository.deleteByLedgerLedgerId(ledgerId);
-        transactionRepository.deleteByLedgerLedgerId(ledgerId);
-        fixedTransactionRepository.deleteByLedgerLedgerId(ledgerId);
-        categoryRepository.deleteByLedgerLedgerId(ledgerId);
-        ledgerPermissionRepository.deleteByLedgerLedgerId(ledgerId);
-        ledgerRepository.deleteById(ledgerId);
+        accessValidator.validateOwnerAccess(ledgerId, userId);
+        ledgerCascadeDeleter.delete(ledgerId);
     }
 }

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import BudgetPage from '../page';
+import BudgetPanel from '@/components/budget/BudgetPanel';
 import * as budgetApi from '@/lib/api/budget';
 import * as ledgerApi from '@/lib/api/ledger';
 import type { Budget } from '@/types/budget';
@@ -8,9 +8,6 @@ import type { BudgetHeatmapMonth } from '@/types/budget';
 
 jest.mock('@/lib/api/budget');
 jest.mock('@/lib/api/ledger');
-jest.mock('next/navigation', () => ({
-  useParams: () => ({ ledgerId: 'ldg_1' }),
-}));
 
 jest.mock('recharts', () => {
   const original = jest.requireActual('recharts');
@@ -80,9 +77,9 @@ beforeEach(() => {
   mockDeleteBudget.mockResolvedValue({ data: null, error: null, timestamp: '' });
 });
 
-describe('BudgetPage', () => {
+describe('BudgetPanel', () => {
   it('空の場合にメッセージを表示する', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     expect(
       await screen.findByText('この月の予算がまだ設定されていません')
     ).toBeInTheDocument();
@@ -94,7 +91,7 @@ describe('BudgetPage', () => {
       error: null,
       timestamp: '',
     });
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     // 食費はBudgetRowとヒートマップの両方に表示される可能性があるため getAllByText を使用
     await waitFor(() => {
       expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
@@ -108,7 +105,7 @@ describe('BudgetPage', () => {
       error: null,
       timestamp: '',
     });
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     expect(await screen.findByText('注意')).toBeInTheDocument();
   });
 
@@ -118,19 +115,19 @@ describe('BudgetPage', () => {
       error: null,
       timestamp: '',
     });
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     expect(await screen.findByText('超過')).toBeInTheDocument();
   });
 
   it('予算追加ボタンでモーダルが開く', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     await screen.findByText('この月の予算がまだ設定されていません');
     await userEvent.click(screen.getByRole('button', { name: '+ 予算を追加' }));
     expect(screen.getByText('予算を追加')).toBeInTheDocument();
   });
 
   it('モーダルのキャンセルで閉じる', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     await screen.findByText('この月の予算がまだ設定されていません');
     await userEvent.click(screen.getByRole('button', { name: '+ 予算を追加' }));
     await userEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
@@ -140,7 +137,7 @@ describe('BudgetPage', () => {
   });
 
   it('前月ボタンで月が戻る', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     await screen.findByText('この月の予算がまだ設定されていません');
     const today = new Date();
     const expectedYear =
@@ -154,14 +151,14 @@ describe('BudgetPage', () => {
   });
 
   it('ヒートマップセクションが表示される', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     await waitFor(() => {
       expect(screen.getByText('予算達成率ヒートマップ（過去12ヶ月）')).toBeInTheDocument();
     });
   });
 
   it('余剰・超過グラフセクションが表示される', async () => {
-    render(<BudgetPage />);
+    render(<BudgetPanel ledgerId="ldg_1" />);
     await waitFor(() => {
       expect(screen.getByText('予算余剰・超過（直近6ヶ月）')).toBeInTheDocument();
     });

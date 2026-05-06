@@ -10,6 +10,8 @@ type ApiResponse<T> = {
   timestamp: string;
 };
 
+export type PermissionType = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
+
 export type Ledger = {
   ledgerId: string;
   ownerUserId: string;
@@ -21,6 +23,24 @@ export type Ledger = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  myPermissionType: PermissionType;
+};
+
+export type LedgerMember = {
+  permissionId: string | null;
+  userId: string;
+  userName: string;
+  permissionType: PermissionType;
+  grantedAt: string | null;
+};
+
+export type AddMemberRequest = {
+  userId: string;
+  permissionType: Exclude<PermissionType, 'OWNER'>;
+};
+
+export type UpdateMemberRequest = {
+  permissionType: Exclude<PermissionType, 'OWNER'>;
 };
 
 export type Category = {
@@ -141,4 +161,38 @@ export const updateCategoryOrder = (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }
+  );
+
+// -------------------------
+// メンバー管理 API
+// -------------------------
+
+export const getMembers = (ledgerId: string) =>
+  apiClient<ApiResponse<LedgerMember[]>>(`/api/v1/ledgers/${ledgerId}/members`);
+
+export const addMember = (ledgerId: string, data: AddMemberRequest) =>
+  apiClient<ApiResponse<LedgerMember>>(`/api/v1/ledgers/${ledgerId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+export const updateMember = (
+  ledgerId: string,
+  userId: string,
+  data: UpdateMemberRequest
+) =>
+  apiClient<ApiResponse<LedgerMember>>(
+    `/api/v1/ledgers/${ledgerId}/members/${userId}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
+
+export const removeMember = (ledgerId: string, userId: string) =>
+  apiClient<ApiResponse<null>>(
+    `/api/v1/ledgers/${ledgerId}/members/${userId}`,
+    { method: 'DELETE' }
   );

@@ -110,8 +110,8 @@ class ReportControllerTest {
                 .categoryName("給与").categoryType(CategoryType.INCOME).displayOrder((short) 2).build());
         incCatId = incCat.getCategoryId();
 
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -271,6 +271,58 @@ class ReportControllerTest {
         mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/reports/annual")
                         .header("Authorization", "Bearer " + token2)
                         .param("year", "2026"))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
+    // 全期間残高推移
+    // =========================================================================
+
+    @Test
+    void getBalanceHistory_success() throws Exception {
+        // 2025-01: 収入50000, 2025-03: 支出20000
+        createTx("INCOME",  50000, "2025-01-15", incCatId);
+        createTx("EXPENSE", 20000, "2025-03-10", expCatId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/reports/balance-history")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                // 2025-01 〜 2025-03 の3ヶ月分
+                .andExpect(jsonPath("$.data", hasSize(3)))
+                .andExpect(jsonPath("$.data[0].yearMonth").value("2025-01"))
+                .andExpect(jsonPath("$.data[0].income").value(50000))
+                .andExpect(jsonPath("$.data[0].expense").value(0))
+                .andExpect(jsonPath("$.data[2].yearMonth").value("2025-03"))
+                .andExpect(jsonPath("$.data[2].expense").value(20000));
+    }
+
+    @Test
+    void getBalanceHistory_empty_returnsEmptyList() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/reports/balance-history")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(0)));
+    }
+
+    @Test
+    void getBalanceHistory_runningBalanceIsCorrect() throws Exception {
+        // initialBalance=100000, 2025-01: 収入50000, 2025-02: 支出30000
+        createTx("INCOME",  50000, "2025-01-15", incCatId);
+        createTx("EXPENSE", 30000, "2025-02-10", expCatId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/reports/balance-history")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                // 2025-01: 100000 + 50000 = 150000
+                .andExpect(jsonPath("$.data[0].balance").value(150000))
+                // 2025-02: 150000 - 30000 = 120000
+                .andExpect(jsonPath("$.data[1].balance").value(120000));
+    }
+
+    @Test
+    void getBalanceHistory_otherUser_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/reports/balance-history")
+                        .header("Authorization", "Bearer " + token2))
                 .andExpect(status().isForbidden());
     }
 

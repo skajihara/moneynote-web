@@ -46,7 +46,7 @@ public class CategoryService {
      */
     @Transactional
     public CategoryResponse createCategory(String ledgerId, CategoryRequest request, String userId) {
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validateAdminAccess(ledgerId, userId);
 
         // 現在の最大 display_order の次を設定する
         List<Category> existing = categoryRepository
@@ -56,7 +56,7 @@ public class CategoryService {
                 : (short) (existing.get(existing.size() - 1).getDisplayOrder() + 1);
 
         Category category = Category.builder()
-                .categoryId(IdGenerator.categoryId())
+                .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                 .ledger(ledger)
                 .categoryName(request.getCategoryName())
                 .categoryType(request.getCategoryType())
@@ -74,7 +74,7 @@ public class CategoryService {
     @Transactional
     public CategoryResponse updateCategory(String ledgerId, String categoryId,
                                            CategoryUpdateRequest request, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
 
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("カテゴリが見つかりません"));
@@ -96,7 +96,7 @@ public class CategoryService {
      */
     @Transactional
     public void deleteCategory(String ledgerId, String categoryId, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
 
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("カテゴリが見つかりません"));
@@ -113,7 +113,7 @@ public class CategoryService {
      */
     @Transactional
     public void updateCategoryOrder(String ledgerId, List<CategoryOrderItem> items, String userId) {
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateAdminAccess(ledgerId, userId);
 
         for (CategoryOrderItem item : items) {
             Category category = categoryRepository.findById(item.getCategoryId())

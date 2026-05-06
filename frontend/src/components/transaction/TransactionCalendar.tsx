@@ -6,7 +6,7 @@ type Props = {
   year: number;
   month: number;
   dailySummaries: DailySummary[];
-  onDateClick: (date: string) => void;
+  onDateClick?: (date: string) => void;
   startDayOfMonth?: number;
 };
 
@@ -72,7 +72,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* 曜日ヘッダー */}
       <div className="grid grid-cols-7">
         {DAYS_OF_WEEK.map((dow, i) => (
@@ -96,10 +96,10 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
           return (
             <div
               key={idx}
-              className={`min-h-[72px] border-b border-r border-gray-100 p-1 text-xs
+              className={`min-h-[72px] border-b border-r border-gray-100 dark:border-gray-700 p-1 text-xs
                 ${cell.day ? 'cursor-pointer hover:bg-gray-50' : ''}
-                ${isToday ? 'bg-blue-50' : ''}`}
-              onClick={() => cell.date && onDateClick(cell.date)}
+                ${isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+              onClick={() => cell.date && onDateClick?.(cell.date)}
             >
               {cell.day && (
                 <>
@@ -108,7 +108,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
                       ${isToday ? 'bg-blue-600 text-white' : ''}
                       ${!isToday && dow === 0 ? 'text-red-500' : ''}
                       ${!isToday && dow === 6 ? 'text-blue-500' : ''}
-                      ${!isToday && dow > 0 && dow < 6 ? 'text-gray-700' : ''}`}
+                      ${!isToday && dow > 0 && dow < 6 ? 'text-gray-700 dark:text-gray-300' : ''}`}
                   >
                     {cell.day}
                   </span>

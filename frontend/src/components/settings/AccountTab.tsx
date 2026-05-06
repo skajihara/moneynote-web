@@ -140,31 +140,31 @@ const AccountTab = () => {
   return (
     <div className="space-y-8">
       {/* プロフィール */}
-      <section className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">プロフィール</h2>
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">プロフィール</h2>
         <form onSubmit={onSaveProfile} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">ユーザー名</label>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 mb-1">ユーザー名</label>
             <input
               {...profileForm.register('userName')}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
             {profileForm.formState.errors.userName && (
               <p className="text-red-500 text-xs mt-1">{profileForm.formState.errors.userName.message}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">メールアドレス</label>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 mb-1">メールアドレス</label>
             <input
               {...profileForm.register('email')}
               type="email"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
             {profileForm.formState.errors.email && (
               <p className="text-red-500 text-xs mt-1">{profileForm.formState.errors.email.message}</p>
             )}
           </div>
-          <div className="text-xs text-gray-400">ユーザーID: {profile?.userId}</div>
+          <div className="text-xs text-gray-400 dark:text-gray-500">ユーザーID: {profile?.userId}</div>
           <button
             type="submit"
             disabled={profileForm.formState.isSubmitting}
@@ -176,26 +176,26 @@ const AccountTab = () => {
       </section>
 
       {/* パスワード変更 */}
-      <section className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">パスワード変更</h2>
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">パスワード変更</h2>
         <form onSubmit={onChangePassword} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">現在のパスワード</label>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 mb-1">現在のパスワード</label>
             <input
               {...passwordForm.register('currentPassword')}
               type="password"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
             {passwordForm.formState.errors.currentPassword && (
               <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.currentPassword.message}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">新しいパスワード</label>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 mb-1">新しいパスワード</label>
             <input
               {...passwordForm.register('newPassword')}
               type="password"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
             {passwordForm.formState.errors.newPassword && (
               <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.newPassword.message}</p>
@@ -203,18 +203,18 @@ const AccountTab = () => {
             {/* パスワードポリシー */}
             <ul className="mt-2 space-y-0.5">
               {passwordPolicies.map(({ label, ok }) => (
-                <li key={label} className={`text-xs flex items-center gap-1 ${ok ? 'text-green-600' : 'text-gray-400'}`}>
+                <li key={label} className={`text-xs flex items-center gap-1 ${ok ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                   {ok ? '✅' : '❌'} {label}
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">新しいパスワード（確認）</label>
+            <label className="block text-sm text-gray-600 dark:text-gray-300 dark:text-gray-300 mb-1">新しいパスワード（確認）</label>
             <input
               {...passwordForm.register('confirmPassword')}
               type="password"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)]"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
             {passwordForm.formState.errors.confirmPassword && (
               <p className="text-red-500 text-xs mt-1">{passwordForm.formState.errors.confirmPassword.message}</p>
@@ -231,9 +231,9 @@ const AccountTab = () => {
       </section>
 
       {/* アカウント削除 */}
-      <section className="bg-white rounded-lg border border-red-200 p-6">
-        <h2 className="text-sm font-semibold text-red-600 mb-2">アカウント削除</h2>
-        <p className="text-xs text-gray-500 mb-4">
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 p-6">
+        <h2 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">アカウント削除</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           アカウントを削除すると、すべての帳簿・明細・予算データが完全に削除されます。この操作は取り消せません。
         </p>
         <button
@@ -247,9 +247,9 @@ const AccountTab = () => {
       {/* プロフィール変更確認ダイアログ */}
       {pendingProfileData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-gray-800 mb-3">変更の確認</h3>
-            <ul className="text-sm text-gray-600 mb-4 space-y-1">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">変更の確認</h3>
+            <ul className="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-1">
               {profileConfirmMessages().map((msg, i) => (
                 <li key={i}>{msg}</li>
               ))}
@@ -258,7 +258,7 @@ const AccountTab = () => {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setPendingProfileData(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-md hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 キャンセル
               </button>
@@ -276,12 +276,12 @@ const AccountTab = () => {
       {/* パスワード変更確認ダイアログ */}
       {pendingPasswordData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-gray-800 mb-3">パスワードを変更します。よろしいですか？</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">パスワードを変更します。よろしいですか？</h3>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setPendingPasswordData(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-md hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 キャンセル
               </button>
@@ -299,15 +299,15 @@ const AccountTab = () => {
       {/* 削除確認ダイアログ */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-gray-800 mb-3">本当に削除しますか？</h3>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">本当に削除しますか？</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               すべての帳簿・明細・予算データが完全に削除されます。この操作は取り消せません。
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm rounded-md hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 キャンセル
               </button>

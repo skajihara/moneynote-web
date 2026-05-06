@@ -4,7 +4,7 @@ import type { Transaction } from '@/types/transaction';
 
 type Props = {
   transactions: Transaction[];
-  onEdit: (transaction: Transaction) => void;
+  onEdit?: (transaction: Transaction) => void;
 };
 
 const fmt = (n: number) =>
@@ -32,7 +32,7 @@ function groupByDate(transactions: Transaction[]) {
 const TransactionList = ({ transactions, onEdit }: Props) => {
   if (transactions.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-400 text-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center text-gray-400 text-sm">
         明細がありません
       </div>
     );
@@ -41,7 +41,7 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
   const groups = groupByDate(transactions);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {groups.map(([date, txList]) => {
         const dayIncome  = txList.filter((t) => t.transactionType === 'INCOME').reduce((s, t) => s + t.amount, 0);
         const dayExpense = txList.filter((t) => t.transactionType === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
@@ -50,8 +50,8 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
         return (
           <div key={date}>
             {/* 日付グループヘッダー */}
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-700">{formatDate(date)}</span>
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{formatDate(date)}</span>
               <span className={`text-sm font-medium ${dayNet >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                 {`${dayNet >= 0 ? '+' : ''}${fmt(dayNet)}`}
               </span>
@@ -64,10 +64,10 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
                 role="button"
                 tabIndex={0}
                 aria-label={`${t.categoryName ?? '（カテゴリなし）'} ${t.amount}円`}
-                onClick={() => onEdit(t)}
-                onKeyDown={(e) => e.key === 'Enter' && onEdit(t)}
+                onClick={() => onEdit?.(t)}
+                onKeyDown={(e) => e.key === 'Enter' && onEdit?.(t)}
                 title={t.isFixedOrigin ? '固定費から自動生成' : undefined}
-                className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-100 cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
                   t.isFixedOrigin ? 'border-l-2 border-l-blue-400' : ''
                 }`}
               >
@@ -85,11 +85,11 @@ const TransactionList = ({ transactions, onEdit }: Props) => {
 
                 {/* カテゴリ名・メモ */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-gray-800">
+                  <p className="text-sm font-medium truncate text-gray-800 dark:text-gray-100">
                     {t.categoryName ?? '（カテゴリなし）'}
                   </p>
                   {t.memo && (
-                    <p className="text-xs truncate text-gray-400">{t.memo}</p>
+                    <p className="text-xs truncate text-gray-400 dark:text-gray-500">{t.memo}</p>
                   )}
                 </div>
 

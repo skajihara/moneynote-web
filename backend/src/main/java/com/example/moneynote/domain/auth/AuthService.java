@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.auth;
 
+import com.example.moneynote.common.exception.AccessDeniedException;
 import com.example.moneynote.common.exception.RateLimitException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.UnauthorizedException;
@@ -78,14 +79,14 @@ public class AuthService {
         userRepository.save(user);
 
         Ledger ledger = Ledger.builder()
-                .ledgerId(IdGenerator.ledgerId())
+                .ledgerId(IdGenerator.generateUnique("ldg_", ledgerRepository::existsById))
                 .owner(user)
                 .ledgerName("マイ家計簿")
                 .build();
         ledgerRepository.save(ledger);
 
         ledgerPermissionRepository.save(LedgerPermission.builder()
-                .permissionId(IdGenerator.ledgerPermissionId())
+                .permissionId(IdGenerator.generateUnique("lperm_", ledgerPermissionRepository::existsById))
                 .ledger(ledger)
                 .user(user)
                 .permissionType(PermissionType.ADMIN)
@@ -103,7 +104,7 @@ public class AuthService {
         short order = 0;
         for (String name : expenseNames) {
             categoryRepository.save(Category.builder()
-                    .categoryId(IdGenerator.categoryId())
+                    .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                     .ledger(ledger)
                     .categoryName(name)
                     .categoryType(CategoryType.EXPENSE)
@@ -113,7 +114,7 @@ public class AuthService {
         order = 0;
         for (String name : incomeNames) {
             categoryRepository.save(Category.builder()
-                    .categoryId(IdGenerator.categoryId())
+                    .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                     .ledger(ledger)
                     .categoryName(name)
                     .categoryType(CategoryType.INCOME)
@@ -141,10 +142,15 @@ public class AuthService {
             throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
         }
 
+        // セキュリティ: 無効化されたアカウントはログイン不可
+        if (!user.isActive()) {
+            throw new AccessDeniedException("アカウントが無効化されています");
+        }
+
         // 成功 → 失敗カウントをリセット
         redisTemplate.delete(failKey);
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
 
         // リフレッシュトークンを Redis に保存
@@ -212,7 +218,10 @@ public class AuthService {
             throw new UnauthorizedException("リフレッシュトークンが一致しません");
         }
 
-        return jwtTokenProvider.generateAccessToken(userId);
+        // ロールを最新 DB 値から取得して新しいアクセストークンに埋め込む
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("ユーザーが見つかりません"));
+        return jwtTokenProvider.generateAccessToken(userId, user.getRole().name());
     }
 
     // -------------------------------------------------------------------------

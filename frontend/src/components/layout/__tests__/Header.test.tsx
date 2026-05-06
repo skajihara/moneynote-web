@@ -4,6 +4,7 @@ import Header from '../Header';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useAuthStore } from '@/stores/authStore';
+import type { PermissionType } from '@/lib/api/ledger';
 
 const mockPush = jest.fn();
 let mockPathname = '/dashboard';
@@ -17,31 +18,23 @@ jest.mock('@/lib/api/auth', () => ({
   logout: jest.fn().mockResolvedValue({ data: null, error: null, timestamp: '' }),
 }));
 
+const makeLedger = (ledgerId: string, name: string, permission: PermissionType = 'OWNER') => ({
+  ledgerId,
+  ownerUserId: 'user1',
+  ledgerName: name,
+  initialBalance: 0,
+  startDayOfMonth: 1,
+  startMonthOfYear: 1,
+  themeColor: null,
+  isActive: true,
+  createdAt: '',
+  updatedAt: '',
+  myPermissionType: permission,
+});
+
 const ledgersData = [
-  {
-    ledgerId: 'ldg_aaa',
-    ownerUserId: 'user1',
-    ledgerName: '家計簿A',
-    initialBalance: 0,
-    startDayOfMonth: 1,
-    startMonthOfYear: 1,
-    themeColor: null,
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    ledgerId: 'ldg_bbb',
-    ownerUserId: 'user1',
-    ledgerName: '家計簿B',
-    initialBalance: 0,
-    startDayOfMonth: 1,
-    startMonthOfYear: 1,
-    themeColor: null,
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  },
+  makeLedger('ldg_aaa', '家計簿A', 'OWNER'),
+  makeLedger('ldg_bbb', '家計簿B', 'VIEWER'),
 ];
 
 beforeEach(() => {
@@ -109,5 +102,42 @@ describe('Header 帳簿セレクター', () => {
     await waitFor(() => {
       expect(useSubPanelStore.getState().isOpen).toBe(false);
     });
+  });
+});
+
+describe('Header メンバー管理ボタン', () => {
+  it('ADMIN 以上の場合 👥 ボタンが表示される', () => {
+    useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: 'ldg_aaa' });
+    render(<Header />);
+    expect(screen.getByRole('button', { name: 'メンバー管理' })).toBeInTheDocument();
+  });
+
+  it('👥 ボタンに title="メンバー管理" が設定されている', () => {
+    render(<Header />);
+    const btn = screen.getByRole('button', { name: 'メンバー管理' });
+    expect(btn).toHaveAttribute('title', 'メンバー管理');
+  });
+
+  it('VIEWER の場合 👥 ボタンが表示されない', () => {
+    useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: 'ldg_bbb' });
+    render(<Header />);
+    expect(screen.queryByRole('button', { name: 'メンバー管理' })).not.toBeInTheDocument();
+  });
+
+  it('帳簿未選択の場合 👥 ボタンが表示されない', () => {
+    useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: null });
+    render(<Header />);
+    expect(screen.queryByRole('button', { name: 'メンバー管理' })).not.toBeInTheDocument();
+  });
+
+  it('メンバー管理ボタンクリックで SubPanel が開く', async () => {
+    useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
+    useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: 'ldg_aaa' });
+    render(<Header />);
+    await userEvent.click(screen.getByRole('button', { name: 'メンバー管理' }));
+    await waitFor(() => {
+      expect(useSubPanelStore.getState().isOpen).toBe(true);
+    });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

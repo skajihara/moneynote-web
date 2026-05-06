@@ -17,7 +17,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("null")
 @Service
@@ -152,6 +154,40 @@ public class ReportService {
                 annualIncome, annualExpense, annualIncome.subtract(annualExpense));
 
         return new AnnualReportResponse(year, months, annualSummary, hist);
+    }
+
+    // -------------------------------------------------------------------------
+    // 全期間残高推移
+    // -------------------------------------------------------------------------
+
+    @Transactional(readOnly = true)
+    public List<BalanceHistoryMonthDto> getBalanceHistory(String ledgerId, String userId) {
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        List<Transaction> allTx = transactionRepository.findAllByLedgerIdOrderByDateAsc(ledgerId);
+        if (allTx.isEmpty()) return List.of();
+
+        YearMonth firstYM = YearMonth.from(allTx.get(0).getTransactionDate());
+        YearMonth lastYM  = YearMonth.from(allTx.get(allTx.size() - 1).getTransactionDate());
+
+        Map<YearMonth, BigDecimal[]> byMonth = new LinkedHashMap<>();
+        for (YearMonth ym = firstYM; !ym.isAfter(lastYM); ym = ym.plusMonths(1))
+            byMonth.put(ym, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+
+        for (Transaction t : allTx) {
+            BigDecimal[] v = byMonth.get(YearMonth.from(t.getTransactionDate()));
+            if (t.getTransactionType() == TransactionType.INCOME) v[0] = v[0].add(t.getAmount());
+            else v[1] = v[1].add(t.getAmount());
+        }
+
+        BigDecimal runningBalance = ledger.getInitialBalance();
+        List<BalanceHistoryMonthDto> result = new ArrayList<>(byMonth.size());
+        for (Map.Entry<YearMonth, BigDecimal[]> e : byMonth.entrySet()) {
+            BigDecimal income  = e.getValue()[0];
+            BigDecimal expense = e.getValue()[1];
+            runningBalance = runningBalance.add(income).subtract(expense);
+            result.add(new BalanceHistoryMonthDto(e.getKey().toString(), income, expense, runningBalance));
+        }
+        return result;
     }
 
     // -------------------------------------------------------------------------

@@ -171,14 +171,12 @@ public class TransactionService {
     public TransactionResponse createTransaction(
             String ledgerId, TransactionRequest request, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
-
-        // validate 済みの ledger を再利用してエンティティを生成する
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
+        // EDITOR以上の権限を要求する
+        Ledger ledger = accessValidator.validateEditorAccess(ledgerId, userId);
         Category category = validateCategory(ledgerId, request.categoryId(), request.transactionType());
 
         Transaction t = Transaction.builder()
-                .transactionId(IdGenerator.transactionId())
+                .transactionId(IdGenerator.generateUnique("txn_", transactionRepository::existsById))
                 .ledger(ledger)
                 .category(category)
                 .transactionType(request.transactionType())
@@ -195,7 +193,7 @@ public class TransactionService {
     public TransactionResponse updateTransaction(
             String ledgerId, String transactionId, TransactionRequest request, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateEditorAccess(ledgerId, userId);
         Transaction t = findTransaction(ledgerId, transactionId);
 
         Category category = validateCategory(ledgerId, request.categoryId(), request.transactionType());
@@ -214,7 +212,7 @@ public class TransactionService {
             String ledgerId, String transactionId,
             DeleteTransactionRequest request, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        accessValidator.validateEditorAccess(ledgerId, userId);
         Transaction t = findTransaction(ledgerId, transactionId);
 
         // isFixedOrigin=false の場合は scope に関わらず SINGLE として扱う

@@ -118,7 +118,7 @@ public class CsvService {
     @Transactional
     public CsvImportResponse importCsv(String ledgerId, String userId, MultipartFile file) {
 
-        Ledger ledger = ledgerAccessValidator.validate(ledgerId, userId);
+        Ledger ledger = ledgerAccessValidator.validateEditorAccess(ledgerId, userId);
 
         // カテゴリマップを構築 ("name|type" → Category)
         List<Category> existingCategories = categoryRepository
@@ -274,7 +274,7 @@ public class CsvService {
             // 同名カテゴリが存在しない → 新規作成
             int newOrder = currentMaxOrder + 1 + newCategoriesCreated.size();
             Category newCat = Category.builder()
-                    .categoryId(IdGenerator.categoryId())
+                    .categoryId(IdGenerator.generateUnique("cat_", categoryRepository::existsById))
                     .ledger(ledger)
                     .categoryName(catName)
                     .categoryType(catType)
@@ -291,7 +291,7 @@ public class CsvService {
         if (memo != null && memo.isBlank()) memo = null;
 
         return Transaction.builder()
-                .transactionId(IdGenerator.transactionId())
+                .transactionId(IdGenerator.generateUnique("txn_", transactionRepository::existsById))
                 .ledger(ledger)
                 .transactionDate(date)
                 .transactionType(type)

@@ -20,6 +20,7 @@ import com.example.moneynote.common.exception.ExternalApiException;
 import com.example.moneynote.domain.ai.dto.AiScoreResponse;
 import com.example.moneynote.domain.ai.dto.ScoreBreakdownDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @SuppressWarnings("null")
 @Service
 @RequiredArgsConstructor
@@ -296,10 +298,12 @@ public class AiService {
                 .findByLedgerLedgerIdAndPeriodTypeAndAdviceTypeAndExpiresAtAfter(
                         ledgerId, period, adviceType, LocalDateTime.now());
         if (cached.isPresent()) {
+            log.info("AI advice cache hit: ledgerId={}, period={}, adviceType={}", ledgerId, period, adviceType);
             AiAdviceCache c = cached.get();
             return new AiAnalyzeResponse(c.getAdviceType(), c.getAdviceText(),
                     c.getGeneratedAt(), true);
         }
+        log.info("AI advice cache miss: ledgerId={}, period={}, adviceType={}", ledgerId, period, adviceType);
 
         // キャッシュミス時のみレート制限を適用する（キャッシュヒットは AI を呼ばないため制限しない）
         aiRateLimiter.checkAnalyzeLimit(userId);
@@ -316,7 +320,7 @@ public class AiService {
         Ledger ledger = accessValidator.validate(ledgerId, userId);
 
         AiAdviceCache cache = AiAdviceCache.builder()
-                .cacheId(IdGenerator.aiAdviceCacheId())
+                .cacheId(IdGenerator.generateUnique("aic_", aiAdviceCacheRepository::existsById))
                 .ledger(ledger)
                 .periodType(period)
                 .adviceType(adviceType)
@@ -325,6 +329,7 @@ public class AiService {
                 .expiresAt(expiresAt)
                 .build();
         aiAdviceCacheRepository.save(cache);
+        log.info("AI advice cached: ledgerId={}, period={}, adviceType={}, expiresAt={}", ledgerId, period, adviceType, expiresAt);
 
         return new AiAnalyzeResponse(adviceType, adviceText, now, false);
     }

@@ -19,6 +19,7 @@ const TransactionsContent = () => {
   const router = useRouter();
   const { open: openPanel, close: closePanel } = useSubPanelStore();
   const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
+  const canEdit = useLedgerStore((s) => s.canEdit)();
 
   const startDayOfMonth = getSelectedLedger()?.startDayOfMonth ?? 1;
   const [year, setYear] = useState(() => Number(searchParams.get('year')) || getCurrentYearMonth(startDayOfMonth).year);
@@ -93,23 +94,23 @@ const TransactionsContent = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={handlePrev}
-              className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
               aria-label="前月"
             >
               ◀
             </button>
-            <span className="text-lg font-semibold text-gray-800 w-40 text-center">
+            <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 w-40 text-center">
               {year}年{month}月
             </span>
             <button
               onClick={handleNext}
-              className="p-2 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
               aria-label="翌月"
             >
               ▶
             </button>
           </div>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 dark:text-gray-500">
             （{period.from.getMonth() + 1}/{period.from.getDate()}〜{period.to.getMonth() + 1}/{period.to.getDate()}）
           </span>
         </div>
@@ -130,28 +131,30 @@ const TransactionsContent = () => {
               year={year}
               month={month}
               dailySummaries={data.dailySummaries}
-              onDateClick={(date) => openAddForm(date)}
+              onDateClick={canEdit ? (date) => openAddForm(date) : undefined}
               startDayOfMonth={startDayOfMonth}
             />
 
             {/* 明細一覧 */}
             <TransactionList
               transactions={data.transactions}
-              onEdit={openEditForm}
+              onEdit={canEdit ? openEditForm : undefined}
             />
           </>
         )}
       </div>
 
-      {/* FAB: 追加ボタン */}
-      <button
-        onClick={() => openAddForm()}
-        className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-lg
-          flex items-center justify-center text-2xl z-40 btn-theme"
-        aria-label="明細を追加"
-      >
-        ＋
-      </button>
+      {/* FAB: 追加ボタン（VIEWER は非表示） */}
+      {canEdit && (
+        <button
+          onClick={() => openAddForm()}
+          className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-lg
+            flex items-center justify-center text-2xl z-40 btn-theme"
+          aria-label="明細を追加"
+        >
+          ＋
+        </button>
+      )}
     </div>
   );
 };

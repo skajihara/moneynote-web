@@ -119,8 +119,8 @@ class FixedTransactionControllerTest {
                 .categoryName("給与").categoryType(CategoryType.INCOME)
                 .displayOrder((short) 2).build());
 
-        token1 = jwtTokenProvider.generateAccessToken("user1");
-        token2 = jwtTokenProvider.generateAccessToken("user2");
+        token1 = jwtTokenProvider.generateAccessToken("user1", "USER");
+        token2 = jwtTokenProvider.generateAccessToken("user2", "USER");
     }
 
     // =========================================================================
@@ -139,7 +139,8 @@ class FixedTransactionControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.fixedTransactionId").isNotEmpty())
                 .andExpect(jsonPath("$.data.fixedName").value("家賃"))
-                .andExpect(jsonPath("$.data.amount").value(80000));
+                .andExpect(jsonPath("$.data.amount").value(80000))
+                .andExpect(jsonPath("$.data.intervalType").value("MONTHLY"));
 
         // 3ヶ月分の明細が生成されていること
         var transactions = transactionRepository.findAll();
@@ -376,6 +377,203 @@ class FixedTransactionControllerTest {
     }
 
     // =========================================================================
+    // interval_type: DAILY
+    // =========================================================================
+
+    @Test
+    void intervalType_DAILY_generates_every_day() throws Exception {
+        // 2026-04-01 〜 2026-04-05: 5日分が生成される
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "日次費用", "EXPENSE", expCatId, 100, 1,
+                                "2026-04-01", "2026-04-05", "DAILY"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("DAILY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 5 : "DAILY: Expected 5 transactions, got " + count;
+    }
+
+    @Test
+    void intervalType_DAILY_generate_skips_existing_dates() throws Exception {
+        String fixedId = createFixedWithInterval(
+                "日次費用", "EXPENSE", expCatId, 100, 1,
+                "2026-04-01", "2026-04-05", "DAILY");
+
+        // 5日分が既存。再generateでskipped=5, generated=0
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions/" + fixedId + "/generate")
+                        .header("Authorization", "Bearer " + token1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.generatedCount").value(0))
+                .andExpect(jsonPath("$.data.skippedCount").value(5));
+    }
+
+    // =========================================================================
+    // interval_type: WEEKLY
+    // =========================================================================
+
+    @Test
+    void intervalType_WEEKLY_generates_every_7_days() throws Exception {
+        // 2026-04-01(水) から7日ごと: 04-01, 04-08, 04-15, 04-22, 04-29 → 5回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "週次費用", "EXPENSE", expCatId, 500, 1,
+                                "2026-04-01", "2026-04-30", "WEEKLY"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("WEEKLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 5 : "WEEKLY: Expected 5 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // interval_type: BIWEEKLY
+    // =========================================================================
+
+    @Test
+    void intervalType_BIWEEKLY_generates_every_14_days() throws Exception {
+        // 2026-04-01 から14日ごと: 04-01, 04-15, 04-29 → 3回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "隔週費用", "EXPENSE", expCatId, 1000, 1,
+                                "2026-04-01", "2026-04-30", "BIWEEKLY"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("BIWEEKLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 3 : "BIWEEKLY: Expected 3 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // interval_type: BIMONTHLY
+    // =========================================================================
+
+    @Test
+    void intervalType_BIMONTHLY_generates_every_2_months() throws Exception {
+        // 2026-01〜2026-06 (6ヶ月): 2ヶ月ごとなので 01, 03, 05 → 3回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "隔月費用", "EXPENSE", expCatId, 3000, 15,
+                                "2026-01-01", "2026-06-30", "BIMONTHLY"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("BIMONTHLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 3 : "BIMONTHLY: Expected 3 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // interval_type: QUARTERLY
+    // =========================================================================
+
+    @Test
+    void intervalType_QUARTERLY_generates_every_3_months() throws Exception {
+        // 2026-01〜2026-12 (12ヶ月): 3ヶ月ごとなので 01, 04, 07, 10 → 4回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "四半期費用", "EXPENSE", expCatId, 10000, 1,
+                                "2026-01-01", "2026-12-31", "QUARTERLY"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("QUARTERLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 4 : "QUARTERLY: Expected 4 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // interval_type: SEMIANNUAL
+    // =========================================================================
+
+    @Test
+    void intervalType_SEMIANNUAL_generates_every_6_months() throws Exception {
+        // 2026-01〜2026-12 (12ヶ月): 6ヶ月ごとなので 01, 07 → 2回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "半年費用", "EXPENSE", expCatId, 50000, 1,
+                                "2026-01-01", "2026-12-31", "SEMIANNUAL"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("SEMIANNUAL"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 2 : "SEMIANNUAL: Expected 2 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // interval_type: ANNUAL
+    // =========================================================================
+
+    @Test
+    void intervalType_ANNUAL_generates_once_per_year() throws Exception {
+        // 2026-01〜2028-12 (3年): 12ヶ月ごとなので 2026-01, 2027-01, 2028-01 → 3回
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "年次費用", "EXPENSE", expCatId, 120000, 1,
+                                "2026-01-01", "2028-12-31", "ANNUAL"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("ANNUAL"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 3 : "ANNUAL: Expected 3 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // 後方互換性: intervalType なし → MONTHLY
+    // =========================================================================
+
+    @Test
+    void createFixedTransaction_no_intervalType_defaults_to_MONTHLY() throws Exception {
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReq(
+                                "家賃", "EXPENSE", expCatId, 80000, 1,
+                                "2026-01-01", "2026-03-31"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.intervalType").value("MONTHLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 3 : "Default MONTHLY: Expected 3 transactions, got " + count;
+    }
+
+    // =========================================================================
+    // 更新時に intervalType を変更できる
+    // =========================================================================
+
+    @Test
+    void updateFixedTransaction_can_change_intervalType() throws Exception {
+        // MONTHLY で登録: 2026-01〜2026-03 の 3ヶ月分
+        String fixedId = createFixed("家賃", "EXPENSE", expCatId, 80000, 1, "2026-01-01", "2026-03-31");
+        assert transactionRepository.findAll().size() == 3;
+
+        // QUARTERLY に変更: 2026-01〜2026-12 → 4回に変わる
+        mockMvc.perform(put("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions/" + fixedId)
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReqWithInterval(
+                                "家賃", "EXPENSE", expCatId, 80000, 1,
+                                "2026-01-01", "2026-12-31", "QUARTERLY"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.intervalType").value("QUARTERLY"));
+
+        int count = transactionRepository.findAll().size();
+        assert count == 4 : "After changing to QUARTERLY: Expected 4 transactions, got " + count;
+    }
+
+    // =========================================================================
     // helpers
     // =========================================================================
 
@@ -398,12 +596,35 @@ class FixedTransactionControllerTest {
         return m;
     }
 
+    private Map<String, Object> fixedReqWithInterval(String name, String type, String catId,
+                                                      int amount, int day,
+                                                      String start, String end, String intervalType) {
+        Map<String, Object> m = fixedReq(name, type, catId, amount, day, start, end);
+        m.put("intervalType", intervalType);
+        return m;
+    }
+
     private String createFixed(String name, String type, String catId,
                                 int amount, int day, String start, String end) throws Exception {
         var result = mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
                         .header("Authorization", "Bearer " + token1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(fixedReq(name, type, catId, amount, day, start, end))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        return objectMapper.readTree(body).get("data").get("fixedTransactionId").asText();
+    }
+
+    private String createFixedWithInterval(String name, String type, String catId,
+                                            int amount, int day,
+                                            String start, String end, String intervalType) throws Exception {
+        var result = mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                fixedReqWithInterval(name, type, catId, amount, day, start, end, intervalType))))
                 .andExpect(status().isCreated())
                 .andReturn();
 

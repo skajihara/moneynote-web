@@ -45,13 +45,13 @@ const CsvImport = ({ ledgerId }: Props) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-gray-800">CSVインポート</h2>
-      <p className="text-sm text-gray-500">
+      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">CSVインポート</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
         エクスポートしたCSVファイルを取り込みます。既存の明細は変更されません。
       </p>
 
       <div className="space-y-1">
-        <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <label className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
           ファイルを選択
           <input
             ref={fileInputRef}
@@ -62,11 +62,11 @@ const CsvImport = ({ ledgerId }: Props) => {
           />
         </label>
         {selectedFile ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {selectedFile.name}（{formatFileSize(selectedFile.size)}）
           </p>
         ) : (
-          <p className="text-sm text-gray-400">ファイルが選択されていません</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">ファイルが選択されていません</p>
         )}
       </div>
 
@@ -83,9 +83,9 @@ const CsvImport = ({ ledgerId }: Props) => {
       </button>
 
       {result && (
-        <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-2">
-          <p className="text-sm font-medium text-gray-800">インポート完了</p>
-          <div className="text-sm text-gray-600 space-y-1">
+        <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 space-y-2">
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-100">インポート完了</p>
+          <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
             <p>取り込み件数: <span className="font-medium text-green-700">{result.importedCount}件</span></p>
             {result.skippedCount > 0 && (
               <p>スキップ件数: <span className="font-medium text-yellow-700">{result.skippedCount}件</span></p>

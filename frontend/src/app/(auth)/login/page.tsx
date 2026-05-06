@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login } from '@/lib/api/auth';
+import { getProfile } from '@/lib/api/user';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
@@ -33,8 +34,11 @@ const LoginPage = () => {
   const onSubmit = async (values: FormValues) => {
     try {
       const result = await login(values);
-      authLogin(values.userId, values.userId, result.data.accessToken);
-      router.push('/dashboard');
+      // アクセストークンをセットしてからプロフィール（ロール含む）を取得する
+      useAuthStore.getState().setAccessToken(result.data.accessToken);
+      const profile = await getProfile();
+      authLogin(values.userId, profile.data.userName, result.data.accessToken, profile.data.role);
+      router.push(profile.data.role === 'SYSTEM_ADMIN' ? '/admin' : '/dashboard');
     } catch (e) {
       const message =
         e instanceof ApiClientError
@@ -46,10 +50,10 @@ const LoginPage = () => {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-gray-700 mb-6">ログイン</h2>
+      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-6">ログイン</h2>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
         <div>
-          <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="userId" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-300 mb-1">
             ユーザーID
           </label>
           <input
@@ -57,7 +61,7 @@ const LoginPage = () => {
             type="text"
             autoComplete="username"
             {...register('userId')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.userId && (
             <p className="mt-1 text-xs text-red-500">{errors.userId.message}</p>
@@ -65,7 +69,7 @@ const LoginPage = () => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200 dark:text-gray-300 mb-1">
             パスワード
           </label>
           <input
@@ -73,7 +77,7 @@ const LoginPage = () => {
             type="password"
             autoComplete="current-password"
             {...register('password')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.password && (
             <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
@@ -93,7 +97,7 @@ const LoginPage = () => {
         <Link href="/password-reset" className="text-sm text-blue-600 hover:underline block">
           パスワードをお忘れの方
         </Link>
-        <Link href="/register" className="text-sm text-gray-500 hover:underline block">
+        <Link href="/register" className="text-sm text-gray-500 dark:text-gray-400 hover:underline block">
           アカウントをお持ちでない方はこちら
         </Link>
       </div>
