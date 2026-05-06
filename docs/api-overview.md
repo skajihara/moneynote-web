@@ -216,3 +216,19 @@
 
 - キャッシュあり（`ai_cache` テーブル）
 - モックモード: `AI_MOCK=true` で Claude API を呼ばずにダミーレスポンスを返す
+
+---
+
+### 管理者（SYSTEM_ADMIN のみ） `/api/v1/admin`
+
+| メソッド | パス | 概要 | 権限 |
+|---|---|---|---|
+| GET | /users | ユーザー一覧 | SYSTEM_ADMIN |
+| POST | /users | ユーザー作成 | SYSTEM_ADMIN |
+| PUT | /users/{userId}/role | ロール変更（USER ↔ SYSTEM_ADMIN） | SYSTEM_ADMIN |
+| PUT | /users/{userId}/activate | 有効化 | SYSTEM_ADMIN |
+| PUT | /users/{userId}/deactivate | 無効化 | SYSTEM_ADMIN |
+| DELETE | /users/{userId} | ユーザー削除（物理削除・帳簿データカスケード） | SYSTEM_ADMIN |
+
+- `is_active=false` のユーザーはログイン不可（403）
+- 自分自身への操作・SYSTEM_ADMIN ユーザーの削除/無効化は不可

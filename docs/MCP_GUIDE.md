@@ -45,7 +45,7 @@ feature ブランチ作成
   → git commit & push（人間が実行、手順は `docs/BRANCH_STRATEGY.md` 参照）
 ```
 
-### コマンド一覧（`.claude/commands/` 参照）
+## コマンド一覧（`.claude/commands/` 参照）
 
 | コマンド | 使うタイミング |
 |---|---|
