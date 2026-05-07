@@ -1,0 +1,14 @@
+---
+title: MoneyNote Web マニュアル
+theme: minima
+description: MoneyNote Web の操作マニュアル
+baseurl: "/moneynote-web"
+url: "https://skajihara.github.io"
+exclude:
+  - BRANCH_STRATEGY.md
+  - CURRENT_STATUS.md
+  - MCP_GUIDE.md
+  - RELEASE_PLAN.md
+  - api-overview.md
+  - architecture.md
+  - development-guide.md
