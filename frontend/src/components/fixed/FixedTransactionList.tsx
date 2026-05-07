@@ -9,6 +9,8 @@ import {
 } from '@/lib/api/fixed';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import FixedTransactionForm from './FixedTransactionForm';
 
 const fmt = (n: number) =>
@@ -95,12 +97,14 @@ const FixedAddDialog = ({ ledgerId, onClose, onSaved }: AddDialogProps) => (
 const FixedTransactionList = ({ ledgerId }: Props) => {
   const [items, setItems] = useState<FixedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRED'>('ALL');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<FixedTransaction | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getFixedTransactions(
         ledgerId,
@@ -108,7 +112,7 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
       );
       setItems(res.data);
     } catch {
-      // ignore
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -145,7 +149,9 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
 
       {/* リスト */}
       {loading ? (
-        <div className="text-center text-gray-400 py-6 text-sm">読み込み中...</div>
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={load} />
       ) : items.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">固定費が登録されていません</p>
