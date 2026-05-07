@@ -9,6 +9,8 @@ import {
 } from '@/lib/api/fixed';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import FixedTransactionForm from './FixedTransactionForm';
 
 const fmt = (n: number) =>
@@ -55,7 +57,7 @@ const FixedEditDialog = ({ ledgerId, item, onClose, onSaved }: DialogProps) => {
           onSaved={onSaved}
           onCancel={onClose}
         />
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           <button
             type="button"
             onClick={handleDelete}
@@ -95,12 +97,14 @@ const FixedAddDialog = ({ ledgerId, onClose, onSaved }: AddDialogProps) => (
 const FixedTransactionList = ({ ledgerId }: Props) => {
   const [items, setItems] = useState<FixedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRED'>('ALL');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<FixedTransaction | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getFixedTransactions(
         ledgerId,
@@ -108,7 +112,7 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
       );
       setItems(res.data);
     } catch {
-      // ignore
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -127,8 +131,8 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
               onClick={() => setStatusFilter(f)}
               className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                 statusFilter === f
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-500 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               {f === 'ALL' ? '全て' : f === 'ACTIVE' ? '有効' : '期限切れ'}
@@ -145,7 +149,9 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
 
       {/* リスト */}
       {loading ? (
-        <div className="text-center text-gray-400 py-6 text-sm">読み込み中...</div>
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={load} />
       ) : items.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">固定費が登録されていません</p>

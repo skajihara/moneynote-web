@@ -231,7 +231,7 @@ const AccountTab = () => {
       </section>
 
       {/* アカウント削除 */}
-      <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-900 p-6">
         <h2 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">アカウント削除</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
           アカウントを削除すると、すべての帳簿・明細・予算データが完全に削除されます。この操作は取り消せません。

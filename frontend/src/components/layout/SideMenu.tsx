@@ -53,6 +53,11 @@ const menuItems: MenuItem[] = [
     href: '/settings',
     requiresLedger: false,
   },
+  {
+    label: 'マニュアル',
+    href: '/manual',
+    requiresLedger: false,
+  },
 ];
 
 const SideMenu = () => {

@@ -164,7 +164,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
               className={`flex-1 py-2 text-sm font-medium transition-colors
                 ${currentType === t
                   ? t === 'EXPENSE' ? 'bg-red-500 text-white' : 'bg-green-600 text-white'
-                  : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                  : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
             >
               {t === 'EXPENSE' ? '支出' : '収入'}
             </button>

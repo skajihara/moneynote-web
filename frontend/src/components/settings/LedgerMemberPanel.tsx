@@ -14,6 +14,8 @@ import {
 import type { LedgerMember, PermissionType } from '@/lib/api/ledger';
 import { useToastStore } from '@/stores/toastStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EmptyState from '@/components/ui/EmptyState';
 
 const PERMISSION_LABELS: Record<PermissionType, string> = {
   OWNER:  'オーナー',
@@ -112,7 +114,9 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
       <div>
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">メンバー一覧</h2>
         {loading ? (
-          <p className="text-sm text-gray-400 dark:text-gray-500">読み込み中...</p>
+          <LoadingSpinner />
+        ) : members.length === 0 ? (
+          <EmptyState message="メンバーがいません" icon="👥" />
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
             {members.map((m) => (
@@ -149,8 +153,8 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
                   </div>
                 ) : (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    m.permissionType === 'OWNER'  ? 'bg-purple-100 text-purple-700' :
-                    m.permissionType === 'ADMIN'  ? 'bg-blue-100 text-blue-700'   :
+                    m.permissionType === 'OWNER'  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+                    m.permissionType === 'ADMIN'  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'   :
                     m.permissionType === 'EDITOR' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                     'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                   }`}>

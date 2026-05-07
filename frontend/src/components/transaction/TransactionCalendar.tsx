@@ -78,8 +78,8 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
         {DAYS_OF_WEEK.map((dow, i) => (
           <div
             key={dow}
-            className={`text-center text-xs font-medium py-2 border-b border-gray-200
-              ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-500'}`}
+            className={`text-center text-xs font-medium py-2 border-b border-gray-200 dark:border-gray-700
+              ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-500 dark:text-gray-400'}`}
           >
             {dow}
           </div>
@@ -97,7 +97,7 @@ const TransactionCalendar = ({ year, month, dailySummaries, onDateClick, startDa
             <div
               key={idx}
               className={`min-h-[72px] border-b border-r border-gray-100 dark:border-gray-700 p-1 text-xs
-                ${cell.day ? 'cursor-pointer hover:bg-gray-50' : ''}
+                ${cell.day ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}
                 ${isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
               onClick={() => cell.date && onDateClick?.(cell.date)}
             >

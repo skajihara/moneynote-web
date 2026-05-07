@@ -9,10 +9,25 @@ import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { logout as logoutApi } from '@/lib/api/auth';
 import LedgerMemberPanel from '@/components/settings/LedgerMemberPanel';
+import HelpButton from '@/components/ui/HelpButton';
+
+const getManualPath = (pathname: string): string | null => {
+  if (pathname === '/dashboard') return 'dashboard';
+  if (/^\/ledgers\/[^/]+\/transactions/.test(pathname)) return 'transactions';
+  if (/^\/ledgers\/[^/]+\/reports/.test(pathname)) return 'reports';
+  if (/^\/ledgers\/[^/]+\/ai/.test(pathname)) return 'ai';
+  if (pathname === '/search') return 'search';
+  if (pathname === '/fixed-transactions') return 'fixed-transactions';
+  if (pathname === '/csv') return 'csv';
+  if (pathname === '/settings') return 'settings';
+  if (pathname === '/admin') return 'admin';
+  return null;
+};
 
 const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const manualPath = getManualPath(pathname);
   const { userName, logout: authLogout } = useAuthStore();
   const addToast = useToastStore((state) => state.add);
   const { ledgers, selectedLedgerId, selectLedger } = useLedgerStore();
@@ -111,7 +126,7 @@ const Header = () => {
         )}
       </div>
 
-      {/* 右: ダークモード切り替え・ユーザー名・ログアウト */}
+      {/* 右: ダークモード切り替え・ヘルプ・ユーザー名・ログアウト */}
       <div className="flex items-center gap-3">
         {/* ダークモード切り替えボタン */}
         <button
@@ -122,6 +137,9 @@ const Header = () => {
         >
           {isDark ? '☀️' : '🌙'}
         </button>
+
+        {/* ヘルプボタン（現在ページのマニュアルへのリンク） */}
+        {manualPath && <HelpButton manualPath={manualPath} />}
 
         {userName && (
           <span className="text-sm text-white/80">{userName}</span>

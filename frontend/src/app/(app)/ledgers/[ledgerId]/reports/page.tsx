@@ -17,6 +17,8 @@ import {
 import type { MonthlyReport, AnnualReport, BalanceHistoryItem, CategorySummary, CategoryTransactions } from '@/types/report';
 import type { Transaction } from '@/types/transaction';
 import SummaryCards from '@/components/ui/SummaryCards';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart';
 import BalanceLineChart from '@/components/charts/BalanceLineChart';
 import AllPeriodLineChart from '@/components/charts/AllPeriodLineChart';
@@ -90,11 +92,14 @@ const CategoryDetailPanel = ({
   const { open: openPanel, close: closePanel } = useSubPanelStore();
   const [detail, setDetail] = useState<CategoryTransactions | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const fetchDetail = useCallback(() => {
     setLoading(true);
+    setIsError(false);
     getCategoryTransactions(ledgerId, categoryId, year, month)
       .then((res) => setDetail(res.data))
+      .catch(() => setIsError(true))
       .finally(() => setLoading(false));
   }, [ledgerId, categoryId, year, month]);
 
@@ -111,9 +116,8 @@ const CategoryDetailPanel = ({
     );
   };
 
-  if (loading || !detail) {
-    return <div className="text-center text-gray-400 py-8">読み込み中...</div>;
-  }
+  if (loading) return <LoadingSpinner />;
+  if (isError || !detail) return <ErrorState onRetry={fetchDetail} />;
 
   const barData: BarItem[] = detail.monthlyTrend.map((t) => ({
     label: t.month.slice(5),
@@ -184,7 +188,7 @@ const CategorySection = ({
   summaries, loading, categoryTab, selectedCategoryId, onTabChange, onCategoryClick,
 }: CategorySectionProps) => (
   <div className="flex flex-col gap-3">
-    <div className="flex border-b border-gray-200">
+    <div className="flex border-b border-gray-200 dark:border-gray-700">
       {(['EXPENSE', 'INCOME'] as CategoryTab[]).map((t) => (
         <button
           key={t}
@@ -201,11 +205,11 @@ const CategorySection = ({
     </div>
 
     {loading ? (
-      <div className="text-center text-gray-400 py-6">読み込み中...</div>
+      <LoadingSpinner />
     ) : (
       <>
         <CategoryPieChart data={summaries as unknown as CategoryBreakdown[]} size={220} />
-        <div className="bg-white rounded-lg border border-gray-200 p-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2">
           {summaries.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-4">データがありません</p>
           ) : (
@@ -251,7 +255,8 @@ const ReportsContent = () => {
   const [allTimeCategorySummaries, setAllTimeCategorySummaries] = useState<CategorySummary[]>([]);
   const [allTimeCategoryTab, setAllTimeCategoryTab] = useState<CategoryTab>('EXPENSE');
   const [selectedAllTimeCategoryId, setSelectedAllTimeCategoryId] = useState<string | null>(null);
-  const [reportLoading, setReportLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(true);
+  const [isReportError, setIsReportError] = useState(false);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [annualCategoryLoading, setAnnualCategoryLoading] = useState(false);
   const [allTimeCategoryLoading, setAllTimeCategoryLoading] = useState(false);
@@ -265,9 +270,12 @@ const ReportsContent = () => {
 
   const fetchMonthly = useCallback(async () => {
     setReportLoading(true);
+    setIsReportError(false);
     try {
       const res = await getMonthlyReport(ledgerId, year, month);
       setMonthlyData(res.data);
+    } catch {
+      setIsReportError(true);
     } finally {
       setReportLoading(false);
     }
@@ -275,9 +283,12 @@ const ReportsContent = () => {
 
   const fetchAnnual = useCallback(async () => {
     setReportLoading(true);
+    setIsReportError(false);
     try {
       const res = await getAnnualReport(ledgerId, year);
       setAnnualData(res.data);
+    } catch {
+      setIsReportError(true);
     } finally {
       setReportLoading(false);
     }
@@ -305,9 +316,12 @@ const ReportsContent = () => {
 
   const fetchAllPeriod = useCallback(async () => {
     setReportLoading(true);
+    setIsReportError(false);
     try {
       const res = await getBalanceHistory(ledgerId);
       setAllPeriodData(res.data);
+    } catch {
+      setIsReportError(true);
     } finally {
       setReportLoading(false);
     }
@@ -427,7 +441,7 @@ const ReportsContent = () => {
   return (
     <div className="flex flex-col gap-4">
       {/* タブ */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
         {(['monthly', 'annual', 'all'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -449,9 +463,9 @@ const ReportsContent = () => {
           {/* 月セレクター */}
           <div className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-4">
-              <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="前月">◀</button>
+              <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="前月">◀</button>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 w-40 text-center">{year}年{month}月</span>
-              <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="翌月">▶</button>
+              <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="翌月">▶</button>
             </div>
             {(() => {
               const p = getPeriodRange(year, month, startDayOfMonth);
@@ -463,8 +477,10 @@ const ReportsContent = () => {
             })()}
           </div>
 
-          {reportLoading || !monthlyData ? (
-            <div className="text-center text-gray-400 py-8">読み込み中...</div>
+          {reportLoading ? (
+            <LoadingSpinner />
+          ) : isReportError || !monthlyData ? (
+            <ErrorState onRetry={fetchMonthly} />
           ) : (
             <>
               <SummaryCards
@@ -527,13 +543,15 @@ const ReportsContent = () => {
       {tab === 'annual' && (
         <>
           <div className="flex items-center gap-4 justify-center">
-            <button onClick={prevYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="前年">◀</button>
+            <button onClick={prevYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="前年">◀</button>
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 w-24 text-center">{year}年</span>
-            <button onClick={nextYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="翌年">▶</button>
+            <button onClick={nextYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="翌年">▶</button>
           </div>
 
-          {reportLoading || !annualData ? (
-            <div className="text-center text-gray-400 py-8">読み込み中...</div>
+          {reportLoading ? (
+            <LoadingSpinner />
+          ) : isReportError || !annualData ? (
+            <ErrorState onRetry={fetchAnnual} />
           ) : (
             <>
               <SummaryCards
@@ -571,7 +589,9 @@ const ReportsContent = () => {
       {tab === 'all' && (
         <>
           {reportLoading ? (
-            <div className="text-center text-gray-400 py-8">読み込み中...</div>
+            <LoadingSpinner />
+          ) : isReportError ? (
+            <ErrorState onRetry={fetchAllPeriod} />
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
               <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">月次残高推移（全期間）</h3>
@@ -618,7 +638,7 @@ const BudgetReportContent = () => {
 };
 
 const BudgetReportPage = () => (
-  <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+  <Suspense fallback={<LoadingSpinner />}>
     <BudgetReportContent />
   </Suspense>
 );

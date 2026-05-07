@@ -13,6 +13,8 @@ import type { DashboardResponse } from '@/types/dashboard';
 import type { Transaction } from '@/types/transaction';
 import type { AiAnalysisResult, AiScore } from '@/types/ai';
 import SummaryCards from '@/components/ui/SummaryCards';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import BudgetProgressList from '@/components/budget/BudgetProgressList';
 import TransactionList from '@/components/transaction/TransactionList';
@@ -34,6 +36,7 @@ const DashboardContent = () => {
   const [recentCount, setRecentCount] = useState(10);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [aiResult, setAiResult] = useState<AiAnalysisResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiScore, setAiScore] = useState<AiScore | null>(null);
@@ -63,9 +66,12 @@ const DashboardContent = () => {
   const fetchData = useCallback(async () => {
     if (!selectedLedgerId) return;
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getDashboard(selectedLedgerId, year, month, recentCount);
       setData(res.data);
+    } catch {
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -100,7 +106,7 @@ const DashboardContent = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={prevMonth}
-            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
             aria-label="前月"
           >
             ◀
@@ -110,7 +116,7 @@ const DashboardContent = () => {
           </span>
           <button
             onClick={nextMonth}
-            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
             aria-label="翌月"
           >
             ▶
@@ -121,9 +127,11 @@ const DashboardContent = () => {
         </span>
       </div>
 
-      {loading || !data ? (
-        <div className="text-center text-gray-400 py-8">読み込み中...</div>
-      ) : (
+      {loading ? (
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={fetchData} />
+      ) : data ? (
         <>
           {/* サマリーカード（4枚: 収入・支出・収支・残高） */}
           <SummaryCards
@@ -169,7 +177,7 @@ const DashboardContent = () => {
               const g = GRADE[aiScore.grade] ?? { emoji: '●', label: aiScore.grade };
               return (
                 <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-md px-3 py-2 border border-blue-100 dark:border-blue-800">
-                  <span className="text-sm font-bold text-gray-800">{aiScore.totalScore}点</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{aiScore.totalScore}点</span>
                   <span className="text-xs">{g.emoji} {g.label}</span>
                   {aiScore.scoreDiff !== null && (
                     <span className={`text-xs ml-auto ${aiScore.scoreDiff >= 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -222,14 +230,14 @@ const DashboardContent = () => {
             />
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 };
 
 const DashboardPage = () => {
   return (
-    <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <DashboardContent />
     </Suspense>
   );

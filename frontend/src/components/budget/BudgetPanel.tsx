@@ -16,6 +16,8 @@ import { useLedgerStore } from '@/stores/ledgerStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -303,7 +305,7 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
+  if (loading) return <LoadingSpinner compact />;
 
   const categoryNames = Array.from(
     new Set(data.flatMap((d) => d.budgets.map((b) => b.categoryName)))
@@ -320,9 +322,9 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
       <table className="text-xs border-collapse min-w-full">
         <thead>
           <tr>
-            <th className="text-left pr-2 py-1 text-gray-500 font-medium whitespace-nowrap">カテゴリ</th>
+            <th className="text-left pr-2 py-1 text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">カテゴリ</th>
             {displayData.map((d) => (
-              <th key={d.yearMonth} className="px-1 py-1 text-gray-500 font-medium text-center whitespace-nowrap">
+              <th key={d.yearMonth} className="px-1 py-1 text-gray-500 dark:text-gray-400 font-medium text-center whitespace-nowrap">
                 {d.yearMonth.slice(5)}月
               </th>
             ))}
@@ -331,7 +333,7 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
         <tbody>
           {categoryNames.map((name) => (
             <tr key={name}>
-              <td className="pr-2 py-0.5 text-gray-700 whitespace-nowrap">{name}</td>
+              <td className="pr-2 py-0.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">{name}</td>
               {displayData.map((d) => {
                 const b = d.budgets.find((bgt) => bgt.categoryName === name);
                 const pct = b ? b.percentage : null;
@@ -354,7 +356,7 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-300 inline-block" />80%未満</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-300 inline-block" />80〜99%</span>
         <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-400 inline-block" />100%以上</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block" />未設定</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 dark:bg-gray-600 inline-block" />未設定</span>
       </div>
     </div>
   );
@@ -386,7 +388,7 @@ const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
+  if (loading) return <LoadingSpinner compact />;
 
   const hasData = items.some((d) => d.surplus !== 0);
   if (!hasData) return <p className="text-xs text-gray-400 dark:text-gray-500 py-2">予算データがありません</p>;
@@ -435,16 +437,18 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [expCategories, setExpCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getBudgets(ledgerId, year, month);
       setBudgets(res.data);
     } catch {
-      // ignore
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -487,16 +491,16 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
 
       {/* 月選択 */}
       <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 self-start">
-        <button onClick={handlePrevMonth} className="text-gray-500 hover:text-gray-700 px-1" aria-label="前月">◀</button>
+        <button onClick={handlePrevMonth} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-1" aria-label="前月">◀</button>
         <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 w-20 text-center">{year}年{month}月</span>
-        <button onClick={handleNextMonth} className="text-gray-500 hover:text-gray-700 px-1" aria-label="翌月">▶</button>
+        <button onClick={handleNextMonth} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-1" aria-label="翌月">▶</button>
       </div>
 
       {/* サマリ */}
       {budgets.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: '予算合計', val: totalBudget, color: 'text-gray-800' },
+            { label: '予算合計', val: totalBudget, color: 'text-gray-800 dark:text-gray-100' },
             { label: '実績合計', val: totalActual, color: 'text-red-500' },
             { label: '残り合計', val: totalBudget - totalActual, color: totalBudget - totalActual >= 0 ? 'text-green-600' : 'text-red-500' },
           ].map(({ label, val, color }) => (
@@ -510,7 +514,9 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
 
       {/* 予算リスト */}
       {loading ? (
-        <div className="text-center text-gray-400 py-8 text-sm">読み込み中...</div>
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={load} />
       ) : budgets.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">この月の予算がまだ設定されていません</p>
