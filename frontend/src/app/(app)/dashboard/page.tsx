@@ -13,6 +13,8 @@ import type { DashboardResponse } from '@/types/dashboard';
 import type { Transaction } from '@/types/transaction';
 import type { AiAnalysisResult, AiScore } from '@/types/ai';
 import SummaryCards from '@/components/ui/SummaryCards';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import BudgetProgressList from '@/components/budget/BudgetProgressList';
 import TransactionList from '@/components/transaction/TransactionList';
@@ -34,6 +36,7 @@ const DashboardContent = () => {
   const [recentCount, setRecentCount] = useState(10);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [aiResult, setAiResult] = useState<AiAnalysisResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiScore, setAiScore] = useState<AiScore | null>(null);
@@ -63,9 +66,12 @@ const DashboardContent = () => {
   const fetchData = useCallback(async () => {
     if (!selectedLedgerId) return;
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getDashboard(selectedLedgerId, year, month, recentCount);
       setData(res.data);
+    } catch {
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -121,9 +127,11 @@ const DashboardContent = () => {
         </span>
       </div>
 
-      {loading || !data ? (
-        <div className="text-center text-gray-400 py-8">読み込み中...</div>
-      ) : (
+      {loading ? (
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={fetchData} />
+      ) : data ? (
         <>
           {/* サマリーカード（4枚: 収入・支出・収支・残高） */}
           <SummaryCards
@@ -222,14 +230,14 @@ const DashboardContent = () => {
             />
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 };
 
 const DashboardPage = () => {
   return (
-    <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <DashboardContent />
     </Suspense>
   );

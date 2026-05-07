@@ -16,6 +16,8 @@ import { useLedgerStore } from '@/stores/ledgerStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -303,7 +305,7 @@ const BudgetHeatmap = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
+  if (loading) return <LoadingSpinner compact />;
 
   const categoryNames = Array.from(
     new Set(data.flatMap((d) => d.budgets.map((b) => b.categoryName)))
@@ -386,7 +388,7 @@ const BudgetSurplusChart = ({ ledgerId }: { ledgerId: string }) => {
     });
   }, [ledgerId]);
 
-  if (loading) return <div className="text-xs text-gray-400 dark:text-gray-500 py-4 text-center">読み込み中...</div>;
+  if (loading) return <LoadingSpinner compact />;
 
   const hasData = items.some((d) => d.surplus !== 0);
   if (!hasData) return <p className="text-xs text-gray-400 dark:text-gray-500 py-2">予算データがありません</p>;
@@ -435,16 +437,18 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [expCategories, setExpCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getBudgets(ledgerId, year, month);
       setBudgets(res.data);
     } catch {
-      // ignore
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -510,7 +514,9 @@ const BudgetPanel = ({ ledgerId }: BudgetPanelProps) => {
 
       {/* 予算リスト */}
       {loading ? (
-        <div className="text-center text-gray-400 py-8 text-sm">読み込み中...</div>
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={load} />
       ) : budgets.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
           <p className="text-gray-400 text-sm">この月の予算がまだ設定されていません</p>

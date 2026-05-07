@@ -19,6 +19,8 @@ import { getAiSummary, analyzeAi, getAiScore } from '@/lib/api/ai';
 import { useToastStore } from '@/stores/toastStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import type { AiSummary, AiAnalysisResult, AiScore, PeriodType, AdviceType } from '@/types/ai';
 
 const PERIOD_OPTIONS: { value: PeriodType; label: string }[] = [
@@ -400,9 +402,11 @@ const AiContent = () => {
   const [summary, setSummary] = useState<AiSummary | null>(null);
   const [score, setScore] = useState<AiScore | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const [summaryRes, scoreRes] = await Promise.all([
         getAiSummary(ledgerId, period),
@@ -410,6 +414,8 @@ const AiContent = () => {
       ]);
       setSummary(summaryRes.data);
       setScore(scoreRes.data);
+    } catch {
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -443,9 +449,11 @@ const AiContent = () => {
         ))}
       </div>
 
-      {loading || !summary ? (
-        <div className="text-center text-gray-400 py-8">読み込み中...</div>
-      ) : (
+      {loading ? (
+        <LoadingSpinner />
+      ) : isError ? (
+        <ErrorState onRetry={fetchAll} />
+      ) : summary ? (
         <>
           {/* トレンド分析 */}
           <TrendAnalysis summary={summary} />
@@ -468,13 +476,13 @@ const AiContent = () => {
             ))}
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 };
 
 const AiPage = () => (
-  <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+  <Suspense fallback={<LoadingSpinner />}>
     <AiContent />
   </Suspense>
 );

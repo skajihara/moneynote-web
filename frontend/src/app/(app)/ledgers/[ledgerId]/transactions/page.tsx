@@ -8,6 +8,8 @@ import { getTransactions } from '@/lib/api/transaction';
 import { getPeriodRange, prevYearMonth, nextYearMonth, getCurrentYearMonth } from '@/lib/periodUtils';
 import type { TransactionListResponse, Transaction } from '@/types/transaction';
 import SummaryCards from '@/components/ui/SummaryCards';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ErrorState from '@/components/ui/ErrorState';
 import TransactionCalendar from '@/components/transaction/TransactionCalendar';
 import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
@@ -26,14 +28,18 @@ const TransactionsContent = () => {
   const [month, setMonth] = useState(() => Number(searchParams.get('month')) || getCurrentYearMonth(startDayOfMonth).month);
   const [data, setData] = useState<TransactionListResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const period = getPeriodRange(year, month, startDayOfMonth);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setIsError(false);
     try {
       const res = await getTransactions(ledgerId, { year, month });
       setData(res.data);
+    } catch {
+      setIsError(true);
     } finally {
       setLoading(false);
     }
@@ -115,9 +121,11 @@ const TransactionsContent = () => {
           </span>
         </div>
 
-        {loading || !data ? (
-          <div className="text-center text-gray-400 py-8">読み込み中...</div>
-        ) : (
+        {loading ? (
+          <LoadingSpinner />
+        ) : isError ? (
+          <ErrorState onRetry={fetchData} />
+        ) : data ? (
           <>
             {/* サマリーカード */}
             <SummaryCards
@@ -141,7 +149,7 @@ const TransactionsContent = () => {
               onEdit={canEdit ? openEditForm : undefined}
             />
           </>
-        )}
+        ) : null}
       </div>
 
       {/* FAB: 追加ボタン（VIEWER は非表示） */}
@@ -161,7 +169,7 @@ const TransactionsContent = () => {
 
 const TransactionsPage = () => {
   return (
-    <Suspense fallback={<div className="text-center text-gray-400 py-8">読み込み中...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <TransactionsContent />
     </Suspense>
   );
