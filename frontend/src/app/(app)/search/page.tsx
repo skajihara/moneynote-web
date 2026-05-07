@@ -111,7 +111,7 @@ const SearchPage = () => {
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
               placeholder="例: コンビニ"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-gray-100"
               style={{ '--tw-ring-color': 'var(--theme-color)' } as React.CSSProperties}
             />
           </div>

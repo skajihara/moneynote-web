@@ -100,7 +100,7 @@ const DashboardContent = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={prevMonth}
-            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
             aria-label="前月"
           >
             ◀
@@ -110,7 +110,7 @@ const DashboardContent = () => {
           </span>
           <button
             onClick={nextMonth}
-            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
             aria-label="翌月"
           >
             ▶
@@ -169,7 +169,7 @@ const DashboardContent = () => {
               const g = GRADE[aiScore.grade] ?? { emoji: '●', label: aiScore.grade };
               return (
                 <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-md px-3 py-2 border border-blue-100 dark:border-blue-800">
-                  <span className="text-sm font-bold text-gray-800">{aiScore.totalScore}点</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{aiScore.totalScore}点</span>
                   <span className="text-xs">{g.emoji} {g.label}</span>
                   {aiScore.scoreDiff !== null && (
                     <span className={`text-xs ml-auto ${aiScore.scoreDiff >= 0 ? 'text-green-600' : 'text-red-500'}`}>

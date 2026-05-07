@@ -184,7 +184,7 @@ const CategorySection = ({
   summaries, loading, categoryTab, selectedCategoryId, onTabChange, onCategoryClick,
 }: CategorySectionProps) => (
   <div className="flex flex-col gap-3">
-    <div className="flex border-b border-gray-200">
+    <div className="flex border-b border-gray-200 dark:border-gray-700">
       {(['EXPENSE', 'INCOME'] as CategoryTab[]).map((t) => (
         <button
           key={t}
@@ -205,7 +205,7 @@ const CategorySection = ({
     ) : (
       <>
         <CategoryPieChart data={summaries as unknown as CategoryBreakdown[]} size={220} />
-        <div className="bg-white rounded-lg border border-gray-200 p-2">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2">
           {summaries.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-4">データがありません</p>
           ) : (
@@ -427,7 +427,7 @@ const ReportsContent = () => {
   return (
     <div className="flex flex-col gap-4">
       {/* タブ */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
         {(['monthly', 'annual', 'all'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -449,9 +449,9 @@ const ReportsContent = () => {
           {/* 月セレクター */}
           <div className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-4">
-              <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="前月">◀</button>
+              <button onClick={prevMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="前月">◀</button>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 w-40 text-center">{year}年{month}月</span>
-              <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="翌月">▶</button>
+              <button onClick={nextMonth} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="翌月">▶</button>
             </div>
             {(() => {
               const p = getPeriodRange(year, month, startDayOfMonth);
@@ -527,9 +527,9 @@ const ReportsContent = () => {
       {tab === 'annual' && (
         <>
           <div className="flex items-center gap-4 justify-center">
-            <button onClick={prevYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="前年">◀</button>
+            <button onClick={prevYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="前年">◀</button>
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 w-24 text-center">{year}年</span>
-            <button onClick={nextYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors" aria-label="翌年">▶</button>
+            <button onClick={nextYear} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" aria-label="翌年">▶</button>
           </div>
 
           {reportLoading || !annualData ? (
