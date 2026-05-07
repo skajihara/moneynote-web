@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（Issue #37 完了・T-017/T-019 対応しないに移動）
+最終更新: 2026年5月（Issue #20 完了）
 
 ---
 
@@ -25,7 +25,6 @@
 |---|---|---|---|---|
 | T-016 | [#16](https://github.com/skajihara/moneynote-web/issues/16) | 機能 | 予算超過メール通知 | 予算 100% 超過時に登録メールアドレスへ通知メールを送信する |
 | T-018 | [#18](https://github.com/skajihara/moneynote-web/issues/18) | 機能 | 週次・日次サマリー | 週・日単位での集計レポートを追加 |
-| T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | 暗黙の仕様・注意点・全画面へのリンクを含むマニュアルを GitHub Pages で公開する |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
 
@@ -80,3 +79,4 @@
 | T-021 | [#21](https://github.com/skajihara/moneynote-web/issues/21) | ドキュメント | 仕様書・ドキュメントの最新化 | feature/issue-21-documentation |
 | T-022 | [#22](https://github.com/skajihara/moneynote-web/issues/22) | UI/UX | ダークモード | feature/issue-22-dark-mode |
 | T-033 | [#37](https://github.com/skajihara/moneynote-web/issues/37) | 機能 | システム管理者機能 | feature/issue-33-system-admin |
+| T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | feature/issue-20-github-pages |
