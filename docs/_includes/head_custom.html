@@ -1,0 +1,17 @@
+<!-- lunr-languages: Japanese search support (loaded synchronously after lunr.min.js) -->
+<script src="{{ '/assets/js/vendor/lunr.stemmer.support.js' | relative_url }}"></script>
+<script src="{{ '/assets/js/vendor/lunr.ja.js' | relative_url }}"></script>
+<script>
+;(function () {
+  if (typeof lunr === 'undefined' || typeof lunr.ja === 'undefined') return;
+  var _o = lunr;
+  lunr = function (c) {
+    return _o(function () {
+      try { this.use(lunr.ja); } catch (e) {}
+      c.call(this);
+    });
+  };
+  lunr.prototype = _o.prototype;
+  Object.keys(_o).forEach(function (k) { lunr[k] = _o[k]; });
+})();
+</script>
