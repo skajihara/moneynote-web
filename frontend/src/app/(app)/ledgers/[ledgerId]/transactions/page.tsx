@@ -94,7 +94,7 @@ const TransactionsContent = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={handlePrev}
-              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
               aria-label="前月"
             >
               ◀
@@ -104,7 +104,7 @@ const TransactionsContent = () => {
             </span>
             <button
               onClick={handleNext}
-              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
               aria-label="翌月"
             >
               ▶

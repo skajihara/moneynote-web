@@ -55,7 +55,7 @@ const FixedEditDialog = ({ ledgerId, item, onClose, onSaved }: DialogProps) => {
           onSaved={onSaved}
           onCancel={onClose}
         />
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           <button
             type="button"
             onClick={handleDelete}
@@ -127,8 +127,8 @@ const FixedTransactionList = ({ ledgerId }: Props) => {
               onClick={() => setStatusFilter(f)}
               className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                 statusFilter === f
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'text-gray-500 hover:bg-gray-100'
+                  ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               {f === 'ALL' ? '全て' : f === 'ACTIVE' ? '有効' : '期限切れ'}

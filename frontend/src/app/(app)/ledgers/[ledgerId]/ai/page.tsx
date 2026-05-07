@@ -58,10 +58,10 @@ const fmt = (n: number) =>
 // スコアカード
 // =========================================================================
 const GRADE_CONFIG = {
-  EXCELLENT: { emoji: '🟢', label: '優秀',     bg: 'bg-green-50',  border: 'border-green-200', text: 'text-green-700' },
-  GOOD:      { emoji: '🟡', label: '良好',     bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
-  CAUTION:   { emoji: '🟠', label: '要注意',   bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
-  POOR:      { emoji: '🔴', label: '改善が必要', bg: 'bg-red-50',   border: 'border-red-200',   text: 'text-red-700' },
+  EXCELLENT: { emoji: '🟢', label: '優秀',     bg: 'bg-green-50 dark:bg-green-900/20',  border: 'border-green-200 dark:border-green-800', text: 'text-green-700 dark:text-green-400' },
+  GOOD:      { emoji: '🟡', label: '良好',     bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-200 dark:border-yellow-800', text: 'text-yellow-700 dark:text-yellow-400' },
+  CAUTION:   { emoji: '🟠', label: '要注意',   bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-200 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-400' },
+  POOR:      { emoji: '🔴', label: '改善が必要', bg: 'bg-red-50 dark:bg-red-900/20',   border: 'border-red-200 dark:border-red-800',   text: 'text-red-700 dark:text-red-400' },
 };
 
 const ScoreBar = ({ score, max = 25 }: { score: number; max?: number }) => {
@@ -133,7 +133,7 @@ const ScoreCard = ({ score }: { score: AiScore }) => {
             <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 leading-relaxed pl-0.5">
               {SCORE_DESCRIPTIONS[label].summary}
             </p>
-            <p className="text-xs text-gray-300 dark:text-gray-600 dark:text-gray-600 font-mono leading-relaxed pl-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 font-mono leading-relaxed pl-0.5">
               {SCORE_DESCRIPTIONS[label].formula}
             </p>
           </div>
@@ -371,7 +371,7 @@ const AdviceCard = ({ ledgerId, period, adviceType, label, description }: Advice
       </p>
 
       {result && (
-        <div className="space-y-1 pt-1 border-t border-gray-100">
+        <div className="space-y-1 pt-1 border-t border-gray-100 dark:border-gray-700">
           {result.fromCache && (
             <p className="text-xs text-gray-400 dark:text-gray-500">キャッシュから取得</p>
           )}
@@ -434,7 +434,7 @@ const AiContent = () => {
             className={`px-3 py-1 text-xs rounded-md transition-colors ${
               period === opt.value
                 ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                : 'bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
             }`}
             aria-label={opt.label}
           >

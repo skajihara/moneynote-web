@@ -149,8 +149,8 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
                   </div>
                 ) : (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    m.permissionType === 'OWNER'  ? 'bg-purple-100 text-purple-700' :
-                    m.permissionType === 'ADMIN'  ? 'bg-blue-100 text-blue-700'   :
+                    m.permissionType === 'OWNER'  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+                    m.permissionType === 'ADMIN'  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'   :
                     m.permissionType === 'EDITOR' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                     'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                   }`}>

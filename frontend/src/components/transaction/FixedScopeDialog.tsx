@@ -30,14 +30,14 @@ const FixedScopeDialog = ({ mode, onConfirm, onCancel }: Props) => {
             onClick={onConfirm}
             className={`w-full text-left px-4 py-3 rounded-md border text-sm transition-colors ${
               isEdit
-                ? 'border-blue-300 hover:bg-blue-50'
+                ? 'border-blue-300 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <span className={`font-medium ${isEdit ? 'text-blue-700' : 'text-gray-800'}`}>
+            <span className={`font-medium ${isEdit ? 'text-blue-700 dark:text-blue-400' : 'text-gray-800 dark:text-gray-100'}`}>
               {isEdit ? 'この1件のみ編集する' : 'この1件のみ削除する'}
             </span>
-            <p className={`text-xs mt-0.5 ${isEdit ? 'text-blue-400' : 'text-gray-500'}`}>
+            <p className={`text-xs mt-0.5 ${isEdit ? 'text-blue-400 dark:text-blue-500' : 'text-gray-500 dark:text-gray-400'}`}>
               {isEdit
                 ? '他の月の明細には影響しません'
                 : 'この明細だけを削除します'}
@@ -48,9 +48,9 @@ const FixedScopeDialog = ({ mode, onConfirm, onCancel }: Props) => {
               onCancel();
               router.push('/settings?tab=fixed');
             }}
-            className="w-full text-left px-4 py-3 rounded-md border border-gray-200 text-sm hover:bg-gray-50 transition-colors"
+            className="w-full text-left px-4 py-3 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            <span className="font-medium text-gray-700">固定費設定を変更する</span>
+            <span className="font-medium text-gray-700 dark:text-gray-200">固定費設定を変更する</span>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               設定ページで固定費の変更・削除ができます
             </p>

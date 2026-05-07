@@ -441,8 +441,8 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted, initialSubTa
 
       {/* 帳簿削除 */}
       {subTab === 'delete' && (
-        <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 p-5">
-          <h3 className="text-sm font-semibold text-red-500 mb-2">帳簿の削除</h3>
+        <section className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-900 p-5">
+          <h3 className="text-sm font-semibold text-red-500 dark:text-red-400 mb-2">帳簿の削除</h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             帳簿内の全データ（明細・予算・カテゴリ）が削除されます。この操作は取り消せません。
           </p>
@@ -530,7 +530,7 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
             onClick={() => onSelect(l)}
             className="w-full text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-[var(--theme-color)] hover:bg-theme-light transition-colors"
           >
-            <div className="font-medium text-gray-800 text-sm">{l.ledgerName}</div>
+            <div className="font-medium text-gray-800 dark:text-gray-100 text-sm">{l.ledgerName}</div>
             <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               初期残高: {l.initialBalance.toLocaleString('ja-JP')}円
               月度開始日: {l.startDayOfMonth}日
