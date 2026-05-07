@@ -1,9 +1,32 @@
----
 title: MoneyNote Web マニュアル
-theme: minima
 description: MoneyNote Web の操作マニュアル
 baseurl: "/moneynote-web"
 url: "https://skajihara.github.io"
+
+remote_theme: just-the-docs/just-the-docs
+
+# カラー設定
+color_scheme: light
+
+# 検索機能を有効化
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 3
+
+# ナビゲーション設定
+nav_sort: order
+
+# フッター
+footer_content: "© 2024 MoneyNote Web"
+
+# aux links（ヘッダー右上のリンク）
+aux_links:
+  "GitHubリポジトリ":
+    - "https://github.com/skajihara/moneynote-web"
+aux_links_new_tab: true
+
+# 開発者向けドキュメントを GitHub Pages 対象から除外する
 exclude:
   - BRANCH_STRATEGY.md
   - CURRENT_STATUS.md
@@ -12,3 +35,5 @@ exclude:
   - api-overview.md
   - architecture.md
   - development-guide.md
+  - Gemfile
+  - Gemfile.lock

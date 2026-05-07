@@ -1,6 +1,6 @@
 ---
-title: MoneyNote Web マニュアル
-layout: home
+title: ホーム
+nav_order: 1
 ---
 
 # MoneyNote Web マニュアル
