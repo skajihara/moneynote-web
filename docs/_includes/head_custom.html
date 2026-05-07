@@ -1,0 +1,15 @@
+<!-- lunr-languages: Japanese search support -->
+<script defer src="https://unpkg.com/lunr-languages@1.14.0/lunr.stemmer.support.js"></script>
+<script defer src="https://unpkg.com/lunr-languages@1.14.0/lunr.ja.js"></script>
+<script defer>
+(function () {
+  var _o = lunr;
+  lunr = function (c) {
+    return _o(function () {
+      if (lunr.ja) this.use(lunr.ja);
+      c.call(this);
+    });
+  };
+  Object.keys(_o).forEach(function (k) { lunr[k] = _o[k]; });
+})();
+</script>
