@@ -1,15 +1,17 @@
-<!-- lunr-languages: Japanese search support -->
-<script defer src="https://unpkg.com/lunr-languages@1.14.0/lunr.stemmer.support.js"></script>
-<script defer src="https://unpkg.com/lunr-languages@1.14.0/lunr.ja.js"></script>
-<script defer>
-(function () {
+<!-- lunr-languages: Japanese search support (loaded synchronously after lunr.min.js) -->
+<script src="{{ '/assets/js/vendor/lunr.stemmer.support.js' | relative_url }}"></script>
+<script src="{{ '/assets/js/vendor/lunr.ja.js' | relative_url }}"></script>
+<script>
+;(function () {
+  if (typeof lunr === 'undefined' || typeof lunr.ja === 'undefined') return;
   var _o = lunr;
   lunr = function (c) {
     return _o(function () {
-      if (lunr.ja) this.use(lunr.ja);
+      try { this.use(lunr.ja); } catch (e) {}
       c.call(this);
     });
   };
+  lunr.prototype = _o.prototype;
   Object.keys(_o).forEach(function (k) { lunr[k] = _o[k]; });
 })();
 </script>
