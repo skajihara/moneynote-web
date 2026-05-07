@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Issue #33 システム管理者機能 実装完了・テストグリーン）
+最終更新: 2026年5月（ローディング・空・エラー3状態分離 実装完了・テストグリーン）
 
 ---
 
@@ -28,9 +28,10 @@
 
 ## 現在の状態
 
-- ISSUES対応中。作業中ブランチ: `feature/issue-33-system-admin`（テストグリーン・コミット待ち）
-- 直近完了ブランチ: `feature/issue-22-dark-mode`（develop マージ済み）
-- 次の作業: feature/issue-33-system-admin → develop マージ後、次の Issue 対応へ
+- ISSUES対応中。直近作業ブランチ一覧（コミット待ち）:
+  - `feature/darkmode-visibility-fix`（ダークモード視認性修正・14ファイル・テストグリーン）
+  - `feature/loading-empty-state`（ローディング/空/エラー3状態分離・テストグリーン）
+- 直近 develop マージ済み: `feature/issue-33-system-admin`（システム管理者機能）
 - リリース済み: v0.5.0（Step 14〜15）
 
 ---
@@ -57,6 +58,10 @@
 | `canEdit()` は EDITOR/ADMIN/OWNER 全てで true。FAB・編集ボタンは `canEdit()` で制御 | VIEWER は明細作成・更新・削除の UI を非表示にする。バックエンドでも 403 を返す |
 | 固定費の `endDate` は必須（`@NotNull`）。デフォルト10年後 | endDate=null 運用を廃止。バリデーション: endDate > startDate |
 | `JWT_SECRET` は `openssl rand -base64 64` で生成した256bit以上の文字列を使用 | CLAUDE.md のセキュリティルール参照。.env.example にも記載済み |
+| `loading \|\| !data` パターンは禁止。`loading` / `isError` / `data` の3状態に分離する | データnull時に「読み込み中...」が永続表示されるバグを防ぐため |
+| 共通UIコンポーネント: `LoadingSpinner`・`EmptyState`・`ErrorState` を `components/ui/` に配置 | 全画面で一貫したローディング/空/エラー表示を実現。`LoadingSpinner` は `compact` prop で小型化可能 |
+| fetch関数は try/catch/finally 必須。catch で `setIsError(true)`、finally で `setLoading(false)` | エラー時にローディングが解除されずUIが止まるバグを防ぐため |
+| `reportLoading` の初期値は `true`（reports/page.tsx） | `false` 始まりだと初回レンダーで一瞬 ErrorState が表示されるフラッシュが発生するため |
 
 ---
 
