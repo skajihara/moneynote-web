@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（ローディング・空・エラー3状態分離 実装完了・テストグリーン）
+最終更新: 2026年5月（Step 16 完了・main マージ済み）
 
 ---
 
@@ -23,16 +23,19 @@
 | Step 13 | セキュリティリスク対応・エラーハンドリング | 完了・develop マージ済み |
 | Step 14 | 設定ファイル最適化・MCP導入 | 完了・develop マージ済み |
 | Step 15 | hooks・skills | 完了・develop マージ済み |
+| Step 16 | UX改善・セキュリティドキュメント整備 | 完了・main マージ済み |
 
 ---
 
 ## 現在の状態
 
-- ISSUES対応中。直近作業ブランチ一覧（コミット待ち）:
-  - `feature/darkmode-visibility-fix`（ダークモード視認性修正・14ファイル・テストグリーン）
-  - `feature/loading-empty-state`（ローディング/空/エラー3状態分離・テストグリーン）
-- 直近 develop マージ済み: `feature/issue-33-system-admin`（システム管理者機能）
-- リリース済み: v0.5.0（Step 14〜15）
+- Step 16 完了・main マージ済み。次の作業待ち
+- Step 16 の内容:
+  - `feature/darkmode-visibility-fix`: ダークモード視認性修正（14ファイル）
+  - `feature/loading-empty-state`: ローディング/空/エラー3状態分離（共通UIコンポーネント新設）
+  - `docs/aws-guidelines.md` 新規作成・CLAUDE.md AWS作業ルール追加
+  - `CLAUDE.md` 機密情報管理セクション追加・`.gitignore` 拡充・`backend/.env.example`・`frontend/.env.example` 新規作成
+- リリース済み: v0.6.0（~Step 16）
 
 ---
 
