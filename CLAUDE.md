@@ -45,6 +45,37 @@ MoneyNote Web - モノレポ（`backend/` Spring Boot 3.x / Java 24、`frontend/
 **エラー時**: 原因・影響範囲・修正方針を先に説明してから修正する
 **Gate 3後**: `docs/CURRENT_STATUS.md` を更新（完了Stepのステータス・現在の状態・技術的決定事項・注意点）してからコミットへ
 
+## 機密情報管理（必須ルール）
+
+### コミット禁止ファイル・情報
+以下は絶対にGitリポジトリにコミットしない。
+- .env / .env.* 等の環境変数ファイル
+- application-prod.yml 等の本番設定ファイル
+- AWSアクセスキー・シークレットキー
+- JWT_SECRET 等のシークレット文字列
+- Claude APIキー（CLAUDE_API_KEY）
+- DBのパスワード
+- SSHキーペア（.pem ファイル）
+- AWS認証情報の実値
+- 機密情報を含む docker-compose.prod.yml 等
+
+### 作業前の確認（AWS・インフラ作業時）
+- 作成・編集するファイルに機密情報が含まれていないか確認する
+- .gitignore に対象ファイルが含まれているか確認する
+- git add 前に git diff でコミット内容を確認する
+
+### 機密情報の管理場所
+- ローカル環境: .env ファイル（.gitignore 済み）
+- AWS環境: Secrets Manager または Parameter Store
+- CI/CD: GitHub Actions の Secrets
+- 機密情報をコードにハードコードしない
+- ログに機密情報を出力しない
+
+### AWSリソース操作時の注意
+- IAMアクセスキーをコードや設定ファイルに埋め込まない
+- SSHキーペア（.pem）をリポジトリに追加しない
+- AWSコンソールのスクリーンショットにアクセスキーが写っていないか確認する
+
 ## よくある行き詰まり
 - Testcontainers失敗 → Docker Desktop起動・WSL2統合確認
 - Spring AI エラー → `docker-compose.yml` の `AI_MOCK: "true"` を確認
