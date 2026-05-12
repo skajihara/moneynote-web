@@ -335,9 +335,22 @@ https://ALB-ka-moneynote-01-xxxxxxxxxx.ap-northeast-1.elb.amazonaws.com
    - ターゲットグループ: TGT-ka-moneynote-01（HTTP:8080・ヘルスチェック: /actuator/health）
    - EC2インスタンスをターゲットに登録
 
-9. **ACM証明書発行**
-   - ALBのDNS名に対してACM証明書を発行
-   - 検証方法: メール検証またはDNS検証
+9. **自己署名証明書の生成・ACMへのインポート**
+```bash
+   # 自己署名証明書を生成（有効期限: 825日）
+   openssl req -x509 -nodes -days 825 -newkey rsa:2048 \
+     -keyout self-signed.key \
+     -out self-signed.crt \
+     -subj "/CN=moneynote-env1"
+
+   # ACMにインポート
+   aws acm import-certificate \
+     --certificate fileb://self-signed.crt \
+     --private-key fileb://self-signed.key \
+     --region ap-northeast-1
+```
+   > ブラウザで「安全でない」警告が出るがテスト用途のため許容する。
+   > 将来独自ドメインを取得した際にACMパブリック証明書に切り替える。
 
 10. **ALBにHTTPSリスナー設定**
     - ポート443・ACM証明書をアタッチ
