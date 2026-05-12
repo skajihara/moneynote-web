@@ -23,6 +23,11 @@ spring:
 ai:
   mock: true
 
+management:
+  health:
+    mail:
+      enabled: false
+
 app:
   jwt:
     secret: test-secret-key-that-is-at-least-32bytes!!

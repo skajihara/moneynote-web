@@ -52,3 +52,17 @@ app:
     hsts:
       # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-prod.yml で true に設定する
       enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # セキュリティ: ALB ヘルスチェック用に health のみ公開する
+        include: health
+      base-path: /actuator
+  endpoint:
+    health:
+      # セキュリティ: DB・Redis 等の内部情報を外部に漏らさない
+      show-details: never
+  server:
+    port: 8080
