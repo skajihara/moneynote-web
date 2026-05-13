@@ -1,22 +1,21 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# 本番環境設定 (spring.profiles.active=prod)
-# 開発環境との差分のみ記載する。共通設定は application.yml を参照。
+# 環境1設定 (spring.profiles.active=env1)
+# AWSデプロイ・develop ブランチ用
+# 共通設定は application.yml を参照。差分のみ記載する。
 # ─────────────────────────────────────────────────────────────────────────────
 
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
   mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
 
 management:
   health:
@@ -25,18 +24,22 @@ management:
       enabled: false
 
 ai:
-  mock: false  # 本番環境では Claude API を使用する
+  mock: true
 
 app:
   cookie:
-    # セキュリティ: 本番環境は HTTPS のため Secure フラグを強制する
+    # セキュリティ: ALB が HTTPS 終端するため Secure フラグを強制する
     secure: true
   security:
     hsts:
-      # セキュリティ: 本番環境では HSTS を有効化して HTTPS を強制する（max-age=1年）
+      # セキュリティ: ALB 経由で HTTPS アクセスされるため HSTS を有効化する
       enabled: true
 
 logging:
   level:
-    root: WARN
-    com.example.moneynote: INFO
+    root: INFO
+    com.example.moneynote: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

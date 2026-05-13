@@ -23,10 +23,6 @@ frontend/.swc/
 *.iml
 .vscode/settings.json
 
-# 本番設定ファイル（機密情報を含むためコミット禁止）
-application-prod.yml
-application-env*.yml
-
 # SSHキーペア・AWS認証情報
 *.pem
 .aws/
@@ -38,7 +34,6 @@ terraform.tfstate.backup
 
 # ローカルのみのDocker Compose設定
 docker-compose.override.yml
-docker-compose.prod.yml
 
 # nginx SSL 証明書（mkcert で生成するため絶対にコミットしない）
 nginx/certs/*.pem
