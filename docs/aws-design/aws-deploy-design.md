@@ -275,10 +275,10 @@ Internet Gateway (IGW_ka_moneynote_01)
 
 | シークレット名 | 内容 | 利用箇所 |
 |---|---|---|
-| moneynote/env1/db-password | PostgreSQLパスワード | docker-compose.prod.yml |
-| moneynote/env1/jwt-secret | JWT署名キー（256bit以上） | application-prod.yml |
-| moneynote/env1/redis-password | Redisパスワード | docker-compose.prod.yml |
-| moneynote/env1/claude-api-key | Claude APIキー | application-prod.yml |
+| moneynote/env1/db-password | PostgreSQLパスワード | docker-compose.env1.yml |
+| moneynote/env1/jwt-secret | JWT署名キー（256bit以上） | application-env1.yml |
+| moneynote/env1/redis-password | Redisパスワード | docker-compose.env1.yml |
+| moneynote/env1/claude-api-key | Claude APIキー | application-env1.yml |
 
 > ✅ EC2のIAMロール経由でSecrets Managerから取得する。アクセスキーをコードに埋め込まない。
 
@@ -400,17 +400,17 @@ https://ALB-ka-moneynote-01-xxxxxxxxxx.ap-northeast-1.elb.amazonaws.com
    # .envファイルには機密情報を書かない
    ```
 
-5. **docker-compose.prod.ymlの作成**
+5. **docker-compose.env1.ymlの作成**
    - 本番用Docker Compose設定を作成
    - 機密情報は環境変数経由で注入（ハードコード禁止）
 
-6. **application-prod.ymlの作成**
+6. **application-env1.ymlの作成**
    - 本番用Spring Boot設定を作成
    - DB接続先・Redis接続先・JWT設定等を環境変数で注入
 
 7. **Docker Composeでアプリ起動**
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   docker-compose -f docker-compose.env1.yml up -d
    ```
 
 #### Phase 3: 動作確認
@@ -597,9 +597,9 @@ Internet Gateway
 
 #### アプリケーション設定変更
 
-1. `docker-compose.prod.yml` からdb・redisコンテナを削除
-2. `application-prod.yml` のDB接続先をRDSのエンドポイントに変更
-3. `application-prod.yml` のRedis接続先をElastiCacheのエンドポイントに変更
+1. `docker-compose.env1.yml` からdb・redisコンテナを削除
+2. `application-env1.yml` のDB接続先をRDSのエンドポイントに変更
+3. `application-env1.yml` のRedis接続先をElastiCacheのエンドポイントに変更
 4. Docker Composeを再起動
 
 ---
@@ -615,7 +615,7 @@ Internet Gateway
 | 用途 | 予算超過通知・アカウント登録確認メール等 |
 | 送信元アドレス | SESで検証済みのアドレスを使用 |
 | 送信制限解除 | **アカウント管理者への申請が必要（ALL.5対応）** |
-| Spring Boot設定 | application-prod.ymlにSES設定を追加 |
+| Spring Boot設定 | application-env2.ymlにSES設定を追加 |
 
 > ⚠️ **ALL.5対応:** SESのサンドボックス解除はアカウント全体に影響するため、アカウント管理者の許可を得てから申請する。
 
@@ -638,7 +638,7 @@ Step 17では最小限のシークレットのみ登録するが、Step 22で全
 ### 9.1 機密情報管理ルール
 
 - Gitリポジトリに機密情報を**絶対にコミットしない**
-- `.env` / `application-prod.yml` / `*.pem` 等は `.gitignore` に登録済み
+- `.env` / `application-env2.yml` / `*.pem` 等は `.gitignore` に登録済み
 - IAMアクセスキーをコードや設定ファイルに埋め込まない
 - SSHキーペア（.pem）をリポジトリに追加しない
 - AWSコンソールのスクリーンショットにアクセスキーが写っていないか確認する

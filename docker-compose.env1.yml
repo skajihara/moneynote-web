@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# 本番環境用 Docker Compose（環境1 / develop ブランチ）
-# 起動前に scripts/secrets-fetch.sh を実行して .env.prod を生成すること
-# 起動コマンド: docker-compose -f docker-compose.prod.yml up -d
+# 環境1用 Docker Compose（develop ブランチ）
+# 起動前に scripts/secrets-fetch.sh env1 を実行して .env.env1 を生成すること
+# 起動コマンド: docker-compose -f docker-compose.env1.yml up -d
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -54,7 +54,7 @@ services:
       redis:
         condition: service_healthy
     env_file:
-      - .env.prod
+      - .env.env1
     environment:
       SPRING_PROFILES_ACTIVE: env1
       DB_HOST: db

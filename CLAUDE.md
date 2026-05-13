@@ -50,14 +50,13 @@ MoneyNote Web - モノレポ（`backend/` Spring Boot 3.x / Java 24、`frontend/
 ### コミット禁止ファイル・情報
 以下は絶対にGitリポジトリにコミットしない。
 - .env / .env.* 等の環境変数ファイル
-- application-prod.yml 等の本番設定ファイル
 - AWSアクセスキー・シークレットキー
 - JWT_SECRET 等のシークレット文字列
 - Claude APIキー（CLAUDE_API_KEY）
 - DBのパスワード
 - SSHキーペア（.pem ファイル）
 - AWS認証情報の実値
-- 機密情報を含む docker-compose.prod.yml 等
+- .env.env1 / .env.env2 等の機密情報を含む環境変数ファイル
 
 ### 作業前の確認（AWS・インフラ作業時）
 - 作成・編集するファイルに機密情報が含まれていないか確認する
@@ -86,7 +85,7 @@ MoneyNote Web - モノレポ（`backend/` Spring Boot 3.x / Java 24、`frontend/
 ```bash
 docker compose up -d --build                                    # 通常起動
 powershell -ExecutionPolicy Bypass -File seed.ps1               # DBリセット＋データ投入
-SPRING_PROFILES_ACTIVE=prod docker compose up -d --build        # 本番プロファイルで確認
+docker-compose -f docker-compose.env1.yml up -d --build        # 環境1（AWS EC2）で起動確認
 # アクセス: https://localhost | https://localhost/swagger-ui.html | http://localhost:8025
 ```
 

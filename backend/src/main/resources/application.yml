@@ -51,7 +51,7 @@ app:
     secure: ${COOKIE_SECURE:false}
   security:
     hsts:
-      # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-prod.yml で true に設定する
+      # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-env1.yml / application-env2.yml で true に設定する
       enabled: false
 
 management:

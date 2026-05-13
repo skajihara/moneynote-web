@@ -49,7 +49,7 @@
 |---|---|---|---|
 | TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | フロントエンドのテストカバレッジが低い画面がある | 中 |
 | TD-002 | [#30](https://github.com/skajihara/moneynote-web/issues/30) | Docker ビルドが毎回時間がかかる（Gradle キャッシュの最適化余地あり） | 低 |
-| TD-003 | [#31](https://github.com/skajihara/moneynote-web/issues/31) | application.yml・application-prod.yml の整合性確認が必要 | 高 |
+| TD-003 | [#31](https://github.com/skajihara/moneynote-web/issues/31) | application.yml・application-env1.yml・application-env2.yml の整合性確認が必要 | 高 |
 | TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | 中 |
 
 ---
