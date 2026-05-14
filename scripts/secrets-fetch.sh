@@ -24,7 +24,8 @@ get_secret() {
     --region "${REGION}" \
     --secret-id "$1" \
     --query SecretString \
-    --output text
+    --output text \
+    | python3 -c "import sys,json; print(list(json.load(sys.stdin).values())[0])"
 }
 
 echo "Fetching secrets for ${ENV} from AWS Secrets Manager (region: ${REGION})..."
