@@ -57,13 +57,6 @@ services:
       - .env.env2
     environment:
       SPRING_PROFILES_ACTIVE: env2
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: moneynote
-      DB_USERNAME: moneynote
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      COOKIE_SECURE: "true"
     healthcheck:
       # eclipse-temurin:24-jre-alpine には curl がないため wget を使用する
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
