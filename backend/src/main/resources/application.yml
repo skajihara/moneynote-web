@@ -15,6 +15,7 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
   mail:
     host: mailhog
     port: 1025
@@ -50,5 +51,19 @@ app:
     secure: ${COOKIE_SECURE:false}
   security:
     hsts:
-      # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-prod.yml で true に設定する
+      # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-env1.yml / application-env2.yml で true に設定する
       enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # セキュリティ: ALB ヘルスチェック用に health のみ公開する
+        include: health
+      base-path: /actuator
+  endpoint:
+    health:
+      # セキュリティ: DB・Redis 等の内部情報を外部に漏らさない
+      show-details: never
+  server:
+    port: 8080
