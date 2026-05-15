@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 環境1設定 (spring.profiles.active=env1)
+# AWSデプロイ・develop ブランチ用
+# 共通設定は application.yml を参照。差分のみ記載する。
+# ─────────────────────────────────────────────────────────────────────────────
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+management:
+  health:
+    mail:
+      # Step 22（SES設定）まではメールヘルスチェックを無効化する
+      enabled: false
+
+ai:
+  mock: true
+
+app:
+  cookie:
+    # セキュリティ: ALB が HTTPS 終端するため Secure フラグを強制する
+    secure: true
+  security:
+    hsts:
+      # セキュリティ: ALB 経由で HTTPS アクセスされるため HSTS を有効化する
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.moneynote: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

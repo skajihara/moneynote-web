@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Issue #33 システム管理者機能 実装完了・テストグリーン）
+最終更新: 2026年5月（Step 16 完了・main マージ済み）
 
 ---
 
@@ -23,15 +23,19 @@
 | Step 13 | セキュリティリスク対応・エラーハンドリング | 完了・develop マージ済み |
 | Step 14 | 設定ファイル最適化・MCP導入 | 完了・develop マージ済み |
 | Step 15 | hooks・skills | 完了・develop マージ済み |
+| Step 16 | UX改善・セキュリティドキュメント整備 | 完了・main マージ済み |
 
 ---
 
 ## 現在の状態
 
-- ISSUES対応中。作業中ブランチ: `feature/issue-33-system-admin`（テストグリーン・コミット待ち）
-- 直近完了ブランチ: `feature/issue-22-dark-mode`（develop マージ済み）
-- 次の作業: feature/issue-33-system-admin → develop マージ後、次の Issue 対応へ
-- リリース済み: v0.5.0（Step 14〜15）
+- Step 16 完了・main マージ済み。次の作業待ち
+- Step 16 の内容:
+  - `feature/darkmode-visibility-fix`: ダークモード視認性修正（14ファイル）
+  - `feature/loading-empty-state`: ローディング/空/エラー3状態分離（共通UIコンポーネント新設）
+  - `docs/aws-guidelines.md` 新規作成・CLAUDE.md AWS作業ルール追加
+  - `CLAUDE.md` 機密情報管理セクション追加・`.gitignore` 拡充・`backend/.env.example`・`frontend/.env.example` 新規作成
+- リリース済み: v0.6.0（~Step 16）
 
 ---
 
@@ -57,6 +61,10 @@
 | `canEdit()` は EDITOR/ADMIN/OWNER 全てで true。FAB・編集ボタンは `canEdit()` で制御 | VIEWER は明細作成・更新・削除の UI を非表示にする。バックエンドでも 403 を返す |
 | 固定費の `endDate` は必須（`@NotNull`）。デフォルト10年後 | endDate=null 運用を廃止。バリデーション: endDate > startDate |
 | `JWT_SECRET` は `openssl rand -base64 64` で生成した256bit以上の文字列を使用 | CLAUDE.md のセキュリティルール参照。.env.example にも記載済み |
+| `loading \|\| !data` パターンは禁止。`loading` / `isError` / `data` の3状態に分離する | データnull時に「読み込み中...」が永続表示されるバグを防ぐため |
+| 共通UIコンポーネント: `LoadingSpinner`・`EmptyState`・`ErrorState` を `components/ui/` に配置 | 全画面で一貫したローディング/空/エラー表示を実現。`LoadingSpinner` は `compact` prop で小型化可能 |
+| fetch関数は try/catch/finally 必須。catch で `setIsError(true)`、finally で `setLoading(false)` | エラー時にローディングが解除されずUIが止まるバグを防ぐため |
+| `reportLoading` の初期値は `true`（reports/page.tsx） | `false` 始まりだと初回レンダーで一瞬 ErrorState が表示されるフラッシュが発生するため |
 
 ---
 

@@ -75,6 +75,8 @@ public class SecurityConfig {
                         "/v3/api-docs/**"
                     ).permitAll();
                 }
+                // セキュリティ: ALB ヘルスチェック用。認証なしでアクセス可能にする（health のみ）
+                auth.requestMatchers("/actuator/health").permitAll();
                 // セキュリティ: 管理者専用 API は SYSTEM_ADMIN ロールのみ許可する
                 auth.requestMatchers("/api/v1/admin/**").hasAuthority("SYSTEM_ADMIN");
                 auth.anyRequest().authenticated();

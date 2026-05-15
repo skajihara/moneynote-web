@@ -3,6 +3,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+      password: ""
   jpa:
     hibernate:
       ddl-auto: validate
@@ -22,6 +23,11 @@ spring:
 
 ai:
   mock: true
+
+management:
+  health:
+    mail:
+      enabled: false
 
 app:
   jwt:
