@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 16 完了・main マージ済み）
+最終更新: 2026年5月（Step 17 完了・v1.0.0 main マージ済み）
 
 ---
 
@@ -24,18 +24,22 @@
 | Step 14 | 設定ファイル最適化・MCP導入 | 完了・develop マージ済み |
 | Step 15 | hooks・skills | 完了・develop マージ済み |
 | Step 16 | UX改善・セキュリティドキュメント整備 | 完了・main マージ済み |
+| Step 17 | 環境1デプロイ（EC2 + Docker Compose） | 完了・main マージ済み（v1.0.0） |
 
 ---
 
 ## 現在の状態
 
-- Step 16 完了・main マージ済み。次の作業待ち
-- Step 16 の内容:
-  - `feature/darkmode-visibility-fix`: ダークモード視認性修正（14ファイル）
-  - `feature/loading-empty-state`: ローディング/空/エラー3状態分離（共通UIコンポーネント新設）
-  - `docs/aws-guidelines.md` 新規作成・CLAUDE.md AWS作業ルール追加
-  - `CLAUDE.md` 機密情報管理セクション追加・`.gitignore` 拡充・`backend/.env.example`・`frontend/.env.example` 新規作成
-- リリース済み: v0.6.0（~Step 16）
+- Step 17 完了・main マージ済み（v1.0.0）。次は Step 18（CI/CD パイプライン構築）
+- Step 17 の内容（`feature/step17-aws-deploy`）:
+  - `application-env1.yml` / `application-env2.yml` 新規作成（env1/env2 用 Spring Boot プロファイル）
+  - `docker-compose.env1.yml` / `docker-compose.env2.yml` 新規作成
+  - `nginx/nginx.prod.conf` 新規作成（ALB → EC2:8080 → nginx → backend/frontend）
+  - `scripts/secrets-fetch.sh` 新規作成（Secrets Manager からシークレット取得・固定値も生成）
+  - `seed.sh` 新規作成（Linux/EC2 向け bash 版シードスクリプト）
+  - Redis パスワード認証を全環境（dev/env1/env2/test）に設定
+  - `docs/aws-design/aws-deploy-design-v3.md` 新規作成
+- リリース済み: v1.0.0（Step 17 完了）
 
 ---
 
@@ -61,6 +65,11 @@
 | `canEdit()` は EDITOR/ADMIN/OWNER 全てで true。FAB・編集ボタンは `canEdit()` で制御 | VIEWER は明細作成・更新・削除の UI を非表示にする。バックエンドでも 403 を返す |
 | 固定費の `endDate` は必須（`@NotNull`）。デフォルト10年後 | endDate=null 運用を廃止。バリデーション: endDate > startDate |
 | `JWT_SECRET` は `openssl rand -base64 64` で生成した256bit以上の文字列を使用 | CLAUDE.md のセキュリティルール参照。.env.example にも記載済み |
+| Next.js standalone ランタイムに `node_modules/.bin/` は存在しない。`-H 0.0.0.0` フラグ不可 | standalone ビルドは `server.js` を `node` で直接起動。バインドアドレスは `HOSTNAME=0.0.0.0` 環境変数で制御する |
+| env1/env2 のヘルスチェックは `/actuator/health` を使用（`/v3/api-docs` 不可） | nginx.prod.conf は `/actuator/` を backend に転送するが `/v3/api-docs` は frontend（Next.js）に転送されるため |
+| `secrets-fetch.sh` は `python3 -c "import sys,json; print(list(json.load(sys.stdin).values())[0])"` で値を抽出 | Secrets Manager は `{"key":"value"}` 形式の JSON を返すため、生の文字列ではなく値だけを取り出す必要がある |
+| `docker compose -f docker-compose.env1.yml --env-file .env.env1 up -d --build` が env1 の起動コマンド | `--env-file` がないと compose ファイル内の `${DB_PASSWORD}` 等の変数が解決できずエラーになる |
+| application-env1.yml / application-env2.yml: `ai.mock=true`・Swagger 有効・DEBUG ログ・`app.cookie.secure: true`・`security.hsts.enabled: true` | 本番相当環境での動作確認のため Swagger を残す。HSTS と Secure Cookie は ALB の X-Forwarded-Proto を受けて Spring 側で有効化 |
 | `loading \|\| !data` パターンは禁止。`loading` / `isError` / `data` の3状態に分離する | データnull時に「読み込み中...」が永続表示されるバグを防ぐため |
 | 共通UIコンポーネント: `LoadingSpinner`・`EmptyState`・`ErrorState` を `components/ui/` に配置 | 全画面で一貫したローディング/空/エラー表示を実現。`LoadingSpinner` は `compact` prop で小型化可能 |
 | fetch関数は try/catch/finally 必須。catch で `setIsError(true)`、finally で `setLoading(false)` | エラー時にローディングが解除されずUIが止まるバグを防ぐため |

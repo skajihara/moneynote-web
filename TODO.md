@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（Issue #38・#39 追加・#12〜#15 更新・T-036 追加）
+最終更新: 2026年5月（Step 17 完了・T-012 クローズ・T-036 追加）
 
 ---
 
@@ -8,7 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Step 17（EC2 + Docker Compose 環境1構築） | EC2 + Docker Compose で環境1の初回デプロイ。PostgreSQL・Redis は Docker Compose 上で動かす（Step 17） |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CDパイプライン構築 | テスト自動実行・SSM Send Command で EC2 へ自動デプロイ。IAM OIDC でアクセスキー不要（Step 18） |
 | T-034 | [#38](https://github.com/skajihara/moneynote-web/issues/38) | インフラ | 環境2構築（EC2 + Docker Compose） | 環境1と同構成で環境2を構築。main ブランチを本番相当テスト環境にデプロイ（Step 19） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | 環境1を3層構成（RDS・ElastiCache）に移行 | EC2 上の PostgreSQL・Redis を RDS・ElastiCache に移行。VPC を3層構成（Public・Protected・Private）に拡張（Step 20） |
@@ -17,7 +16,6 @@
 | T-029 | [#32](https://github.com/skajihara/moneynote-web/issues/32) | インフラ | nginx/LB で X-Forwarded-For を信頼プロキシ限定に設定 | 本番アーキテクチャ確定後に nginx.conf または Spring の forwarded-headers-strategy で制限する |
 | T-030 | [#33](https://github.com/skajihara/moneynote-web/issues/33) | インフラ | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | openssl rand -base64 64 で生成した256bit以上の文字列を Secrets Manager で管理する |
 | T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | CI/CD（T-013）に COOKIE_SECURE=true の環境変数設定を追加する |
-| T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager 等によるクレデンシャル管理の導入 | JWT_SECRET・CLAUDE_API_KEY 等の機密情報を AWS Secrets Manager で管理する（Step 22） |
 
 ---
 
@@ -83,3 +81,5 @@
 | T-022 | [#22](https://github.com/skajihara/moneynote-web/issues/22) | UI/UX | ダークモード | feature/issue-22-dark-mode |
 | T-033 | [#37](https://github.com/skajihara/moneynote-web/issues/37) | 機能 | システム管理者機能 | feature/issue-33-system-admin |
 | T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | feature/issue-20-github-pages |
+| T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Step 17（EC2 + Docker Compose 環境1構築） | feature/step17-aws-deploy |
+| T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager によるクレデンシャル管理の導入 | feature/step17-aws-deploy |
