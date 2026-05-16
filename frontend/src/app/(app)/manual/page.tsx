@@ -54,6 +54,11 @@ const manualSections: ManualSection[] = [
     manualPath: 'settings',
   },
   {
+    label: 'お問い合わせ',
+    description: '管理者へのご質問・ご要望・不具合報告を送信する',
+    manualPath: 'contact',
+  },
+  {
     label: '管理者画面',
     description: 'ユーザーの作成・ロール変更・有効化・無効化・削除（システム管理者のみ）',
     manualPath: 'admin',

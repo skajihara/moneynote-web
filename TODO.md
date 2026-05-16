@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（Step 17 完了・T-012 クローズ・T-036 追加）
+最終更新: 2026年5月（T-027・T-037 完了）
 
 ---
 
@@ -16,6 +16,7 @@
 | T-029 | [#32](https://github.com/skajihara/moneynote-web/issues/32) | インフラ | nginx/LB で X-Forwarded-For を信頼プロキシ限定に設定 | 本番アーキテクチャ確定後に nginx.conf または Spring の forwarded-headers-strategy で制限する |
 | T-030 | [#33](https://github.com/skajihara/moneynote-web/issues/33) | インフラ | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | openssl rand -base64 64 で生成した256bit以上の文字列を Secrets Manager で管理する |
 | T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | CI/CD（T-013）に COOKIE_SECURE=true の環境変数設定を追加する |
+| T-028 | [#28](https://github.com/skajihara/moneynote-web/issues/28) | アーキテクチャ | EC2 上に OAuth2 サーバを構築して OAuth 認証を導入 | Keycloak を EC2 に構築し OAuth 2.0 / OIDC に移行。dev プロファイルは既存 JWT 認証を維持し、env1/env2 プロファイルのみ Keycloak 認証に切り替える |
 
 ---
 
@@ -23,8 +24,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-016 | [#16](https://github.com/skajihara/moneynote-web/issues/16) | 機能 | 予算超過メール通知 | 予算 100% 超過時に登録メールアドレスへ通知メールを送信する |
-| T-018 | [#18](https://github.com/skajihara/moneynote-web/issues/18) | 機能 | 週次・日次サマリー | 週・日単位での集計レポートを追加 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
 
@@ -34,10 +33,7 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-025 | [#25](https://github.com/skajihara/moneynote-web/issues/25) | 機能 | 目標貯蓄機能 | 貯蓄目標を設定して進捗をグラフで表示する |
 | T-026 | [#26](https://github.com/skajihara/moneynote-web/issues/26) | 機能 | 領収書・レシート画像添付 | 明細に画像を添付できる機能（S3 連携） |
-| T-027 | [#27](https://github.com/skajihara/moneynote-web/issues/27) | 機能 | 問い合わせメール受付 | アプリ内から問い合わせメールを送受信できる機能 |
-| T-028 | [#28](https://github.com/skajihara/moneynote-web/issues/28) | アーキテクチャ | EC2 上に OAuth2 サーバを構築して OAuth 認証を導入 | EC2 に OAuth2 認証サーバ（Authorization Server）を設計・構築し、既存の JWT 認証を OAuth2 フローに移行する（学習目的） |
 
 ---
 
@@ -58,6 +54,9 @@
 |---|---|---|---|---|
 | T-017 | [#17](https://github.com/skajihara/moneynote-web/issues/17) | 機能 | 固定費の一時停止 | 固定費は期間指定一括登録のため一時停止の概念なし |
 | T-019 | [#19](https://github.com/skajihara/moneynote-web/issues/19) | 機能 | データインポート（他アプリ） | 現状対応予定なし |
+| T-016 | [#16](https://github.com/skajihara/moneynote-web/issues/16) | 機能 | 予算超過メール通知 | ダッシュボードで予算超過を視覚的に確認できるため、メール通知の追加価値が薄い |
+| T-018 | [#18](https://github.com/skajihara/moneynote-web/issues/18) | 機能 | 週次・日次サマリー | カレンダービュー（日次）と月次レポートで十分な粒度があり、追加の週次・日次集計ページは情報重複になる |
+| T-025 | [#25](https://github.com/skajihara/moneynote-web/issues/25) | 機能 | 目標貯蓄機能 | 貯金管理（目的別・期間・進捗）は家計簿の本分から外れる。収入・支出の記録と分析に特化する |
 | T-036 | - | アーキテクチャ | Next.js SSR（サーバーサイドレンダリング）への移行 | 全ページが `'use client'` の完全 SPA 構成であり accessToken をメモリのみで管理する設計が SSR と根本的に相容れない。移行には認証設計の見直し・50 ファイル以上の改修が必要でコストがメリットを上回るため現時点では対応しない |
 
 ---
@@ -83,3 +82,5 @@
 | T-020 | [#20](https://github.com/skajihara/moneynote-web/issues/20) | ドキュメント | GitHub Pages によるマニュアル整備 | feature/issue-20-github-pages |
 | T-012 | [#12](https://github.com/skajihara/moneynote-web/issues/12) | インフラ | AWSデプロイ Step 17（EC2 + Docker Compose 環境1構築） | feature/step17-aws-deploy |
 | T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager によるクレデンシャル管理の導入 | feature/step17-aws-deploy |
+| T-037 | [#40](https://github.com/skajihara/moneynote-web/issues/40) | 機能 | アカウント削除の日次バッチ化・メールキャンセル対応 | feature/issue-40-account-deletion-batch |
+| T-027 | [#27](https://github.com/skajihara/moneynote-web/issues/27) | 機能 | 問い合わせメール受付 | feature/issue-40-account-deletion-batch |

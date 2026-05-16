@@ -98,43 +98,12 @@ public class DashboardService {
                 totalIncome, totalExpense, netBalance, currentBalance, carryOver);
 
         // =========================================================
-        // categoryBreakdown: EXPENSE のみ・金額降順・0円除外
+        // categoryBreakdown / categoryIncomeBreakdown: 金額降順・0円除外
         // =========================================================
-        Map<String, BigDecimal> categoryAmountMap = new LinkedHashMap<>();
-        Map<String, Transaction> categoryRepMap = new LinkedHashMap<>();
-
-        for (Transaction t : monthlyTx) {
-            if (t.getTransactionType() != TransactionType.EXPENSE || t.getCategory() == null) {
-                continue;
-            }
-            String catId = t.getCategory().getCategoryId();
-            categoryAmountMap.merge(catId, t.getAmount(), BigDecimal::add);
-            categoryRepMap.putIfAbsent(catId, t);
-        }
-
-        List<CategoryBreakdownDto> categoryBreakdown = new ArrayList<>();
-        for (Map.Entry<String, BigDecimal> entry : categoryAmountMap.entrySet()) {
-            BigDecimal amount = entry.getValue();
-            if (amount.compareTo(BigDecimal.ZERO) == 0) continue;
-
-            Transaction rep = categoryRepMap.get(entry.getKey());
-            double percentage = totalExpense.compareTo(BigDecimal.ZERO) == 0
-                    ? 0.0
-                    : amount.multiply(BigDecimal.valueOf(100))
-                             .divide(totalExpense, 2, RoundingMode.HALF_UP)
-                             .doubleValue();
-
-            categoryBreakdown.add(new CategoryBreakdownDto(
-                    rep.getCategory().getCategoryId(),
-                    rep.getCategory().getCategoryName(),
-                    rep.getCategory().getCategoryType(),
-                    rep.getCategory().getIcon(),
-                    rep.getCategory().getColor(),
-                    amount,
-                    percentage
-            ));
-        }
-        categoryBreakdown.sort(Comparator.comparing(CategoryBreakdownDto::amount).reversed());
+        List<CategoryBreakdownDto> categoryBreakdown =
+                buildCategoryBreakdown(monthlyTx, TransactionType.EXPENSE, totalExpense);
+        List<CategoryBreakdownDto> categoryIncomeBreakdown =
+                buildCategoryBreakdown(monthlyTx, TransactionType.INCOME, totalIncome);
 
         // =========================================================
         // budgetStatus: 予算設定済みカテゴリのみ
@@ -188,6 +157,45 @@ public class DashboardService {
                 .map(TransactionResponse::from)
                 .toList();
 
-        return new DashboardResponse(summary, categoryBreakdown, budgetStatus, recentTransactions);
+        return new DashboardResponse(summary, categoryBreakdown, categoryIncomeBreakdown, budgetStatus, recentTransactions);
+    }
+
+    private List<CategoryBreakdownDto> buildCategoryBreakdown(
+            List<Transaction> transactions, TransactionType type, BigDecimal total) {
+
+        Map<String, BigDecimal> amountMap = new LinkedHashMap<>();
+        Map<String, Transaction> repMap   = new LinkedHashMap<>();
+
+        for (Transaction t : transactions) {
+            if (t.getTransactionType() != type || t.getCategory() == null) continue;
+            String catId = t.getCategory().getCategoryId();
+            amountMap.merge(catId, t.getAmount(), BigDecimal::add);
+            repMap.putIfAbsent(catId, t);
+        }
+
+        List<CategoryBreakdownDto> result = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : amountMap.entrySet()) {
+            BigDecimal amount = entry.getValue();
+            if (amount.compareTo(BigDecimal.ZERO) == 0) continue;
+
+            Transaction rep = repMap.get(entry.getKey());
+            double percentage = total.compareTo(BigDecimal.ZERO) == 0
+                    ? 0.0
+                    : amount.multiply(BigDecimal.valueOf(100))
+                             .divide(total, 2, RoundingMode.HALF_UP)
+                             .doubleValue();
+
+            result.add(new CategoryBreakdownDto(
+                    rep.getCategory().getCategoryId(),
+                    rep.getCategory().getCategoryName(),
+                    rep.getCategory().getCategoryType(),
+                    rep.getCategory().getIcon(),
+                    rep.getCategory().getColor(),
+                    amount,
+                    percentage
+            ));
+        }
+        result.sort(Comparator.comparing(CategoryBreakdownDto::amount).reversed());
+        return result;
     }
 }

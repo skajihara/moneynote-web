@@ -58,6 +58,11 @@ const menuItems: MenuItem[] = [
     href: '/manual',
     requiresLedger: false,
   },
+  {
+    label: 'お問い合わせ',
+    href: '/contact',
+    requiresLedger: false,
+  },
 ];
 
 const SideMenu = () => {

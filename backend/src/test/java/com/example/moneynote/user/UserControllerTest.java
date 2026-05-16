@@ -225,20 +225,20 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.themeColor", is("#3B82F6")));
     }
 
-    // =========================================================================
-    // DELETE /api/v1/users/me
-    // =========================================================================
-
     @Test
     void deleteAccount_success() throws Exception {
         mockMvc.perform(delete("/api/v1/users/me")
                         .header("Authorization", "Bearer " + token1))
                 .andExpect(status().isOk());
 
-        // 削除後は user1 が存在しないこと
-        mockMvc.perform(get("/api/v1/users/me")
-                        .header("Authorization", "Bearer " + token1))
-                .andExpect(status().isNotFound());
+        // 削除後はアカウントが is_active=false になること
+        User user = userRepository.findById("user1").orElseThrow();
+        org.junit.jupiter.api.Assertions.assertFalse(user.isActive(), "user1 が is_active=false になっていない");
+
+        // pending_deletion_users に登録されること
+        int pendingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pending_deletion_users WHERE user_id = ?", Integer.class, "user1");
+        org.junit.jupiter.api.Assertions.assertEquals(1, pendingCount, "pending_deletion_users に登録されていない");
     }
 
     @Test
@@ -248,7 +248,7 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteAccount_cascadesRelatedData() throws Exception {
+    void deleteAccount_registersAsPending() throws Exception {
         // register 経由でデフォルト帳簿＋カテゴリを作成する
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -260,51 +260,35 @@ class UserControllerTest {
                 .andExpect(status().isCreated());
         String token3 = jwtTokenProvider.generateAccessToken("user3", "USER");
 
-        // 帳簿IDとカテゴリIDを取得する
-        String ledgerBody = mockMvc.perform(get("/api/v1/ledgers")
-                        .header("Authorization", "Bearer " + token3))
-                .andReturn().getResponse().getContentAsString();
-        String ledgerId = objectMapper.readTree(ledgerBody).at("/data/0/ledgerId").asText();
-
-        String catBody = mockMvc.perform(get("/api/v1/ledgers/" + ledgerId + "/categories")
-                        .header("Authorization", "Bearer " + token3))
-                .andReturn().getResponse().getContentAsString();
-        String categoryId = objectMapper.readTree(catBody).at("/data/0/categoryId").asText();
-
-        // 明細を1件挿入する
-        jdbcTemplate.update(
-                "INSERT INTO transactions(transaction_id, ledger_id, category_id, transaction_type, amount, transaction_date, is_fixed_origin, created_at, updated_at) " +
-                "VALUES (?, ?, ?, 'EXPENSE', 1000, '2026-04-01', false, NOW(), NOW())",
-                "txn_account_cascade", ledgerId, categoryId);
-
-        // アカウント削除
+        // アカウント削除依頼
         mockMvc.perform(delete("/api/v1/users/me")
                         .header("Authorization", "Bearer " + token3))
                 .andExpect(status().isOk());
 
-        // ユーザーが消えていること
-        org.junit.jupiter.api.Assertions.assertFalse(
-                userRepository.existsById("user3"), "user3 が削除されていない");
+        // ユーザーが is_active=false になること（物理削除されないこと）
+        org.junit.jupiter.api.Assertions.assertTrue(
+                userRepository.existsById("user3"), "user3 が物理削除された（されるべきでない）");
+        User user3 = userRepository.findById("user3").orElseThrow();
+        org.junit.jupiter.api.Assertions.assertFalse(user3.isActive(), "user3 が is_active=false になっていない");
 
-        // 帳簿が消えていること
-        int ledgerCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM ledgers WHERE ledger_id = ?", Integer.class, ledgerId);
-        org.junit.jupiter.api.Assertions.assertEquals(0, ledgerCount, "帳簿が削除されていない");
+        // pending_deletion_users に登録されること
+        int pendingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pending_deletion_users WHERE user_id = ?", Integer.class, "user3");
+        org.junit.jupiter.api.Assertions.assertEquals(1, pendingCount, "pending_deletion_users に登録されていない");
 
-        // 明細が消えていること
-        int txCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM transactions WHERE ledger_id = ?", Integer.class, ledgerId);
-        org.junit.jupiter.api.Assertions.assertEquals(0, txCount, "明細が削除されていない");
-
-        // カテゴリが消えていること
+        // 帳簿・明細・カテゴリはまだ残っていること（バッチ実行前）
+        String ledgerBody = mockMvc.perform(get("/api/v1/ledgers")
+                        .header("Authorization", "Bearer " + token3))
+                .andReturn().getResponse().getContentAsString();
+        String ledgerId = objectMapper.readTree(ledgerBody).at("/data/0/ledgerId").asText();
         int catCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM categories WHERE ledger_id = ?", Integer.class, ledgerId);
-        org.junit.jupiter.api.Assertions.assertEquals(0, catCount, "カテゴリが削除されていない");
+        org.junit.jupiter.api.Assertions.assertTrue(catCount > 0, "削除依頼後にカテゴリが消えた（バッチ前は残るべき）");
     }
 
     @Test
     void deleteAccount_doesNotAffectOtherUser() throws Exception {
-        // user1 を削除しても user2 のプロフィールは取得できること
+        // user1 が削除依頼しても user2 のプロフィールは取得できること
         mockMvc.perform(delete("/api/v1/users/me")
                         .header("Authorization", "Bearer " + token1))
                 .andExpect(status().isOk());

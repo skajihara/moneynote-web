@@ -141,11 +141,17 @@ const DashboardContent = () => {
             currentBalance={data.summary.currentBalance}
           />
 
-          {/* カテゴリ別円グラフ */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">カテゴリ別支出</h2>
-            <CategoryPieChart data={data.categoryBreakdown} />
-          </section>
+          {/* カテゴリ別円グラフ（支出・収入を横並び） */}
+          <div className="grid grid-cols-2 gap-4">
+            <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">カテゴリ別支出</h2>
+              <CategoryPieChart data={data.categoryBreakdown} />
+            </section>
+            <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">カテゴリ別収入</h2>
+              <CategoryPieChart data={data.categoryIncomeBreakdown} />
+            </section>
+          </div>
 
           {/* 予算消化率 */}
           <section>

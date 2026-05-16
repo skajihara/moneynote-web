@@ -35,5 +35,6 @@ exclude:
   - api-overview.md
   - architecture.md
   - development-guide.md
+  - aws-design
   - Gemfile
   - Gemfile.lock

@@ -95,6 +95,14 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
+    @Operation(summary = "アカウント削除キャンセル", description = "メールのキャンセルトークンでアカウント削除依頼を取り消す。認証不要。")
+    @PostMapping("/account-deletion/cancel")
+    public ApiResponse<Void> cancelAccountDeletion(
+            @Valid @RequestBody AccountDeletionCancelRequest request) {
+        authService.cancelAccountDeletion(request.getToken());
+        return ApiResponse.success(null);
+    }
+
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------

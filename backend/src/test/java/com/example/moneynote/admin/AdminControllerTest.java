@@ -321,6 +321,34 @@ class AdminControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void deleteUser_withPendingDeletion_succeeds() throws Exception {
+        // user1 が退会予定に入っている場合も管理者が即時削除できること
+        jdbcTemplate.update(
+                "INSERT INTO pending_deletion_users(user_id, requested_at) VALUES (?, NOW())", "user1");
+
+        mockMvc.perform(delete("/api/v1/admin/users/user1")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById("user1")).isEmpty();
+
+        // pending_deletion_users からも削除されること
+        int pendingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pending_deletion_users WHERE user_id = ?", Integer.class, "user1");
+        assertThat(pendingCount).isEqualTo(0);
+    }
+
+    @Test
+    void deleteUser_withoutPendingDeletion_succeeds() throws Exception {
+        // pending_deletion_users になくても正常に削除できること（既存フローの回帰確認）
+        mockMvc.perform(delete("/api/v1/admin/users/user1")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        assertThat(userRepository.findById("user1")).isEmpty();
+    }
+
     // =========================================================================
     // ログイン制御: is_active=false ユーザーは 403
     // =========================================================================

@@ -53,6 +53,8 @@ app:
     hsts:
       # セキュリティ: HSTS は HTTPS 本番環境でのみ有効化する。application-env1.yml / application-env2.yml で true に設定する
       enabled: false
+  mail:
+    admin-address: ${ADMIN_EMAIL:admin@example.com}
 
 management:
   endpoints:
