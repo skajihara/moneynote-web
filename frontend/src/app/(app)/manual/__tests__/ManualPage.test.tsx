@@ -28,6 +28,7 @@ describe('ManualPage', () => {
     expect(screen.getByText('固定費')).toBeInTheDocument();
     expect(screen.getByText('CSV')).toBeInTheDocument();
     expect(screen.getByText('設定')).toBeInTheDocument();
+    expect(screen.getByText('お問い合わせ')).toBeInTheDocument();
   });
 
   it('USER ロールでは管理者画面セクションが表示されない', () => {
