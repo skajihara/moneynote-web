@@ -302,7 +302,7 @@ const AccountTab = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">本当に削除しますか？</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              すべての帳簿・明細・予算データが完全に削除されます。この操作は取り消せません。
+              本日深夜0時に削除されます。依頼後は当日中にキャンセルメールから取り消せます。
             </p>
             <div className="flex gap-3 justify-end">
               <button

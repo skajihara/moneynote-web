@@ -23,7 +23,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(docker run *)",
-      "Bash(docker stop *)"
+      "Bash(docker stop *)",
+      "mcp__serena__insert_after_symbol"
     ]
   }
 }
