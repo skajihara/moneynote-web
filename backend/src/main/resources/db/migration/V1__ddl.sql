@@ -1,7 +1,8 @@
 -- ============================================================
 -- V1__ddl.sql  全テーブル・インデックス定義（統合版）
 -- テーブル順: users, ledgers, ledger_permissions, categories,
---           fixed_transactions, transactions, budgets, ai_advice_cache
+--           fixed_transactions, transactions, budgets, ai_advice_cache,
+--           pending_deletion_users
 -- ============================================================
 
 CREATE TABLE users (
@@ -138,6 +139,14 @@ CREATE TABLE ai_advice_cache (
     CONSTRAINT fk_ai_advice_cache_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(ledger_id),
     CONSTRAINT chk_ai_advice_cache_period CHECK (period_type IN ('ONE_MONTH', 'THREE_MONTHS', 'TWELVE_MONTHS')),
     CONSTRAINT chk_ai_advice_cache_type   CHECK (advice_type   IN ('INSIGHT', 'ADVICE', 'FORECAST'))
+);
+
+-- アカウント削除依頼ユーザー管理テーブル（削除依頼時に登録・毎日0時のバッチで物理削除）
+CREATE TABLE pending_deletion_users (
+    user_id      VARCHAR(20)  NOT NULL,
+    requested_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_pending_deletion_users PRIMARY KEY (user_id),
+    CONSTRAINT fk_pending_deletion_users_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
 -- インデックス
