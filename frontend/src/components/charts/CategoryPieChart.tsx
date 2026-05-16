@@ -49,6 +49,10 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
     color: isDark ? '#F9FAFB' : '#111827',
   };
 
+  const tooltipItemStyle = {
+    color: isDark ? '#F9FAFB' : '#111827',
+  };
+
   return (
     <ResponsiveContainer width="100%" height={size}>
       <PieChart>
@@ -69,6 +73,7 @@ const CategoryPieChart = ({ data, size = 300 }: Props) => {
         <Tooltip
           formatter={(value: number) => fmt(value)}
           contentStyle={tooltipStyle}
+          itemStyle={tooltipItemStyle}
         />
         <Legend
           layout="vertical"

@@ -31,6 +31,7 @@ export type BudgetStatus = {
 export type DashboardResponse = {
   summary: DashboardSummary;
   categoryBreakdown: CategoryBreakdown[];
+  categoryIncomeBreakdown: CategoryBreakdown[];
   budgetStatus: BudgetStatus[];
   recentTransactions: Transaction[];
 };
