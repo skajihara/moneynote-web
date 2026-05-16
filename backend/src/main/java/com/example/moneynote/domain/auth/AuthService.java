@@ -16,6 +16,7 @@ import com.example.moneynote.domain.ledger.LedgerRepository;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermission;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
 import com.example.moneynote.domain.ledgerpermission.PermissionType;
+import com.example.moneynote.domain.user.PendingDeletionUserRepository;
 import com.example.moneynote.domain.user.User;
 import com.example.moneynote.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate redisTemplate;
     private final JavaMailSender mailSender;
+    private final PendingDeletionUserRepository pendingDeletionUserRepository;
 
     @Value("${app.jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
@@ -283,5 +285,33 @@ public class AuthService {
 
     private String resetKey(String token) {
         return "password_reset:" + token;
+    }
+
+    // -------------------------------------------------------------------------
+    // account deletion cancel
+    // -------------------------------------------------------------------------
+
+    @Transactional
+    public void cancelAccountDeletion(String token) {
+        String key = cancelKey(token);
+        String userId = redisTemplate.opsForValue().get(key);
+        if (userId == null) {
+            throw new ResourceNotFoundException("キャンセルリンクが無効または期限切れです");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("キャンセルリンクが無効または期限切れです"));
+
+        user.setActive(true);
+        userRepository.save(user);
+
+        pendingDeletionUserRepository.deleteById(userId);
+        redisTemplate.delete(key);
+
+        log.info("アカウント削除キャンセル: userId={}", userId);
+    }
+
+    private String cancelKey(String token) {
+        return "account_deletion_cancel:" + token;
     }
 }

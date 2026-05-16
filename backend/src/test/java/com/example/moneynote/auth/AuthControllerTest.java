@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -74,7 +75,7 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "pwd_reset:req:*"}) {
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "pwd_reset:req:*", "account_deletion_cancel:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
@@ -452,6 +453,71 @@ class AuthControllerTest {
                         .get("/api/v1/ledgers")
                         .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // =========================================================================
+    // POST /api/v1/auth/account-deletion/cancel
+    // =========================================================================
+
+    @Test
+    void accountDeletionCancel_success() throws Exception {
+        createUser("cancel_user", "cancel@example.com");
+
+        // 削除依頼: DELETE /api/v1/users/me
+        String accessToken = jwtTokenProvider.generateAccessToken("cancel_user", "USER");
+        mockMvc.perform(delete("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+
+        // is_active=false になっていること
+        User u = userRepository.findById("cancel_user").orElseThrow();
+        assertThat(u.isActive()).isFalse();
+
+        // Redis からキャンセルトークンを取得する
+        String cancelToken = null;
+        var keys = redisTemplate.keys("account_deletion_cancel:*");
+        assertThat(keys).as("キャンセルトークンが Redis に保存されていること").isNotEmpty();
+        for (String key : keys) {
+            String val = redisTemplate.opsForValue().get(key);
+            if ("cancel_user".equals(val)) {
+                cancelToken = key.replace("account_deletion_cancel:", "");
+                break;
+            }
+        }
+        assertThat(cancelToken).as("cancel_user のキャンセルトークンが見つかること").isNotBlank();
+
+        // キャンセル
+        mockMvc.perform(post("/api/v1/auth/account-deletion/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", cancelToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.nullValue()));
+
+        // is_active=true に復元されること
+        User restored = userRepository.findById("cancel_user").orElseThrow();
+        assertThat(restored.isActive()).isTrue();
+
+        // pending_deletion_users から削除されること
+        int pendingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM pending_deletion_users WHERE user_id = ?", Integer.class, "cancel_user");
+        assertThat(pendingCount).isEqualTo(0);
+    }
+
+    @Test
+    void accountDeletionCancel_invalidToken_returns404() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/account-deletion/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", "invalid-token-xyz")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.message").value("キャンセルリンクが無効または期限切れです"));
+    }
+
+    @Test
+    void accountDeletionCancel_missingToken_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/account-deletion/cancel")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // =========================================================================

@@ -77,3 +77,11 @@ export const confirmPasswordReset = (token: string, newPassword: string) =>
     body: JSON.stringify({ token, newPassword }),
     skipRefresh: true,
   });
+
+export const cancelAccountDeletion = (token: string) =>
+  apiClient<ApiResponse<null>>('/api/v1/auth/account-deletion/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+    skipRefresh: true,
+  });
