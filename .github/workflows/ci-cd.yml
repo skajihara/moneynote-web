@@ -141,7 +141,7 @@ jobs:
               ("ECR_REGISTRY=$(grep ECR_REGISTRY .env." + $env + " | cut -d= -f2)"),
               "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
-              ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d"),
+              ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d --force-recreate"),
               "sleep 30",
               "curl -f http://localhost:8080/actuator/health"
             ]}')
