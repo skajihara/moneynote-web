@@ -30,6 +30,9 @@ get_secret() {
 
 echo "Fetching secrets for ${ENV} from AWS Secrets Manager (region: ${REGION})..."
 
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+
 DB_PASSWORD=$(get_secret "moneynote/${ENV}/db-password")
 JWT_SECRET=$(get_secret "moneynote/${ENV}/jwt-secret")
 REDIS_PASSWORD=$(get_secret "moneynote/${ENV}/redis-password")
@@ -47,6 +50,7 @@ CLAUDE_API_KEY=${CLAUDE_API_KEY}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 
 # ── 固定値（機密情報ではない）────────────────────────────────
+ECR_REGISTRY=${ECR_REGISTRY}
 DB_HOST=db
 DB_PORT=5432
 DB_NAME=moneynote
