@@ -1,0 +1,149 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('backend/**/*.gradle*', 'backend/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run backend tests
+        working-directory: backend
+        run: ./gradlew test
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test
+
+  build-and-push:
+    needs: [test-backend, test-frontend]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        run: |
+          docker build -t ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-backend:latest \
+                       -t ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-backend:sha-${{ github.sha }} \
+                       ./backend
+          docker push ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-backend:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-backend:sha-${{ github.sha }}
+
+      - name: Build and push frontend image
+        run: |
+          docker build -t ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-frontend:latest \
+                       -t ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-frontend:sha-${{ github.sha }} \
+                       ./frontend
+          docker push ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-frontend:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/ecr-ka-moneynote-frontend:sha-${{ github.sha }}
+
+  deploy:
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to EC2 via SSM
+        id: ssm-send
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "cd /home/ssm-user/moneynote-web",
+              "git pull origin develop",
+              "./scripts/secrets-fetch.sh env1",
+              "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
+              "docker compose -f docker-compose.env1.yml pull",
+              "docker compose -f docker-compose.env1.yml --env-file .env.env1 up -d",
+              "sleep 30",
+              "curl -f http://localhost:8080/actuator/health"
+            ]' \
+            --query "Command.CommandId" \
+            --output text)
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for SSM command to complete
+        run: |
+          aws ssm wait command-executed \
+            --command-id "${{ steps.ssm-send.outputs.command_id }}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}"
+
+      - name: Check SSM command result
+        run: |
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "${{ steps.ssm-send.outputs.command_id }}" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
+            --query "Status" \
+            --output text)
+          echo "Deploy status: $STATUS"
+          if [ "$STATUS" != "Success" ]; then
+            aws ssm get-command-invocation \
+              --command-id "${{ steps.ssm-send.outputs.command_id }}" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
+              --query "StandardErrorContent" \
+              --output text
+            exit 1
+          fi
