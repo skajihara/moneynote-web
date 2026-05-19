@@ -132,6 +132,7 @@ jobs:
             --arg branch "$DEPLOY_BRANCH" \
             '{commands: [
               "set -e",
+              "export HOME=/root",
               "git config --global --add safe.directory /home/ssm-user/moneynote-web",
               "cd /home/ssm-user/moneynote-web",
               ("git fetch origin " + $branch),
