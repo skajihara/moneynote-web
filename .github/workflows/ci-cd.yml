@@ -93,12 +93,27 @@ jobs:
 
   deploy:
     needs: [build-and-push]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    # Step 19 で main (env2) も対象にする場合:
+    # if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     steps:
+      - name: Set deploy variables
+        id: vars
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "env=env1" >> "$GITHUB_OUTPUT"
+            echo "branch=develop" >> "$GITHUB_OUTPUT"
+            echo "instance_id=${{ secrets.EC2_INSTANCE_ID_ENV1 }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=env2" >> "$GITHUB_OUTPUT"
+            echo "branch=main" >> "$GITHUB_OUTPUT"
+            echo "instance_id=${{ secrets.EC2_INSTANCE_ID_ENV2 }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -107,43 +122,64 @@ jobs:
 
       - name: Deploy to EC2 via SSM
         id: ssm-send
+        env:
+          DEPLOY_ENV: ${{ steps.vars.outputs.env }}
+          DEPLOY_BRANCH: ${{ steps.vars.outputs.branch }}
+          DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
-          COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
+          PARAMS=$(jq -cn \
+            --arg env "$DEPLOY_ENV" \
+            --arg branch "$DEPLOY_BRANCH" \
+            '{commands: [
+              "set -e",
+              "export HOME=/root",
+              "git config --global --add safe.directory /home/ssm-user/moneynote-web",
               "cd /home/ssm-user/moneynote-web",
-              "git pull origin develop",
-              "./scripts/secrets-fetch.sh env1",
-              "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}",
-              "docker compose -f docker-compose.env1.yml pull",
-              "docker compose -f docker-compose.env1.yml --env-file .env.env1 up -d",
-              "sleep 30",
-              "curl -f http://localhost:8080/actuator/health"
-            ]' \
+              ("git fetch origin " + $branch),
+              ("git checkout " + $branch),
+              ("git reset --hard origin/" + $branch),
+              ("bash ./scripts/secrets-fetch.sh " + $env),
+              ("ECR_REGISTRY=$(grep ECR_REGISTRY .env." + $env + " | cut -d= -f2)"),
+              "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
+              ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
+              ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d --force-recreate"),
+              "curl -f --retry 10 --retry-delay 3 --retry-all-errors http://localhost:8080/actuator/health"
+            ]}')
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$DEPLOY_INSTANCE" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "$PARAMS" \
             --query "Command.CommandId" \
             --output text)
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for SSM command to complete
+        continue-on-error: true
+        env:
+          DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
           aws ssm wait command-executed \
             --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}"
+            --instance-id "$DEPLOY_INSTANCE"
 
       - name: Check SSM command result
+        env:
+          DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
-          STATUS=$(aws ssm get-command-invocation \
+          INVOCATION=$(aws ssm get-command-invocation \
             --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
-            --query "Status" \
-            --output text)
-          echo "Deploy status: $STATUS"
+            --instance-id "$DEPLOY_INSTANCE")
+
+          STATUS=$(echo "$INVOCATION" | jq -r '.Status')
+          echo "=== Deploy status: $STATUS ==="
+
+          echo "--- stdout ---"
+          echo "$INVOCATION" | jq -r '.StandardOutputContent'
+
+          echo "--- stderr ---"
+          echo "$INVOCATION" | jq -r '.StandardErrorContent'
+
           if [ "$STATUS" != "Success" ]; then
-            aws ssm get-command-invocation \
-              --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-              --instance-id "${{ secrets.EC2_INSTANCE_ID_ENV1 }}" \
-              --query "StandardErrorContent" \
-              --output text
             exit 1
           fi

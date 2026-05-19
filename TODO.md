@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-027・T-037 完了）
+最終更新: 2026年5月（T-013 完了）
 
 ---
 
@@ -8,7 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CDパイプライン構築 | テスト自動実行・SSM Send Command で EC2 へ自動デプロイ。IAM OIDC でアクセスキー不要（Step 18） |
 | T-034 | [#38](https://github.com/skajihara/moneynote-web/issues/38) | インフラ | 環境2構築（EC2 + Docker Compose） | 環境1と同構成で環境2を構築。main ブランチを本番相当テスト環境にデプロイ（Step 19） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | 環境1を3層構成（RDS・ElastiCache）に移行 | EC2 上の PostgreSQL・Redis を RDS・ElastiCache に移行。VPC を3層構成（Public・Protected・Private）に拡張（Step 20） |
 | T-035 | [#39](https://github.com/skajihara/moneynote-web/issues/39) | インフラ | 環境2を3層構成（RDS・ElastiCache）に移行 | Step 20（T-014）と同手順を環境2に適用（Step 21） |
@@ -84,3 +83,4 @@
 | T-032 | [#35](https://github.com/skajihara/moneynote-web/issues/35) | インフラ | Secrets Manager によるクレデンシャル管理の導入 | feature/step17-aws-deploy |
 | T-037 | [#40](https://github.com/skajihara/moneynote-web/issues/40) | 機能 | アカウント削除の日次バッチ化・メールキャンセル対応 | feature/issue-40-account-deletion-batch |
 | T-027 | [#27](https://github.com/skajihara/moneynote-web/issues/27) | 機能 | 問い合わせメール受付 | feature/issue-40-account-deletion-batch |
+| T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | feature/step18-cicd |
