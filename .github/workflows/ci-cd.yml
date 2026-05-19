@@ -140,7 +140,7 @@ jobs:
               ("git checkout " + $branch),
               ("git reset --hard origin/" + $branch),
               "git stash drop || true",
-              ("./scripts/secrets-fetch.sh " + $env),
+              ("bash ./scripts/secrets-fetch.sh " + $env),
               ("ECR_REGISTRY=$(grep ECR_REGISTRY .env." + $env + " | cut -d= -f2)"),
               "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
