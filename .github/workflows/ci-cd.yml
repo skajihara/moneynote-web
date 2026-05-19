@@ -131,6 +131,7 @@ jobs:
             --arg env "$DEPLOY_ENV" \
             --arg branch "$DEPLOY_BRANCH" \
             '{commands: [
+              "set -e",
               "cd /home/ssm-user/moneynote-web",
               ("git fetch origin " + $branch),
               "git stash",
@@ -166,17 +167,19 @@ jobs:
         env:
           DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
-          STATUS=$(aws ssm get-command-invocation \
+          INVOCATION=$(aws ssm get-command-invocation \
             --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-            --instance-id "$DEPLOY_INSTANCE" \
-            --query "Status" \
-            --output text)
-          echo "Deploy status: $STATUS"
+            --instance-id "$DEPLOY_INSTANCE")
+
+          STATUS=$(echo "$INVOCATION" | jq -r '.Status')
+          echo "=== Deploy status: $STATUS ==="
+
+          echo "--- stdout ---"
+          echo "$INVOCATION" | jq -r '.StandardOutputContent'
+
+          echo "--- stderr ---"
+          echo "$INVOCATION" | jq -r '.StandardErrorContent'
+
           if [ "$STATUS" != "Success" ]; then
-            aws ssm get-command-invocation \
-              --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-              --instance-id "$DEPLOY_INSTANCE" \
-              --query "StandardErrorContent" \
-              --output text
             exit 1
           fi
