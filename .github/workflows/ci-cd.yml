@@ -34,7 +34,7 @@ jobs:
 
       - name: Run backend tests
         working-directory: backend
-        run: echo "Tests temporarily skipped"  # TODO: restore ./gradlew test
+        run: ./gradlew test
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -54,7 +54,7 @@ jobs:
 
       - name: Run frontend tests
         working-directory: frontend
-        run: echo "Tests temporarily skipped"  # TODO: restore npm test
+        run: npm test
 
   build-and-push:
     needs: [test-backend, test-frontend]
@@ -136,16 +136,13 @@ jobs:
               "git config --global --add safe.directory /home/ssm-user/moneynote-web",
               "cd /home/ssm-user/moneynote-web",
               ("git fetch origin " + $branch),
-              "git stash",
               ("git checkout " + $branch),
               ("git reset --hard origin/" + $branch),
-              "git stash drop || true",
               ("bash ./scripts/secrets-fetch.sh " + $env),
               ("ECR_REGISTRY=$(grep ECR_REGISTRY .env." + $env + " | cut -d= -f2)"),
               "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d --force-recreate"),
-              "sleep 30",
               "curl -f http://localhost:8080/actuator/health"
             ]}')
 
