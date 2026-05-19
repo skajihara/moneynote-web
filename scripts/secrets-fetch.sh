@@ -33,6 +33,12 @@ echo "Fetching secrets for ${ENV} from AWS Secrets Manager (region: ${REGION})..
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 
+if [[ "$ENV" == "env1" ]]; then
+  FRONTEND_URL=https://alb-ka-moneynote-01-567525932.ap-northeast-1.elb.amazonaws.com
+elif [[ "$ENV" == "env2" ]]; then
+  FRONTEND_URL=https://alb-ka-moneynote-02-changeme.ap-northeast-1.elb.amazonaws.com
+fi
+
 DB_PASSWORD=$(get_secret "moneynote/${ENV}/db-password")
 JWT_SECRET=$(get_secret "moneynote/${ENV}/jwt-secret")
 REDIS_PASSWORD=$(get_secret "moneynote/${ENV}/redis-password")
@@ -57,7 +63,7 @@ DB_NAME=moneynote
 DB_USERNAME=moneynote
 REDIS_HOST=redis
 REDIS_PORT=6379
-FRONTEND_URL=https://localhost
+FRONTEND_URL=${FRONTEND_URL}
 MAIL_HOST=localhost
 MAIL_PORT=1025
 EOF
@@ -65,10 +71,7 @@ EOF
 chmod 600 "${OUTPUT_FILE}"
 
 echo "Done. Secrets written to ${OUTPUT_FILE}"
-echo ""
-echo "⚠️  FRONTEND_URL はデフォルト https://localhost のままです。"
-echo "   ALB の DNS 名に変更する場合は ${OUTPUT_FILE} を編集してください。"
-echo "   例: FRONTEND_URL=https://ALB-ka-moneynote-01-xxxxxxxx.ap-northeast-1.elb.amazonaws.com"
+echo "FRONTEND_URL=${FRONTEND_URL}"
 echo ""
 echo "次のステップ:"
-echo "  docker-compose -f docker-compose.${ENV}.yml up -d --build"
+echo "  docker-compose -f docker-compose.${ENV}.yml up -d"
