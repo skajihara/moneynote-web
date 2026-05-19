@@ -9,6 +9,7 @@ import com.example.moneynote.domain.admin.dto.AdminUserResponse;
 import com.example.moneynote.domain.ledger.LedgerCascadeDeleter;
 import com.example.moneynote.domain.ledger.LedgerRepository;
 import com.example.moneynote.domain.ledgerpermission.LedgerPermissionRepository;
+import com.example.moneynote.domain.user.PendingDeletionUserRepository;
 import com.example.moneynote.domain.user.Role;
 import com.example.moneynote.domain.user.User;
 import com.example.moneynote.domain.user.UserRepository;
@@ -29,6 +30,7 @@ public class AdminService {
     private final LedgerRepository ledgerRepository;
     private final LedgerCascadeDeleter ledgerCascadeDeleter;
     private final LedgerPermissionRepository ledgerPermissionRepository;
+    private final PendingDeletionUserRepository pendingDeletionUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
 
@@ -105,6 +107,8 @@ public class AdminService {
                 .forEach(l -> ledgerCascadeDeleter.delete(l.getLedgerId()));
         ledgerPermissionRepository.deleteByUserUserId(targetUserId);
         redisTemplate.delete("refresh:" + targetUserId);
+        // 退会予定に登録されている場合も削除する（管理者による即時削除）
+        pendingDeletionUserRepository.deleteById(targetUserId);
         userRepository.deleteById(targetUserId);
     }
 

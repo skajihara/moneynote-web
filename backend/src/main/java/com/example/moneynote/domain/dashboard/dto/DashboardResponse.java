@@ -7,6 +7,7 @@ import java.util.List;
 public record DashboardResponse(
         DashboardSummaryDto summary,
         List<CategoryBreakdownDto> categoryBreakdown,
+        List<CategoryBreakdownDto> categoryIncomeBreakdown,
         List<BudgetStatusDto> budgetStatus,
         List<TransactionResponse> recentTransactions
 ) {}

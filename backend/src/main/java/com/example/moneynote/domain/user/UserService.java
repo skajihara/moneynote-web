@@ -12,11 +12,22 @@ import com.example.moneynote.domain.user.dto.UpdateProfileRequest;
 import com.example.moneynote.domain.user.dto.UpdateThemeRequest;
 import com.example.moneynote.domain.user.dto.UserProfileResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.UUID;
+
+@Slf4j
 @SuppressWarnings("null")
 @Service
 @RequiredArgsConstructor
@@ -28,6 +39,11 @@ public class UserService {
     private final LedgerPermissionRepository ledgerPermissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
+    private final PendingDeletionUserRepository pendingDeletionUserRepository;
+    private final JavaMailSender mailSender;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String userId) {
@@ -72,25 +88,53 @@ public class UserService {
     }
 
     /**
-     * アカウントと全関連データを削除する。
-     * FK制約の順序に従い: ai_cache → budgets → transactions → fixed_transactions
-     *                    → categories → ledger_permissions → ledgers → user
+     * アカウント削除依頼を受け付ける。
+     * 即時物理削除ではなく、is_active=false + pending_deletion_users 登録 + キャンセルメール送信。
+     * 実際の物理削除は AccountDeletionBatchService が毎日0時に実行する。
      */
     @Transactional
     public void deleteAccount(String userId) {
-        findUser(userId);
+        User user = findUser(userId);
 
-        // 所有帳簿をカスケード削除する
-        ledgerRepository.findByOwnerUserId(userId)
-                .forEach(l -> ledgerCascadeDeleter.delete(l.getLedgerId()));
+        // is_active=false にしてログイン不可にする
+        user.setActive(false);
+        userRepository.save(user);
 
-        // 他の帳簿への参加権限も削除する
-        ledgerPermissionRepository.deleteByUserUserId(userId);
+        // pending_deletion_users に登録
+        pendingDeletionUserRepository.save(
+                PendingDeletionUser.builder().userId(userId).build());
 
-        // Redisのリフレッシュトークンを削除する
+        // Redisのリフレッシュトークンを削除して既存セッションを無効化する
         redisTemplate.delete("refresh:" + userId);
 
-        userRepository.deleteById(userId);
+        // キャンセルトークンを Redis に保存（TTL = 当日 23:59:59 まで）
+        String cancelToken = UUID.randomUUID().toString();
+        ZoneId jst = ZoneId.of("Asia/Tokyo");
+        ZonedDateTime midnight = LocalDate.now(jst).plusDays(1).atStartOfDay(jst);
+        Duration ttl = Duration.between(ZonedDateTime.now(jst), midnight);
+        redisTemplate.opsForValue().set("account_deletion_cancel:" + cancelToken, userId, ttl);
+
+        // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
+        log.info("アカウント削除依頼を受け付けました userId={}", userId);
+        sendAccountDeletionMail(userId, user.getEmail(), cancelToken);
+    }
+
+    private void sendAccountDeletionMail(String userId, String to, String cancelToken) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject("【MoneyNote】アカウント削除のご確認");
+            message.setText(
+                    "アカウント削除の依頼を受け付けました。\n" +
+                    "本日深夜0時にアカウントおよび全データが削除されます。\n\n" +
+                    "キャンセルする場合は以下のリンクにアクセスしてください（有効期限：本日中）\n\n" +
+                    frontendUrl + "/account-deletion/cancel?token=" + cancelToken + "\n\n" +
+                    "キャンセルしない場合、この操作は取り消せません。");
+            mailSender.send(message);
+        } catch (Exception e) {
+            // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
+            log.error("アカウント削除メールの送信に失敗しました userId={}", userId, e);
+        }
     }
 
     private User findUser(String userId) {

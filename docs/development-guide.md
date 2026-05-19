@@ -29,6 +29,21 @@ public class LedgerController {
 
 ---
 
+## GitHub Secrets の設定
+
+以下の Secrets を GitHub リポジトリに設定すること。
+Settings → Secrets and variables → Actions → New repository secret
+
+| Secret名 | 内容 |
+|---|---|
+| AWS_ROLE_ARN | IAM_R_ka_moneynote_02 の ARN |
+| AWS_REGION | ap-northeast-1 |
+| ECR_REGISTRY | {AWSアカウントID}.dkr.ecr.ap-northeast-1.amazonaws.com |
+| EC2_INSTANCE_ID_ENV1 | 環境1の EC2 インスタンス ID |
+| EC2_INSTANCE_ID_ENV2 | 環境2の EC2 インスタンス ID（Step 19 構築後） |
+
+---
+
 ## ドキュメント最新化ルール
 
 機能追加・変更・バグ修正のたびに以下を更新すること:

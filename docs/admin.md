@@ -1,6 +1,6 @@
 ---
 title: 管理者画面
-nav_order: 10
+nav_order: 11
 ---
 
 システム管理者（SYSTEM_ADMIN）のみアクセスできるユーザー管理画面です。

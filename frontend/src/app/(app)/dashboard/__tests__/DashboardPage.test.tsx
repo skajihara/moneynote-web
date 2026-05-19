@@ -36,6 +36,7 @@ const emptyDashboard: { data: DashboardResponse; error: null; timestamp: string 
   data: {
     summary: { totalIncome: 0, totalExpense: 0, netBalance: 0, currentBalance: 0, carryOver: 0 },
     categoryBreakdown: [],
+    categoryIncomeBreakdown: [],
     budgetStatus: [],
     recentTransactions: [],
   },
@@ -60,6 +61,17 @@ const richDashboard: { data: DashboardResponse; error: null; timestamp: string }
         categoryIcon: null,
         color: '#FF6384',
         amount: 30000,
+        percentage: 100.0,
+      },
+    ],
+    categoryIncomeBreakdown: [
+      {
+        categoryId: 'cat_2',
+        categoryName: '給与',
+        categoryType: 'INCOME',
+        categoryIcon: null,
+        color: '#36A2EB',
+        amount: 50000,
         percentage: 100.0,
       },
     ],

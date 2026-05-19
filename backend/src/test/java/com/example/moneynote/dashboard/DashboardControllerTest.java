@@ -195,6 +195,32 @@ class DashboardControllerTest {
     }
 
     @Test
+    void getDashboard_categoryIncomeBreakdown_incomeOnly_descOrder() throws Exception {
+        createTx("INCOME",  50000, "2026-04-15", incCategoryId);
+        createTx("EXPENSE", 10000, "2026-04-10", expCategoryId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/dashboard")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.categoryIncomeBreakdown", hasSize(1)))
+                .andExpect(jsonPath("$.data.categoryIncomeBreakdown[0].categoryName").value("給与"))
+                .andExpect(jsonPath("$.data.categoryIncomeBreakdown[0].amount").value(50000))
+                .andExpect(jsonPath("$.data.categoryIncomeBreakdown[0].percentage").value(100.0));
+    }
+
+    @Test
+    void getDashboard_categoryIncomeBreakdown_empty_whenNoIncome() throws Exception {
+        createTx("EXPENSE", 10000, "2026-04-10", expCategoryId);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/dashboard")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.categoryIncomeBreakdown", hasSize(0)));
+    }
+
+    @Test
     void getDashboard_budgetStatus_statusCalculation() throws Exception {
         // 食費予算: 50000、実績: 40000 → 80% → WARNING
         // 交通費予算: 20000、実績: 25000 → 125% → OVER
