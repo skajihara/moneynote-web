@@ -156,6 +156,7 @@ jobs:
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for SSM command to complete
+        continue-on-error: true
         env:
           DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
