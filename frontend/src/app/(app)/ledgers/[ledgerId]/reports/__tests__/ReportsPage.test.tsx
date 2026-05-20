@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import ReportsPage from '../page';
 import * as reportApi from '@/lib/api/report';
 import { useSubPanelStore } from '@/stores/subPanelStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { MonthlyReport, AnnualReport, BalanceHistoryItem, CategorySummary } from '@/types/report';
 
 const mockReplace = jest.fn();
@@ -130,6 +131,7 @@ beforeEach(() => {
   mockGetAllTimeCategorySummary.mockResolvedValue(emptyCategoryResponse);
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
+  useAuthStore.setState({ role: 'USER' });
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
 });
 
@@ -257,6 +259,14 @@ describe('ReportsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('月次残高推移（全期間）')).toBeInTheDocument();
       expect(screen.getByText('全期間カテゴリ別集計')).toBeInTheDocument();
+    });
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<ReportsPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
     });
   });
 });

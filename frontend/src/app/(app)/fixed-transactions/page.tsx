@@ -1,10 +1,13 @@
 'use client';
 
+import { useUserOnly } from '@/hooks/useUserOnly';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import FixedTransactionList from '@/components/fixed/FixedTransactionList';
 
 const FixedTransactionsPage = () => {
+  const isAdmin = useUserOnly();
   const selectedLedgerId = useLedgerStore((s) => s.selectedLedgerId);
+  if (isAdmin) return null;
 
   if (!selectedLedgerId) {
     return (

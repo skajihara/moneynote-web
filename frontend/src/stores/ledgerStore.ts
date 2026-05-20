@@ -25,6 +25,7 @@ type LedgerActions = {
   getMyPermission: () => PermissionType | null;
   canEdit: () => boolean;
   canAdmin: () => boolean;
+  reset: () => void;
 };
 
 export const useLedgerStore = create<LedgerState & LedgerActions>()(
@@ -89,6 +90,10 @@ export const useLedgerStore = create<LedgerState & LedgerActions>()(
         if (!ledger) return false;
         const pt = ledger.myPermissionType;
         return pt === 'ADMIN' || pt === 'OWNER';
+      },
+
+      reset: () => {
+        set({ ledgers: [], selectedLedgerId: null });
       },
     }),
     {

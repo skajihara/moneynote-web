@@ -1,6 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import FixedTransactionsPage from '../page';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useAuthStore } from '@/stores/authStore';
+
+const mockReplace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+}));
 
 jest.mock('@/components/fixed/FixedTransactionList', () => {
   return function MockFixedTransactionList({ ledgerId }: { ledgerId: string }) {
@@ -22,6 +29,8 @@ const ledger = {
 };
 
 beforeEach(() => {
+  mockReplace.mockReset();
+  useAuthStore.setState({ role: 'USER' });
   useLedgerStore.setState({ ledgers: [ledger], selectedLedgerId: 'ldg_1' });
 });
 
@@ -43,5 +52,13 @@ describe('FixedTransactionsPage', () => {
     const list = screen.getByTestId('fixed-transaction-list');
     expect(list).toBeInTheDocument();
     expect(list).toHaveAttribute('data-ledger-id', 'ldg_1');
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<FixedTransactionsPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
+    });
   });
 });
