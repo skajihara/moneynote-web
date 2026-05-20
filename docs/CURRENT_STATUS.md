@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 17 完了・v1.0.0 main マージ済み）
+最終更新: 2026年5月（Step 19 完了・admin バグ修正 develop マージ済み）
 
 ---
 
@@ -25,21 +25,25 @@
 | Step 15 | hooks・skills | 完了・develop マージ済み |
 | Step 16 | UX改善・セキュリティドキュメント整備 | 完了・main マージ済み |
 | Step 17 | 環境1デプロイ（EC2 + Docker Compose） | 完了・main マージ済み（v1.0.0） |
+| Step 18 | CI/CD パイプライン構築（GitHub Actions + ECR） | 完了・main マージ済み（v1.1.0） |
+| Step 19 | 環境2構築（EC2 + Docker Compose） | 完了・main マージ済み（v1.2.0） |
 
 ---
 
 ## 現在の状態
 
-- Step 17 完了・main マージ済み（v1.0.0）。次は Step 18（CI/CD パイプライン構築）
-- Step 17 の内容（`feature/step17-aws-deploy`）:
-  - `application-env1.yml` / `application-env2.yml` 新規作成（env1/env2 用 Spring Boot プロファイル）
-  - `docker-compose.env1.yml` / `docker-compose.env2.yml` 新規作成
-  - `nginx/nginx.prod.conf` 新規作成（ALB → EC2:8080 → nginx → backend/frontend）
-  - `scripts/secrets-fetch.sh` 新規作成（Secrets Manager からシークレット取得・固定値も生成）
-  - `seed.sh` 新規作成（Linux/EC2 向け bash 版シードスクリプト）
-  - Redis パスワード認証を全環境（dev/env1/env2/test）に設定
-  - `docs/aws-design/aws-deploy-design-v3.md` 新規作成
-- リリース済み: v1.0.0（Step 17 完了）
+- Step 19 完了・main マージ済み（v1.2.0）。次は Step 20（環境1を3層構成へ移行）
+- admin バグ修正（Issue #54）を develop にマージ済み。次回 main マージ時に env1/env2 へ反映
+- Step 18 の主な内容（`feature/step18-cicd`）:
+  - `.github/workflows/ci-cd.yml` 新規作成（test → build-and-push → deploy の3ジョブ）
+  - ECR（ecr-ka-moneynote-backend / ecr-ka-moneynote-frontend）に Docker イメージをプッシュ
+  - SSM Run Command で EC2 に自動デプロイ（git pull → secrets-fetch → docker compose pull → up）
+  - `docs/aws-design/aws-deploy-design-v4.md` 新規作成（VPC 共用制約を反映）
+- Step 19 の主な内容（develop 直コミット）:
+  - `scripts/secrets-fetch.sh`: env2 ALB DNS 名を実際の値に更新
+  - `.github/workflows/ci-cd.yml`: deploy ジョブの if 条件を develop + main 両方に拡張
+  - AMI（env1 スナップショット）から env2 EC2 を起動し main ブランチで動作確認済み
+- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）
 
 ---
 
@@ -74,6 +78,10 @@
 | 共通UIコンポーネント: `LoadingSpinner`・`EmptyState`・`ErrorState` を `components/ui/` に配置 | 全画面で一貫したローディング/空/エラー表示を実現。`LoadingSpinner` は `compact` prop で小型化可能 |
 | fetch関数は try/catch/finally 必須。catch で `setIsError(true)`、finally で `setLoading(false)` | エラー時にローディングが解除されずUIが止まるバグを防ぐため |
 | `reportLoading` の初期値は `true`（reports/page.tsx） | `false` 始まりだと初回レンダーで一瞬 ErrorState が表示されるフラッシュが発生するため |
+| `useUserOnly` フックは `boolean` を返し、呼び出し元が `if (isAdmin) return null` で子コンポーネントをブロックする | `useEffect` のみのリダイレクトでは子コンポーネントが一瞬レンダリングされ API コールが走るため。`admin/page.tsx` と同様の二重防御パターン |
+| SSM Run Command は root で実行されるため `HOME` 未設定。デプロイコマンド先頭に `export HOME=/root` が必要 | git credential や Docker 設定が HOME 依存のため。ci-cd.yml の SSM パラメータに含めること |
+| 会社の AWS アカウントは VPC が 1人1つの制約あり。env1・env2 は `VPC_ka_moneynote_01` を共用 | env2 専用の VPC・IGW は作成不可。サブネット CIDR を env1 と重複しないよう設計（10.0.5-8.x/24 for env2） |
+| env2 EC2 は env1 AMI から起動（Docker・git・リポジトリ込み）。起動直後は env1 コンテナが動いている可能性あり | AMI 作成前に env1 コンテナを停止するか、env2 起動後に docker compose down してから deploy する |
 
 ---
 

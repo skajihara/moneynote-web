@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-038 完了）
+最終更新: 2026年5月（T-034・T-038 完了）
 
 ---
 
@@ -8,7 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-034 | [#38](https://github.com/skajihara/moneynote-web/issues/38) | インフラ | 環境2構築（EC2 + Docker Compose） | 環境1と同構成で環境2を構築。main ブランチを本番相当テスト環境にデプロイ（Step 19） |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | 環境1を3層構成（RDS・ElastiCache）に移行 | EC2 上の PostgreSQL・Redis を RDS・ElastiCache に移行。VPC を3層構成（Public・Protected・Private）に拡張（Step 20） |
 | T-035 | [#39](https://github.com/skajihara/moneynote-web/issues/39) | インフラ | 環境2を3層構成（RDS・ElastiCache）に移行 | Step 20（T-014）と同手順を環境2に適用（Step 21） |
 | T-015 | [#15](https://github.com/skajihara/moneynote-web/issues/15) | インフラ | SES・Secrets Manager本格活用 | AWS SES による本番メール送信有効化・Secrets Manager で全機密情報を集約（Step 22） |
@@ -84,4 +83,5 @@
 | T-037 | [#40](https://github.com/skajihara/moneynote-web/issues/40) | 機能 | アカウント削除の日次バッチ化・メールキャンセル対応 | feature/issue-40-account-deletion-batch |
 | T-027 | [#27](https://github.com/skajihara/moneynote-web/issues/27) | 機能 | 問い合わせメール受付 | feature/issue-40-account-deletion-batch |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | feature/step18-cicd |
+| T-034 | [#38](https://github.com/skajihara/moneynote-web/issues/38) | インフラ | 環境2構築（EC2 + Docker Compose） | develop |
 | T-038 | [#54](https://github.com/skajihara/moneynote-web/issues/54) | バグ修正 | 管理者アカウントのサイドメニュー・ルート保護修正 | feature/issue-54-admin-bugs |

@@ -9,8 +9,8 @@
 | v0.5.0 | Step 14〜15 | MCP導入・設定ファイル最適化 | ✅ リリース済み |
 | v0.6.0 | Step 16 | 品質仕上げ | ✅ リリース済み |
 | v1.0.0 | Step 17 | 環境1デプロイ（EC2 + Docker Compose） | ✅ リリース済み |
-| v1.1.0 | Step 18 | CI/CDパイプライン構築（GitHub Actions） | 未着手 |
-| v1.2.0 | Step 19 | 環境2構築（環境1と同構成） | 未着手 |
+| v1.1.0 | Step 18 | CI/CDパイプライン構築（GitHub Actions + ECR） | ✅ リリース済み |
+| v1.2.0 | Step 19 | 環境2構築（環境1と同構成） | ✅ リリース済み |
 | v1.3.0 | Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | 未着手 |
 | v1.4.0 | Step 21 | 環境2を3層構成に移行 | 未着手 |
 | v1.5.0 | Step 22 | SES・Secrets Manager本格活用 | 未着手 |
