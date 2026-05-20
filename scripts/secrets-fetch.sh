@@ -36,7 +36,7 @@ ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 if [[ "$ENV" == "env1" ]]; then
   FRONTEND_URL=https://alb-ka-moneynote-01-567525932.ap-northeast-1.elb.amazonaws.com
 elif [[ "$ENV" == "env2" ]]; then
-  FRONTEND_URL=https://alb-ka-moneynote-02-changeme.ap-northeast-1.elb.amazonaws.com
+  FRONTEND_URL=https://alb-ka-moneynote-02-1066046470.ap-northeast-1.elb.amazonaws.com
 fi
 
 DB_PASSWORD=$(get_secret "moneynote/${ENV}/db-password")
