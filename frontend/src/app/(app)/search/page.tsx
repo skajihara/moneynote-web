@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -12,7 +13,9 @@ import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
 
 const SearchPage = () => {
+  const isAdmin = useUserOnly();
   const selectedLedgerId = useLedgerStore((s) => s.selectedLedgerId);
+  if (isAdmin) return null;
   const getSelectedLedger = useLedgerStore((s) => s.getSelectedLedger);
   const { open: openPanel, close: closePanel } = useSubPanelStore();
   const addToast = useToastStore((s) => s.add);

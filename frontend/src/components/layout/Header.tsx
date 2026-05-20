@@ -30,7 +30,7 @@ const Header = () => {
   const manualPath = getManualPath(pathname);
   const { userName, logout: authLogout } = useAuthStore();
   const addToast = useToastStore((state) => state.add);
-  const { ledgers, selectedLedgerId, selectLedger } = useLedgerStore();
+  const { ledgers, selectedLedgerId, selectLedger, reset: resetLedgers } = useLedgerStore();
   const canAdmin = useLedgerStore((s) => s.canAdmin)();
   const { close: closePanel, open: openPanel } = useSubPanelStore();
   const { isDark, toggle: toggleDark } = useThemeStore();
@@ -44,6 +44,7 @@ const Header = () => {
     } catch {
       // ログアウト API が失敗してもクライアント側はクリアする
     }
+    resetLedgers();
     authLogout();
     router.push('/login');
     addToast('success', 'ログアウトしました');

@@ -113,4 +113,19 @@ describe('ledgerStore', () => {
 
     expect(useLedgerStore.getState().getSelectedLedger()).toBeNull();
   });
+
+  it('reset で ledgers と selectedLedgerId が初期化される', () => {
+    useLedgerStore.setState({
+      ledgers: [makeLedger('ldg_1', 'A'), makeLedger('ldg_2', 'B')],
+      selectedLedgerId: 'ldg_1',
+    });
+
+    act(() => {
+      useLedgerStore.getState().reset();
+    });
+
+    const state = useLedgerStore.getState();
+    expect(state.ledgers).toHaveLength(0);
+    expect(state.selectedLedgerId).toBeNull();
+  });
 });

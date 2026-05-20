@@ -2,10 +2,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AiPage from '../page';
 import * as aiApi from '@/lib/api/ai';
+import { useAuthStore } from '@/stores/authStore';
 import type { AiSummary, AiScore } from '@/types/ai';
+
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useParams: () => ({ ledgerId: 'ldg_test01' }),
+  useRouter: () => ({ replace: mockReplace }),
 }));
 
 jest.mock('@/lib/api/ai');
@@ -79,6 +83,8 @@ const scoreResponse = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockReplace.mockReset();
+  useAuthStore.setState({ role: 'USER' });
   mockGetAiSummary.mockResolvedValue(summaryResponse);
   mockGetAiScore.mockResolvedValue(scoreResponse);
   mockAnalyzeAi.mockResolvedValue({
@@ -226,6 +232,14 @@ describe('AiPage', () => {
     await userEvent.click(screen.getByRole('button', { name: '3ヶ月' }));
     await waitFor(() => {
       expect(mockGetAiSummary).toHaveBeenCalledWith('ldg_test01', 'THREE_MONTHS');
+    });
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<AiPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
     });
   });
 });

@@ -5,7 +5,14 @@ import * as transactionApi from '@/lib/api/transaction';
 import * as ledgerApi from '@/lib/api/ledger';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { useSubPanelStore } from '@/stores/subPanelStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { Transaction } from '@/types/transaction';
+
+const mockReplace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+}));
 
 jest.mock('@/lib/api/transaction');
 jest.mock('@/lib/api/ledger');
@@ -51,8 +58,10 @@ const categoriesResponse = { data: [], error: null, timestamp: '' };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockReplace.mockReset();
   mockSearchTransactions.mockResolvedValue(emptySearchResponse);
   mockGetCategories.mockResolvedValue(categoriesResponse);
+  useAuthStore.setState({ role: 'USER' });
   useLedgerStore.setState({ ledgers: [ledger], selectedLedgerId: 'ldg_1' });
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
 });
@@ -139,6 +148,14 @@ describe('SearchPage', () => {
     await userEvent.click(screen.getByRole('button', { name: '検索' }));
     await waitFor(() => {
       expect(mockSearchTransactions).toHaveBeenCalledWith('ldg_1', expect.objectContaining({ keyword: 'スーパー' }));
+    });
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<SearchPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
     });
   });
 });
