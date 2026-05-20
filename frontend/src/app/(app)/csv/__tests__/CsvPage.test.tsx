@@ -1,6 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import CsvPage from '../page';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useAuthStore } from '@/stores/authStore';
+
+const mockReplace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+}));
 
 jest.mock('@/components/csv/CsvExport', () => {
   return function MockCsvExport({ ledgerId }: { ledgerId: string }) {
@@ -28,6 +35,8 @@ const ledger = {
 };
 
 beforeEach(() => {
+  mockReplace.mockReset();
+  useAuthStore.setState({ role: 'USER' });
   useLedgerStore.setState({ ledgers: [ledger], selectedLedgerId: 'ldg_1' });
 });
 
@@ -57,5 +66,13 @@ describe('CsvPage', () => {
     const importEl = screen.getByTestId('csv-import');
     expect(importEl).toBeInTheDocument();
     expect(importEl).toHaveAttribute('data-ledger-id', 'ldg_1');
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<CsvPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
+    });
   });
 });

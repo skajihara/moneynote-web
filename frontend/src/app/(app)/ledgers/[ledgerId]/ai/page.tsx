@@ -19,6 +19,7 @@ import { getAiSummary, analyzeAi, getAiScore } from '@/lib/api/ai';
 import { useToastStore } from '@/stores/toastStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { ApiClientError } from '@/lib/api/client';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorState from '@/components/ui/ErrorState';
 import type { AiSummary, AiAnalysisResult, AiScore, PeriodType, AdviceType } from '@/types/ai';
@@ -481,10 +482,14 @@ const AiContent = () => {
   );
 };
 
-const AiPage = () => (
-  <Suspense fallback={<LoadingSpinner />}>
-    <AiContent />
-  </Suspense>
-);
+const AiPage = () => {
+  const isAdmin = useUserOnly();
+  if (isAdmin) return null;
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AiContent />
+    </Suspense>
+  );
+};
 
 export default AiPage;

@@ -1,10 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BudgetPanel from '@/components/budget/BudgetPanel';
+import BudgetPage from '../page';
 import * as budgetApi from '@/lib/api/budget';
 import * as ledgerApi from '@/lib/api/ledger';
+import { useAuthStore } from '@/stores/authStore';
 import type { Budget } from '@/types/budget';
 import type { BudgetHeatmapMonth } from '@/types/budget';
+
+const mockReplace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  useParams: () => ({ ledgerId: 'ldg_test01' }),
+}));
 
 jest.mock('@/lib/api/budget');
 jest.mock('@/lib/api/ledger');
@@ -161,6 +170,21 @@ describe('BudgetPanel', () => {
     render(<BudgetPanel ledgerId="ldg_1" />);
     await waitFor(() => {
       expect(screen.getByText('予算余剰・超過（直近6ヶ月）')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('BudgetPage', () => {
+  beforeEach(() => {
+    mockReplace.mockReset();
+    useAuthStore.setState({ role: 'USER' });
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<BudgetPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
     });
   });
 });

@@ -4,6 +4,7 @@ import TransactionsPage from '../page';
 import * as transactionApi from '@/lib/api/transaction';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { TransactionListResponse } from '@/types/transaction';
 
 const mockReplace = jest.fn();
@@ -66,6 +67,7 @@ beforeEach(() => {
   mockGetTransactions.mockResolvedValue(emptyResponse);
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
+  useAuthStore.setState({ role: 'USER' });
   useSubPanelStore.setState({ isOpen: false, content: null, contentKey: 0 });
   useLedgerStore.setState({
     ledgers: [{
@@ -144,6 +146,14 @@ describe('TransactionsPage', () => {
     render(<TransactionsPage />);
     await waitFor(() => {
       expect(screen.getByText('2025年3月')).toBeInTheDocument();
+    });
+  });
+
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN' });
+    render(<TransactionsPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
     });
   });
 });

@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-013 完了）
+最終更新: 2026年5月（T-038 完了）
 
 ---
 
@@ -84,3 +84,4 @@
 | T-037 | [#40](https://github.com/skajihara/moneynote-web/issues/40) | 機能 | アカウント削除の日次バッチ化・メールキャンセル対応 | feature/issue-40-account-deletion-batch |
 | T-027 | [#27](https://github.com/skajihara/moneynote-web/issues/27) | 機能 | 問い合わせメール受付 | feature/issue-40-account-deletion-batch |
 | T-013 | [#13](https://github.com/skajihara/moneynote-web/issues/13) | インフラ | GitHub Actions CI/CD構築 | feature/step18-cicd |
+| T-038 | [#54](https://github.com/skajihara/moneynote-web/issues/54) | バグ修正 | 管理者アカウントのサイドメニュー・ルート保護修正 | feature/issue-54-admin-bugs |

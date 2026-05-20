@@ -10,6 +10,7 @@ type MenuItem = {
   label: string;
   href: string | ((ledgerId: string) => string);
   requiresLedger: boolean;
+  hideForAdmin?: boolean;
 };
 
 const menuItems: MenuItem[] = [
@@ -17,41 +18,49 @@ const menuItems: MenuItem[] = [
     label: 'ダッシュボード',
     href: '/dashboard',
     requiresLedger: false,
+    hideForAdmin: true,
   },
   {
     label: '明細・入力',
     href: (id) => `/ledgers/${id}/transactions`,
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: '予算・レポート',
     href: (id) => `/ledgers/${id}/reports`,
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: 'AI分析',
     href: (id) => `/ledgers/${id}/ai`,
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: '検索',
     href: '/search',
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: '固定費',
     href: '/fixed-transactions',
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: 'CSV',
     href: '/csv',
     requiresLedger: true,
+    hideForAdmin: true,
   },
   {
     label: '設定',
     href: '/settings',
     requiresLedger: false,
+    hideForAdmin: true,
   },
   {
     label: 'マニュアル',
@@ -75,6 +84,9 @@ const SideMenu = () => {
     <aside className="w-56 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0">
       <nav className="p-2 flex flex-col gap-0.5">
         {menuItems.map((item) => {
+          // 管理者には非表示のメニューをスキップ
+          if (item.hideForAdmin && role === 'SYSTEM_ADMIN') return null;
+
           // 帳簿が必要なメニューかつ未選択の場合は無効化する
           if (item.requiresLedger && !selectedLedgerId) {
             return (

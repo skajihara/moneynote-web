@@ -1,11 +1,14 @@
 'use client';
 
+import { useUserOnly } from '@/hooks/useUserOnly';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import CsvExport from '@/components/csv/CsvExport';
 import CsvImport from '@/components/csv/CsvImport';
 
 const CsvPage = () => {
+  const isAdmin = useUserOnly();
   const selectedLedgerId = useLedgerStore((s) => s.selectedLedgerId);
+  if (isAdmin) return null;
 
   if (!selectedLedgerId) {
     return (

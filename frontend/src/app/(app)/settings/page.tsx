@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import AccountTab from '@/components/settings/AccountTab';
 import LedgersTab, { type SubTab } from '@/components/settings/LedgersTab';
 
@@ -61,10 +62,14 @@ const SettingsContent = () => {
   );
 };
 
-const SettingsPage = () => (
-  <Suspense>
-    <SettingsContent />
-  </Suspense>
-);
+const SettingsPage = () => {
+  const isAdmin = useUserOnly();
+  if (isAdmin) return null;
+  return (
+    <Suspense>
+      <SettingsContent />
+    </Suspense>
+  );
+};
 
 export default SettingsPage;

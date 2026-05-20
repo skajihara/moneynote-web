@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import { useSubPanelStore } from '@/stores/subPanelStore';
 import { useLedgerStore } from '@/stores/ledgerStore';
 import { getTransactions } from '@/lib/api/transaction';
@@ -168,6 +169,8 @@ const TransactionsContent = () => {
 };
 
 const TransactionsPage = () => {
+  const isAdmin = useUserOnly();
+  if (isAdmin) return null;
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <TransactionsContent />

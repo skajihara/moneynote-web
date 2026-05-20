@@ -25,6 +25,7 @@ import AllPeriodLineChart from '@/components/charts/AllPeriodLineChart';
 import CategoryPieChart from '@/components/charts/CategoryPieChart';
 import TransactionList from '@/components/transaction/TransactionList';
 import TransactionEditForm from '@/components/transaction/TransactionEditForm';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import BudgetPanel from '@/components/budget/BudgetPanel';
 import type { BarItem } from '@/components/charts/MonthlyBarChart';
 import type { LineItem } from '@/components/charts/BalanceLineChart';
@@ -637,10 +638,14 @@ const BudgetReportContent = () => {
   );
 };
 
-const BudgetReportPage = () => (
-  <Suspense fallback={<LoadingSpinner />}>
-    <BudgetReportContent />
-  </Suspense>
-);
+const BudgetReportPage = () => {
+  const isAdmin = useUserOnly();
+  if (isAdmin) return null;
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <BudgetReportContent />
+    </Suspense>
+  );
+};
 
 export default BudgetReportPage;

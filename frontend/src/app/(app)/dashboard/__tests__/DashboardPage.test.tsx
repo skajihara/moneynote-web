@@ -4,6 +4,7 @@ import DashboardPage from '../page';
 import * as dashboardApi from '@/lib/api/dashboard';
 import * as aiApi from '@/lib/api/ai';
 import { useLedgerStore } from '@/stores/ledgerStore';
+import { useAuthStore } from '@/stores/authStore';
 import type { DashboardResponse } from '@/types/dashboard';
 
 jest.mock('next/navigation', () => ({
@@ -134,10 +135,19 @@ beforeEach(() => {
   });
   mockReplace.mockReset();
   mockSearchParams = new URLSearchParams();
+  useAuthStore.setState({ role: null });
   useLedgerStore.setState({ ledgers: [], selectedLedgerId: 'ldg_test01' });
 });
 
 describe('DashboardPage', () => {
+  it('SYSTEM_ADMIN は /admin にリダイレクトされる', async () => {
+    useAuthStore.setState({ role: 'SYSTEM_ADMIN', isAuthenticated: true });
+    render(<DashboardPage />);
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith('/admin');
+    });
+  });
+
   it('月セレクターが表示される', async () => {
     render(<DashboardPage />);
     await waitFor(() => {

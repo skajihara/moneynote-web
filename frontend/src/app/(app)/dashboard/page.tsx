@@ -12,6 +12,7 @@ import { ApiClientError } from '@/lib/api/client';
 import type { DashboardResponse } from '@/types/dashboard';
 import type { Transaction } from '@/types/transaction';
 import type { AiAnalysisResult, AiScore } from '@/types/ai';
+import { useUserOnly } from '@/hooks/useUserOnly';
 import SummaryCards from '@/components/ui/SummaryCards';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorState from '@/components/ui/ErrorState';
@@ -242,6 +243,8 @@ const DashboardContent = () => {
 };
 
 const DashboardPage = () => {
+  const isAdmin = useUserOnly();
+  if (isAdmin) return null;
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <DashboardContent />

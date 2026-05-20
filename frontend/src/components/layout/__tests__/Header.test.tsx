@@ -105,6 +105,26 @@ describe('Header 帳簿セレクター', () => {
   });
 });
 
+describe('Header ログアウト', () => {
+  it('ログアウト時に ledgerStore がリセットされる', async () => {
+    useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: 'ldg_aaa' });
+    render(<Header />);
+    await userEvent.click(screen.getByRole('button', { name: 'ログアウト' }));
+    await waitFor(() => {
+      expect(useLedgerStore.getState().ledgers).toHaveLength(0);
+      expect(useLedgerStore.getState().selectedLedgerId).toBeNull();
+    });
+  });
+
+  it('ログアウト時に /login へ遷移する', async () => {
+    render(<Header />);
+    await userEvent.click(screen.getByRole('button', { name: 'ログアウト' }));
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/login');
+    });
+  });
+});
+
 describe('Header メンバー管理ボタン', () => {
   it('ADMIN 以上の場合 👥 ボタンが表示される', () => {
     useLedgerStore.setState({ ledgers: ledgersData, selectedLedgerId: 'ldg_aaa' });
