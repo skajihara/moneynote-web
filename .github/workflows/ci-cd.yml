@@ -93,9 +93,7 @@ jobs:
 
   deploy:
     needs: [build-and-push]
-    # Step 19 で main (env2) も対象にする場合:
-    # if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
