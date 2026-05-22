@@ -1,7 +1,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # 環境1用 Docker Compose（develop ブランチ）
+# Step 20以降: DB は RDS・Redis は ElastiCache を使用（DB/Redisコンテナなし）
 # 起動前に scripts/secrets-fetch.sh env1 を実行して .env.env1 を生成すること
-# 起動コマンド: docker-compose -f docker-compose.env1.yml up -d
+# 起動コマンド: docker-compose -f docker-compose.env1.yml --env-file .env.env1 up -d
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -19,40 +20,8 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: moneynote
-      POSTGRES_USER: moneynote
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD --no-auth-warning ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
   backend:
     image: ${ECR_REGISTRY}/ecr-ka-moneynote-backend:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file:
       - .env.env1
     environment:
@@ -80,6 +49,3 @@ services:
       retries: 10
       start_period: 30s
     restart: unless-stopped
-
-volumes:
-  postgres_data:
