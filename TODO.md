@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-034・T-038 完了）
+最終更新: 2026年5月（T-039 追加）
 
 ---
 
@@ -22,6 +22,7 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
+| T-039 | [#58](https://github.com/skajihara/moneynote-web/issues/58) | インフラ | AWS ロギング・モニタリング基盤の構築（CloudWatch + Grafana） | 構造化ログ（JSON）+ CloudWatch Agent + Micrometer によるメトリクス収集・Grafana ダッシュボード・CloudWatch Alarms → Slack 通知 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
 
