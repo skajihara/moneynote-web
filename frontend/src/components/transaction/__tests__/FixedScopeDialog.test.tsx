@@ -51,14 +51,14 @@ describe('FixedScopeDialog', () => {
     });
   });
 
-  it('固定費設定を変更するボタンで /settings?tab=fixed に遷移する', async () => {
+  it('固定費設定を変更するボタンで /fixed-transactions に遷移する', async () => {
     const handleCancel = jest.fn();
     render(
       <FixedScopeDialog mode="delete" onConfirm={jest.fn()} onCancel={handleCancel} />
     );
     await userEvent.click(screen.getByText('固定費設定を変更する'));
     expect(handleCancel).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/settings?tab=fixed');
+    expect(mockPush).toHaveBeenCalledWith('/fixed-transactions');
   });
 
   it('キャンセルボタンで onCancel が呼ばれる', async () => {

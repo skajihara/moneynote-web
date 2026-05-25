@@ -46,13 +46,13 @@ const FixedScopeDialog = ({ mode, onConfirm, onCancel }: Props) => {
           <button
             onClick={() => {
               onCancel();
-              router.push('/settings?tab=fixed');
+              router.push('/fixed-transactions');
             }}
             className="w-full text-left px-4 py-3 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <span className="font-medium text-gray-700 dark:text-gray-200">固定費設定を変更する</span>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              設定ページで固定費の変更・削除ができます
+              固定費ページで固定費の変更・削除ができます
             </p>
           </button>
           <button
