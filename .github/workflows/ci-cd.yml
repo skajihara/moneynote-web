@@ -141,7 +141,7 @@ jobs:
               "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d --force-recreate"),
-              "curl -f --retry 10 --retry-delay 3 --retry-all-errors http://localhost:8080/actuator/health"
+              "curl -f --retry 30 --retry-delay 10 --retry-all-errors http://localhost:8080/actuator/health"
             ]}')
 
           COMMAND_ID=$(aws ssm send-command \
@@ -153,13 +153,23 @@ jobs:
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for SSM command to complete
-        continue-on-error: true
         env:
           DEPLOY_INSTANCE: ${{ steps.vars.outputs.instance_id }}
         run: |
-          aws ssm wait command-executed \
-            --command-id "${{ steps.ssm-send.outputs.command_id }}" \
-            --instance-id "$DEPLOY_INSTANCE"
+          TIMEOUT=600
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "${{ steps.ssm-send.outputs.command_id }}" \
+              --instance-id "$DEPLOY_INSTANCE" \
+              --query 'Status' --output text 2>/dev/null || echo "Pending")
+            echo "SSM status: $STATUS (${ELAPSED}s elapsed)"
+            case "$STATUS" in
+              Success|Failed|TimedOut|Cancelled|DeliveryTimedOut) break ;;
+            esac
+            sleep 15
+            ELAPSED=$((ELAPSED + 15))
+          done
 
       - name: Check SSM command result
         env:
