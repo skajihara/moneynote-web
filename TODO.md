@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-014・T-031 クローズ）
+最終更新: 2026年5月（T-035 クローズ）
 
 ---
 
@@ -8,7 +8,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-035 | [#39](https://github.com/skajihara/moneynote-web/issues/39) | インフラ | 環境2を3層構成（RDS・ElastiCache）に移行 | Step 20（T-014）と同手順を環境2に適用（Step 21） |
 | T-015 | [#15](https://github.com/skajihara/moneynote-web/issues/15) | インフラ | SES・Secrets Manager本格活用 | AWS SES による本番メール送信有効化・Secrets Manager で全機密情報を集約（Step 22） |
 | T-029 | [#32](https://github.com/skajihara/moneynote-web/issues/32) | インフラ | nginx/LB で X-Forwarded-For を信頼プロキシ限定に設定 | 本番アーキテクチャ確定後に nginx.conf または Spring の forwarded-headers-strategy で制限する |
 | T-030 | [#33](https://github.com/skajihara/moneynote-web/issues/33) | インフラ | JWT_SECRET を本番用強度に更新・ローテーション手順の整備 | openssl rand -base64 64 で生成した256bit以上の文字列を Secrets Manager で管理する |
@@ -86,3 +85,4 @@
 | T-038 | [#54](https://github.com/skajihara/moneynote-web/issues/54) | バグ修正 | 管理者アカウントのサイドメニュー・ルート保護修正 | feature/issue-54-admin-bugs |
 | T-014 | [#14](https://github.com/skajihara/moneynote-web/issues/14) | インフラ | 環境1を3層構成（RDS・ElastiCache）に移行 | feature/step20-3tier-migration |
 | T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | application-env1/env2.yml のハードコードで対応済み |
+| T-035 | [#39](https://github.com/skajihara/moneynote-web/issues/39) | インフラ | 環境2を3層構成（RDS・ElastiCache）に移行 | feature/step21-env2-3tier-migration |
