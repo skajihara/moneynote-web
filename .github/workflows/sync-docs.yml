@@ -1,0 +1,62 @@
+name: Sync Docs to Public Repo
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DOCS_DEPLOY_KEY }}
+
+      - name: Add github.com to known_hosts
+        run: ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Clone docs repo
+        run: git clone git@github.com:skajihara/moneynote-web-manual.git /tmp/manual
+
+      - name: Sync content
+        run: |
+          # 既存コンテンツをクリア（.git は保持）
+          find /tmp/manual -mindepth 1 ! -path '/tmp/manual/.git*' -delete
+
+          # Jekyll設定・テーマファイル
+          cp docs/_config.yml /tmp/manual/
+          cp docs/Gemfile /tmp/manual/
+          cp -r docs/_includes /tmp/manual/
+          cp -r docs/_sass /tmp/manual/
+          cp -r docs/assets /tmp/manual/
+
+          # マニュアルページ（公開対象のみ明示的にコピー）
+          cp docs/index.md /tmp/manual/
+          cp docs/ai.md /tmp/manual/
+          cp docs/admin.md /tmp/manual/
+          cp docs/contact.md /tmp/manual/
+          cp docs/dashboard.md /tmp/manual/
+          cp docs/reports.md /tmp/manual/
+          cp docs/search.md /tmp/manual/
+          cp docs/settings.md /tmp/manual/
+          cp docs/transactions.md /tmp/manual/
+          cp docs/fixed-transactions.md /tmp/manual/
+          cp docs/csv.md /tmp/manual/
+
+      - name: Commit and push
+        working-directory: /tmp/manual
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to sync"
+          else
+            git commit -m "docs: sync from moneynote-web@${GITHUB_SHA::7}"
+            git push
+          fi
