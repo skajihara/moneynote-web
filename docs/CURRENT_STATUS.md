@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 19 完了・admin バグ修正 develop マージ済み）
+最終更新: 2026年5月（Step 20 完了・develop マージ済み）
 
 ---
 
@@ -27,23 +27,23 @@
 | Step 17 | 環境1デプロイ（EC2 + Docker Compose） | 完了・main マージ済み（v1.0.0） |
 | Step 18 | CI/CD パイプライン構築（GitHub Actions + ECR） | 完了・main マージ済み（v1.1.0） |
 | Step 19 | 環境2構築（EC2 + Docker Compose） | 完了・main マージ済み（v1.2.0） |
+| Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | 完了・develop マージ済み（v1.3.0） |
 
 ---
 
 ## 現在の状態
 
-- Step 19 完了・main マージ済み（v1.2.0）。次は Step 20（環境1を3層構成へ移行）
-- admin バグ修正（Issue #54）を develop にマージ済み。次回 main マージ時に env1/env2 へ反映
-- Step 18 の主な内容（`feature/step18-cicd`）:
-  - `.github/workflows/ci-cd.yml` 新規作成（test → build-and-push → deploy の3ジョブ）
-  - ECR（ecr-ka-moneynote-backend / ecr-ka-moneynote-frontend）に Docker イメージをプッシュ
-  - SSM Run Command で EC2 に自動デプロイ（git pull → secrets-fetch → docker compose pull → up）
-  - `docs/aws-design/aws-deploy-design-v4.md` 新規作成（VPC 共用制約を反映）
-- Step 19 の主な内容（develop 直コミット）:
-  - `scripts/secrets-fetch.sh`: env2 ALB DNS 名を実際の値に更新
-  - `.github/workflows/ci-cd.yml`: deploy ジョブの if 条件を develop + main 両方に拡張
-  - AMI（env1 スナップショット）から env2 EC2 を起動し main ブランチで動作確認済み
-- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）
+- Step 20 完了・develop マージ済み（v1.3.0）。次は Step 21（環境2を3層構成へ移行）
+- Step 20 の主な内容（`feature/step20-3tier-migration`）:
+  - VPC を Public / Protected / Private の3層構成に拡張（NAT Gateway 追加）
+  - EC2 を Public サブネット（SBN_01）→ Protected サブネット（SBN_09）へ AMI 経由で移動
+  - RDS（rds-ka-moneynote-01・PostgreSQL 16）・ElastiCache（elc-ka-moneynote-01・Redis 7）を構築
+  - `docker-compose.env1.yml` から db・redis コンテナを削除（マネージドサービスへ移行）
+  - `scripts/secrets-fetch.sh`: env1 で RDS/ElastiCache エンドポイントを AWS CLI で動的取得
+  - `application-env1.yml`: `spring.data.redis.ssl.enabled: true`（ElastiCache TLS 対応）
+  - `secrets-fetch.sh`: env1 でも `REDIS_PASSWORD` を Secrets Manager から取得
+  - `.github/workflows/ci-cd.yml`: curl retry 30回×10秒・SSM wait 600秒ポーリングに拡張
+- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）・v1.3.0（Step 20）
 
 ---
 
@@ -82,6 +82,10 @@
 | SSM Run Command は root で実行されるため `HOME` 未設定。デプロイコマンド先頭に `export HOME=/root` が必要 | git credential や Docker 設定が HOME 依存のため。ci-cd.yml の SSM パラメータに含めること |
 | 会社の AWS アカウントは VPC が 1人1つの制約あり。env1・env2 は `VPC_ka_moneynote_01` を共用 | env2 専用の VPC・IGW は作成不可。サブネット CIDR を env1 と重複しないよう設計（10.0.5-8.x/24 for env2） |
 | env2 EC2 は env1 AMI から起動（Docker・git・リポジトリ込み）。起動直後は env1 コンテナが動いている可能性あり | AMI 作成前に env1 コンテナを停止するか、env2 起動後に docker compose down してから deploy する |
+| Amazon Linux 2023 は systemd-resolved を使用し `/etc/resolv.conf` が存在しない | Docker コンテナが VPC 内 DNS（ElastiCache 等）を解決できない。`/etc/docker/daemon.json` に `{"dns": ["10.0.0.2"]}` を設定して Docker を再起動すること（10.0.0.2 は VPC CIDR base+2） |
+| ElastiCache（elc-ka-moneynote-01）は AUTH 有効（認証デフォルトユーザーアクセス）・TLS 有効 | 当初 AUTH 無効設計だったが AWSコンソールで無効化不可だったため AUTH 有効のまま運用。REDIS_PASSWORD を Secrets Manager（`moneynote/env1/redis-password`）で管理 |
+| EC2 上で psql から RDS に接続する際は `~/.postgresql/` ディレクトリを削除する必要がある | AMI 由来のクライアント証明書が存在するとSSL証明書エラーが発生し、非暗号化フォールバック後に RDS が拒否する |
+| CI/CD（SSM Run Command）が root で実行後、ssm-user で git 操作するとパーミションエラーになる | `sudo chown -R ssm-user:ssm-user /home/ssm-user/moneynote-web` で所有者を戻すこと |
 
 ---
 
