@@ -12,7 +12,9 @@ Web ブラウザから使える家計簿管理アプリ。
 | バックエンド | Spring Boot 3.4.5 / Java 24 / Spring Security + JWT / Spring AI (Claude API) |
 | DB | PostgreSQL 16 / Flyway / Redis 7 |
 | フロントエンド | Next.js 14 (App Router) / TypeScript / Tailwind CSS / Zustand / Recharts |
-| インフラ | Docker Compose / nginx (HTTPS) / Mailhog |
+| インフラ（ローカル） | Docker Compose / nginx (HTTPS) / Mailhog |
+| インフラ（AWS） | AWS EC2 / ALB / RDS (PostgreSQL 16) / ElastiCache (Redis 7) / ECR / Secrets Manager |
+| CI/CD | GitHub Actions（テスト → ECR ビルド → SSM デプロイ） |
 | テスト | JUnit5 / Testcontainers / MockMvc / Jest / React Testing Library |
 
 ---
@@ -97,7 +99,13 @@ develop ← 開発統合ブランチ
 
 ---
 
-## ドキュメント
+## 操作マニュアル
+
+エンドユーザー向けマニュアルは GitHub Pages で公開しています。
+
+- **URL**: https://skajihara.github.io/moneynote-web-manual/
+
+## ドキュメント（開発者向け）
 
 | ドキュメント | 内容 |
 |---|---|
@@ -106,6 +114,7 @@ develop ← 開発統合ブランチ
 | [docs/development-guide.md](docs/development-guide.md) | 開発規約・テスト方針・よくある問題 |
 | [docs/BRANCH_STRATEGY.md](docs/BRANCH_STRATEGY.md) | Git ブランチ運用・コミットメッセージ規則 |
 | [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) | 現在の開発状況・再開手順 |
+| [docs/aws-design/](docs/aws-design/) | AWS インフラ設計書 |
 
 ---
 
