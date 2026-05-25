@@ -9,6 +9,16 @@ on:
     branches:
       - develop
       - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'デプロイ対象ブランチ (develop=env1, main=env2)'
+        required: true
+        default: 'develop'
+        type: choice
+        options:
+          - develop
+          - main
 
 jobs:
   test-backend:
@@ -58,7 +68,7 @@ jobs:
 
   build-and-push:
     needs: [test-backend, test-frontend]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -93,7 +103,7 @@ jobs:
 
   deploy:
     needs: [build-and-push]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
