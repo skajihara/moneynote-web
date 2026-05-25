@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HelpButton from '../HelpButton';
 
-const BASE_URL = 'https://skajihara.github.io/moneynote-web';
+const BASE_URL = 'https://skajihara.github.io/moneynote-web-manual';
 
 beforeEach(() => {
   window.open = jest.fn();
