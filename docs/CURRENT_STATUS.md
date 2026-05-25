@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 20 完了・develop マージ済み）
+最終更新: 2026年5月（Step 21 完了・main マージ済み）
 
 ---
 
@@ -28,22 +28,23 @@
 | Step 18 | CI/CD パイプライン構築（GitHub Actions + ECR） | 完了・main マージ済み（v1.1.0） |
 | Step 19 | 環境2構築（EC2 + Docker Compose） | 完了・main マージ済み（v1.2.0） |
 | Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | 完了・develop マージ済み（v1.3.0） |
+| Step 21 | 環境2を3層構成に移行（RDS・ElastiCache） | 完了・main マージ済み（v1.4.0） |
 
 ---
 
 ## 現在の状態
 
-- Step 20 完了・develop マージ済み（v1.3.0）。次は Step 21（環境2を3層構成へ移行）
-- Step 20 の主な内容（`feature/step20-3tier-migration`）:
-  - VPC を Public / Protected / Private の3層構成に拡張（NAT Gateway 追加）
-  - EC2 を Public サブネット（SBN_01）→ Protected サブネット（SBN_09）へ AMI 経由で移動
-  - RDS（rds-ka-moneynote-01・PostgreSQL 16）・ElastiCache（elc-ka-moneynote-01・Redis 7）を構築
-  - `docker-compose.env1.yml` から db・redis コンテナを削除（マネージドサービスへ移行）
-  - `scripts/secrets-fetch.sh`: env1 で RDS/ElastiCache エンドポイントを AWS CLI で動的取得
-  - `application-env1.yml`: `spring.data.redis.ssl.enabled: true`（ElastiCache TLS 対応）
-  - `secrets-fetch.sh`: env1 でも `REDIS_PASSWORD` を Secrets Manager から取得
-  - `.github/workflows/ci-cd.yml`: curl retry 30回×10秒・SSM wait 600秒ポーリングに拡張
-- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）・v1.3.0（Step 20）
+- Step 21 完了・main マージ済み（v1.4.0）。次は Step 22（SES・Secrets Manager 本格活用）
+- Step 21 の主な内容（`feature/step21-env2-3tier-migration`）:
+  - Protected サブネット（SBN_11・SBN_12）を追加し EC2_02 を AMI 経由で移動
+  - NAT Gateway は NGW_ka_moneynote_01 を env1・env2 で共用
+  - RDS（RDS-ka-moneynote-02・PostgreSQL 16）・ElastiCache（ELC-ka-moneynote-02・Redis 7）を構築
+  - サブネットグループ（SNG_02・SNG_04）は env2 専用（SBN_07・SBN_08 使用）
+  - `docker-compose.env2.yml` から db・redis コンテナを削除（マネージドサービスへ移行）
+  - `scripts/secrets-fetch.sh`: env2 で RDS/ElastiCache エンドポイントを AWS CLI で動的取得
+  - `application-env2.yml`: `spring.data.redis.ssl.enabled: true`（ElastiCache TLS 対応）
+  - GitHub Secret `EC2_INSTANCE_ID_ENV2` を新 EC2 のインスタンス ID に更新
+- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）・v1.3.0（Step 20）・v1.4.0（Step 21）
 
 ---
 
@@ -86,6 +87,9 @@
 | ElastiCache（elc-ka-moneynote-01）は AUTH 有効（認証デフォルトユーザーアクセス）・TLS 有効 | 当初 AUTH 無効設計だったが AWSコンソールで無効化不可だったため AUTH 有効のまま運用。REDIS_PASSWORD を Secrets Manager（`moneynote/env1/redis-password`）で管理 |
 | EC2 上で psql から RDS に接続する際は `~/.postgresql/` ディレクトリを削除する必要がある | AMI 由来のクライアント証明書が存在するとSSL証明書エラーが発生し、非暗号化フォールバック後に RDS が拒否する |
 | CI/CD（SSM Run Command）が root で実行後、ssm-user で git 操作するとパーミションエラーになる | `sudo chown -R ssm-user:ssm-user /home/ssm-user/moneynote-web` で所有者を戻すこと |
+| env2 の NAT Gateway は NGW_ka_moneynote_01（env1）を共用。RTB_11・RTB_12 のデフォルトルートを NGW_01 に向ける | 1人1VPC制約でリソース節約。env2 の Protected サブネット（SBN_11・SBN_12）からの外部通信も NGW_01 経由 |
+| `docker compose up` は compose ファイルから削除されたコンテナを自動停止しない | Step 21 移行後に旧 db・redis コンテナが残存。`docker stop` / `docker rm` で手動削除が必要 |
+| env2 EC2 は env1 AMI から起動。AMI 作成時点のコードが古い場合は CI/CD の `git reset --hard` で更新される | AMI 作成タイミングによっては旧 docker-compose.env2.yml が含まれる。CI/CD 完了まで旧コンテナ構成で動く |
 
 ---
 
