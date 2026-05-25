@@ -4,7 +4,7 @@ import ManualPage from '../page';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 
-const BASE_URL = 'https://skajihara.github.io/moneynote-web';
+const BASE_URL = 'https://skajihara.github.io/moneynote-web-manual';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),

@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 
-const BASE_URL = 'https://skajihara.github.io/moneynote-web';
+const BASE_URL = 'https://skajihara.github.io/moneynote-web-manual';
 
 type ManualSection = {
   label: string;

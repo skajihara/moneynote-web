@@ -1,6 +1,6 @@
 'use client';
 
-const BASE_URL = 'https://skajihara.github.io/moneynote-web';
+const BASE_URL = 'https://skajihara.github.io/moneynote-web-manual';
 
 type Props = {
   manualPath: string;
