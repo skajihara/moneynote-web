@@ -153,11 +153,16 @@ transport=(5000 6000 7000 8000 9000 10000 12000 10000 9000 8000 7000 6000 5000)
 
 # ─── Step 0: DB リセット ─────────────────────────────────────
 step_print "Step0: DB リセット中..."
-echo "  ${DC_CMD} down -v ..."
-$DC_CMD down -v 2>&1 | tail -3 || true
-echo "  ${DC_CMD} up -d --build ..."
-$DC_CMD up -d --build 2>&1 | tail -5 || true
-ok "DB リセット完了"
+if [ "$ENV" = "env1" ] || [ "$ENV" = "env2" ]; then
+    echo "  リモート環境のため Docker リセットをスキップします（コンテナは CI/CD が管理）"
+    ok "DB リセットスキップ（リモート環境）"
+else
+    echo "  ${DC_CMD} down -v ..."
+    $DC_CMD down -v 2>&1 | tail -3 || true
+    echo "  ${DC_CMD} up -d --build ..."
+    $DC_CMD up -d --build 2>&1 | tail -5 || true
+    ok "DB リセット完了"
+fi
 
 # ─── Step 1: バックエンド起動確認 ───────────────────────────
 step_print "Step1: バックエンド起動確認（最大60秒待機）"
