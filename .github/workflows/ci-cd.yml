@@ -141,8 +141,16 @@ jobs:
             '{commands: [
               "set -e",
               "export HOME=/root",
+              "mkdir -p /root/.ssh && chmod 700 /root/.ssh",
+              "GITHUB_KEY_B64=$(aws secretsmanager get-secret-value --region ap-northeast-1 --secret-id moneynote/github-deploy-key --query SecretString --output text | python3 -c \"import sys,json; print(json.load(sys.stdin)['\''private_key_b64'\''])\")",
+              "printf \"%s\" \"$GITHUB_KEY_B64\" | base64 -d > /root/.ssh/github_deploy",
+              "chmod 600 /root/.ssh/github_deploy",
+              "printf \"Host github.com\\n  IdentityFile /root/.ssh/github_deploy\\n  StrictHostKeyChecking no\\n\" > /root/.ssh/config",
+              "chmod 600 /root/.ssh/config",
               "git config --global --add safe.directory /home/ssm-user/moneynote-web",
+              "if [ ! -d /home/ssm-user/moneynote-web/.git ]; then git clone git@github.com:skajihara/moneynote-web.git /home/ssm-user/moneynote-web; fi",
               "cd /home/ssm-user/moneynote-web",
+              "git remote set-url origin git@github.com:skajihara/moneynote-web.git",
               ("git fetch origin " + $branch),
               ("git checkout " + $branch),
               ("git reset --hard origin/" + $branch),
@@ -151,6 +159,7 @@ jobs:
               "aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin ${ECR_REGISTRY}",
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " pull"),
               ("docker compose -f docker-compose." + $env + ".yml --env-file .env." + $env + " up -d --force-recreate"),
+              "rm -f /root/.ssh/github_deploy /root/.ssh/config",
               "curl -f --retry 30 --retry-delay 10 --retry-all-errors http://localhost:8080/actuator/health"
             ]}')
 
