@@ -85,3 +85,11 @@ export const cancelAccountDeletion = (token: string) =>
     body: JSON.stringify({ token }),
     skipRefresh: true,
   });
+
+export const confirmEmailChange = (token: string) =>
+  apiClient<ApiResponse<null>>('/api/v1/auth/email-change/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+    skipRefresh: true,
+  });

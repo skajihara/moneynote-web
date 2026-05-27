@@ -59,14 +59,55 @@ public class UserService {
     public UserProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
         User user = findUser(userId);
 
-        if (!user.getEmail().equals(request.email())
-                && userRepository.existsByEmail(request.email())) {
-            throw new ConflictException("このメールアドレスはすでに使用されています");
+        user.setUserName(request.userName());
+
+        if (!user.getEmail().equals(request.email())) {
+            if (userRepository.existsByEmail(request.email())) {
+                throw new ConflictException("このメールアドレスはすでに使用されています");
+            }
+            initiateEmailChange(userId, request.email());
         }
 
-        user.setUserName(request.userName());
-        user.setEmail(request.email());
         return UserProfileResponse.from(userRepository.save(user));
+    }
+
+    private void initiateEmailChange(String userId, String newEmail) {
+        // セキュリティ: 再申請時に既存トークンを無効化（古いリンクの悪用防止）
+        String existingToken = redisTemplate.opsForValue().get(emailChangeUserKey(userId));
+        if (existingToken != null) {
+            redisTemplate.delete(emailChangeKey(existingToken));
+        }
+
+        String token = UUID.randomUUID().toString();
+        Duration ttl = Duration.ofMinutes(30);
+        redisTemplate.opsForValue().set(emailChangeKey(token), userId + ":" + newEmail, ttl);
+        redisTemplate.opsForValue().set(emailChangeUserKey(userId), token, ttl);
+        sendEmailChangeMail(userId, newEmail, token);
+    }
+
+    private void sendEmailChangeMail(String userId, String to, String token) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(to);
+            message.setSubject("【MoneyNote】メールアドレス変更の確認");
+            message.setText(
+                    "以下のリンクよりメールアドレスの変更を確認してください（有効期限：30分）\n\n" +
+                    frontendUrl + "/email-change/confirm?token=" + token + "\n\n" +
+                    "このメールに心当たりがない場合は無視してください。");
+            mailSender.send(message);
+        } catch (Exception e) {
+            // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
+            log.error("メールアドレス変更メールの送信に失敗しました userId={}", userId, e);
+        }
+    }
+
+    private String emailChangeKey(String token) {
+        return "email_change:" + token;
+    }
+
+    private String emailChangeUserKey(String userId) {
+        return "email_change_user:" + userId;
     }
 
     @Transactional

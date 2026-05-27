@@ -75,7 +75,7 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*"}) {
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*", "email_change:*", "email_change_user:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
@@ -494,6 +494,106 @@ class AuthControllerTest {
                         .get("/api/v1/ledgers")
                         .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // =========================================================================
+    // PUT /api/v1/users/me + POST /api/v1/auth/email-change/confirm
+    // =========================================================================
+
+    @Test
+    void emailChange_fullFlow() throws Exception {
+        createUser("ec_user", "original@example.com");
+        String token = jwtTokenProvider.generateAccessToken("ec_user", "USER");
+
+        // メールアドレス変更申請: email は即時反映されない
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "changed@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email", org.hamcrest.Matchers.is("original@example.com")));
+
+        // Redis からトークンを取得（email_change_user: を除外）
+        var keys = redisTemplate.keys("email_change:*");
+        assertThat(keys).isNotNull();
+        String changeToken = keys.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+
+        // 確認リンクをクリック
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", changeToken)))
+                .andExpect(status().isOk());
+
+        // メールアドレスが更新されていること
+        var updated = userRepository.findById("ec_user").orElseThrow();
+        assertThat(updated.getEmail()).isEqualTo("changed@example.com");
+
+        // 確認後に Redis キーが削除されていること
+        assertThat(redisTemplate.opsForValue().get("email_change_user:ec_user")).isNull();
+    }
+
+    @Test
+    void emailChange_invalidToken_returns404() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", "invalid-token-xyz")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("E404"));
+    }
+
+    @Test
+    void emailChange_secondRequestInvalidatesFirst() throws Exception {
+        createUser("ec_reissue", "ec_reissue@example.com");
+        String token = jwtTokenProvider.generateAccessToken("ec_reissue", "USER");
+
+        // 1回目の申請
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "first@example.com")))
+                .andExpect(status().isOk());
+
+        var keys1 = redisTemplate.keys("email_change:*");
+        assertThat(keys1).isNotNull();
+        String firstToken = keys1.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+
+        // 2回目の申請（1回目のトークンが無効化される）
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "second@example.com")))
+                .andExpect(status().isOk());
+
+        // 1回目のトークンは無効化されていること
+        assertThat(redisTemplate.opsForValue().get("email_change:" + firstToken))
+                .as("1回目のトークンが無効化されていること").isNull();
+
+        // 2回目のトークンのみ有効であること
+        var keys2 = redisTemplate.keys("email_change:*");
+        assertThat(keys2).isNotNull();
+        String secondToken = keys2.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+        assertThat(secondToken).isNotEqualTo(firstToken);
+
+        // 2回目のトークンで変更確定できること
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", secondToken)))
+                .andExpect(status().isOk());
+
+        assertThat(userRepository.findById("ec_reissue").orElseThrow().getEmail())
+                .isEqualTo("second@example.com");
     }
 
     // =========================================================================

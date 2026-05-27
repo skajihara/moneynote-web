@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.auth;
 
 import com.example.moneynote.common.exception.AccessDeniedException;
+import com.example.moneynote.common.exception.ConflictException;
 import com.example.moneynote.common.exception.RateLimitException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.UnauthorizedException;
@@ -329,5 +330,47 @@ public class AuthService {
 
     private String cancelKey(String token) {
         return "account_deletion_cancel:" + token;
+    }
+
+    // -------------------------------------------------------------------------
+    // email change confirm
+    // -------------------------------------------------------------------------
+
+    @Transactional
+    public void confirmEmailChange(String token) {
+        String value = redisTemplate.opsForValue().get(emailChangeKey(token));
+        if (value == null) {
+            throw new ResourceNotFoundException("確認リンクが無効または期限切れです");
+        }
+
+        int sep = value.indexOf(':');
+        String userId = value.substring(0, sep);
+        String newEmail = value.substring(sep + 1);
+
+        // 申請後に別ユーザーが同じアドレスを登録した場合は競合エラー
+        if (userRepository.existsByEmail(newEmail)) {
+            redisTemplate.delete(emailChangeKey(token));
+            redisTemplate.delete(emailChangeUserKey(userId));
+            throw new ConflictException("このメールアドレスはすでに使用されています");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
+
+        user.setEmail(newEmail);
+        userRepository.save(user);
+
+        redisTemplate.delete(emailChangeKey(token));
+        redisTemplate.delete(emailChangeUserKey(userId));
+
+        log.info("メールアドレス変更完了: userId={}", userId);
+    }
+
+    private String emailChangeKey(String token) {
+        return "email_change:" + token;
+    }
+
+    private String emailChangeUserKey(String userId) {
+        return "email_change_user:" + userId;
     }
 }

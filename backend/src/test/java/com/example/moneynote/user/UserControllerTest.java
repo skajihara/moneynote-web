@@ -114,7 +114,21 @@ class UserControllerTest {
                                 "email", "new@example.com"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.userName", is("新しい名前")))
-                .andExpect(jsonPath("$.data.email", is("new@example.com")));
+                // email は確認メール送信後に変更されるため即時反映されない
+                .andExpect(jsonPath("$.data.email", is("user1@example.com")));
+    }
+
+    @Test
+    void updateProfile_usernameOnly_updatesImmediately() throws Exception {
+        mockMvc.perform(put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "userName", "名前だけ変更",
+                                "email", "user1@example.com"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName", is("名前だけ変更")))
+                .andExpect(jsonPath("$.data.email", is("user1@example.com")));
     }
 
     @Test
