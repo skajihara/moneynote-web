@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 /**
  * 認証不要なパス（前方一致）
  */
-const PUBLIC_PATHS = ['/', '/login', '/register', '/password-reset', '/account-deletion/cancel', '/email-change/confirm'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/password-reset', '/account-deletion/cancel'];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(

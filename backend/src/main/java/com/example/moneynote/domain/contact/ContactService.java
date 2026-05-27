@@ -35,9 +35,6 @@ public class ContactService {
     @Value("${app.mail.admin-address}")
     private String adminAddress;
 
-    @Value("${app.mail.from}")
-    private String fromAddress;
-
     public void sendContact(String userId, ContactRequest request) {
         checkRateLimit(userId);
 
@@ -84,7 +81,6 @@ public class ContactService {
         );
 
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
         message.setTo(adminAddress);
         message.setSubject("【MoneyNote お問い合わせ】" + request.getSubject());
         message.setReplyTo(user.getEmail());

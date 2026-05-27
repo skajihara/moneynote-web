@@ -103,14 +103,6 @@ public class AuthController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "メールアドレス変更確定", description = "メールの確認トークンでメールアドレスを更新する。認証不要。")
-    @PostMapping("/email-change/confirm")
-    public ApiResponse<Void> confirmEmailChange(
-            @Valid @RequestBody EmailChangeConfirmRequest request) {
-        authService.confirmEmailChange(request.getToken());
-        return ApiResponse.success(null);
-    }
-
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------

@@ -191,15 +191,15 @@ function Register-AndLogin {
     if ($resp -and $resp.data) { return $resp.data.accessToken } else { return "" }
 }
 
-$tokenNormal = Register-AndLogin "user_normal"        "正常系ユーザー"           "normal@example.com"     "Password123!"
+$tokenNormal = Register-AndLogin "user_normal"        "正常系ユーザー"           "normal@example.com"     "Password123"
 Ok "user_normal"
-$tokenOver   = Register-AndLogin "user_over_budget"   "予算超過ユーザー"         "overbudget@example.com" "Password123!"
+$tokenOver   = Register-AndLogin "user_over_budget"   "予算超過ユーザー"         "overbudget@example.com" "Password123"
 Ok "user_over_budget"
-$tokenNodata = Register-AndLogin "user_no_data"       "データなしユーザー"       "nodata@example.com"     "Password123!"
+$tokenNodata = Register-AndLogin "user_no_data"       "データなしユーザー"       "nodata@example.com"     "Password123"
 Ok "user_no_data"
-$tokenMinus  = Register-AndLogin "user_minus_balance" "残高マイナスユーザー"     "minus@example.com"      "Password123!"
+$tokenMinus  = Register-AndLogin "user_minus_balance" "残高マイナスユーザー"     "minus@example.com"      "Password123"
 Ok "user_minus_balance"
-$tokenOther  = Register-AndLogin "user_other"         "別ユーザー（アクセス禁止）" "other@example.com"    "Password123!"
+$tokenOther  = Register-AndLogin "user_other"         "別ユーザー（アクセス禁止）" "other@example.com"    "Password123"
 Ok "user_other"
 
 # ─── Step 3: 帳簿の更新・追加 ───────────────────────────────
@@ -468,11 +468,11 @@ Write-Host "=== シードデータの投入が完了しました ===" -Foregroun
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host "■ ログイン情報:" -ForegroundColor Yellow
 Write-Host "  システム管理者:       admin              / Admin1234!  (SYSTEM_ADMIN・管理者画面 /admin にアクセス可能)"
-Write-Host "  正常系ユーザー:       user_normal        / Password123!"
-Write-Host "  予算超過ユーザー:     user_over_budget   / Password123!"
-Write-Host "  データなしユーザー:   user_no_data       / Password123!"
-Write-Host "  残高マイナスユーザー: user_minus_balance / Password123!"
-Write-Host "  別ユーザー:           user_other         / Password123!"
+Write-Host "  正常系ユーザー:       user_normal        / Password123"
+Write-Host "  予算超過ユーザー:     user_over_budget   / Password123"
+Write-Host "  データなしユーザー:   user_no_data       / Password123"
+Write-Host "  残高マイナスユーザー: user_minus_balance / Password123"
+Write-Host "  別ユーザー:           user_other         / Password123"
 Write-Host ""
 Write-Host "■ データ確認SQL:" -ForegroundColor Yellow
 Write-Host '  docker compose exec db psql -U moneynote -d moneynote -c "SELECT user_id, user_name FROM users;"'

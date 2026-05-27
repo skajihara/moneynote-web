@@ -92,7 +92,7 @@ class AccountDeletionBatchServiceTest {
                                 "userId", "batch_user",
                                 "userName", "バッチテストユーザー",
                                 "email", "batch@example.com",
-                                "password", "Password1!"))))
+                                "password", "Password1"))))
                 .andExpect(status().isCreated());
         String token = jwtTokenProvider.generateAccessToken("batch_user", "USER");
 
@@ -146,7 +146,7 @@ class AccountDeletionBatchServiceTest {
                                     "userId", "multi_user" + i,
                                     "userName", "マルチユーザー" + i,
                                     "email", "multi" + i + "@example.com",
-                                    "password", "Password1!"))))
+                                    "password", "Password1"))))
                     .andExpect(status().isCreated());
             pendingDeletionUserRepository.save(
                     PendingDeletionUser.builder().userId("multi_user" + i).build());

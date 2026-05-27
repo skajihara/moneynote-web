@@ -332,7 +332,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted, initialSubTa
         ← 帳簿一覧
       </button>
 
-      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4 break-words">{ledger.ledgerName}</h2>
+      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">{ledger.ledgerName}</h2>
 
       {/* サブタブ */}
       <div className="flex border-b border-gray-200 dark:border-gray-700 mb-5 gap-0.5">
@@ -530,7 +530,7 @@ const LedgerListView = ({ onSelect }: LedgerListViewProps) => {
             onClick={() => onSelect(l)}
             className="w-full text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-[var(--theme-color)] hover:bg-theme-light transition-colors"
           >
-            <div className="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{l.ledgerName}</div>
+            <div className="font-medium text-gray-800 dark:text-gray-100 text-sm">{l.ledgerName}</div>
             <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               初期残高: {l.initialBalance.toLocaleString('ja-JP')}円
               月度開始日: {l.startDayOfMonth}日

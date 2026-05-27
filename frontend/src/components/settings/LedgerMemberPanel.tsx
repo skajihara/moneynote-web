@@ -122,8 +122,8 @@ const LedgerMemberPanel = ({ ledgerId }: LedgerMemberPanelProps) => {
             {members.map((m) => (
               <div key={m.userId} className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{m.userName}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{m.userId}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{m.userName}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{m.userId}</p>
                 </div>
 
                 {/* 権限表示 or 編集 */}

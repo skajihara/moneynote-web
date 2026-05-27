@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Slf4j
@@ -46,9 +45,6 @@ public class UserService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
-    @Value("${app.mail.from}")
-    private String fromAddress;
-
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String userId) {
         User user = findUser(userId);
@@ -59,55 +55,14 @@ public class UserService {
     public UserProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
         User user = findUser(userId);
 
+        if (!user.getEmail().equals(request.email())
+                && userRepository.existsByEmail(request.email())) {
+            throw new ConflictException("このメールアドレスはすでに使用されています");
+        }
+
         user.setUserName(request.userName());
-
-        if (!user.getEmail().equals(request.email())) {
-            if (userRepository.existsByEmail(request.email())) {
-                throw new ConflictException("このメールアドレスはすでに使用されています");
-            }
-            initiateEmailChange(userId, request.email());
-        }
-
+        user.setEmail(request.email());
         return UserProfileResponse.from(userRepository.save(user));
-    }
-
-    private void initiateEmailChange(String userId, String newEmail) {
-        // セキュリティ: 再申請時に既存トークンを無効化（古いリンクの悪用防止）
-        String existingToken = redisTemplate.opsForValue().get(emailChangeUserKey(userId));
-        if (existingToken != null) {
-            redisTemplate.delete(emailChangeKey(existingToken));
-        }
-
-        String token = UUID.randomUUID().toString();
-        Duration ttl = Duration.ofMinutes(30);
-        redisTemplate.opsForValue().set(emailChangeKey(token), userId + ":" + newEmail, ttl);
-        redisTemplate.opsForValue().set(emailChangeUserKey(userId), token, ttl);
-        sendEmailChangeMail(userId, newEmail, token);
-    }
-
-    private void sendEmailChangeMail(String userId, String to, String token) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(to);
-            message.setSubject("【MoneyNote】メールアドレス変更の確認");
-            message.setText(
-                    "以下のリンクよりメールアドレスの変更を確認してください（有効期限：30分）\n\n" +
-                    frontendUrl + "/email-change/confirm?token=" + token + "\n\n" +
-                    "このメールに心当たりがない場合は無視してください。");
-            mailSender.send(message);
-        } catch (Exception e) {
-            // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
-            log.error("メールアドレス変更メールの送信に失敗しました userId={}", userId, e);
-        }
-    }
-
-    private String emailChangeKey(String token) {
-        return "email_change:" + token;
-    }
-
-    private String emailChangeUserKey(String userId) {
-        return "email_change_user:" + userId;
     }
 
     @Transactional
@@ -155,26 +110,24 @@ public class UserService {
         // キャンセルトークンを Redis に保存（TTL = 当日 23:59:59 まで）
         String cancelToken = UUID.randomUUID().toString();
         ZoneId jst = ZoneId.of("Asia/Tokyo");
-        ZonedDateTime expiresAt = LocalDate.now(jst).atTime(23, 59, 59).atZone(jst);
-        Duration ttl = Duration.between(ZonedDateTime.now(jst), expiresAt);
-        String formattedExpiry = expiresAt.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+        ZonedDateTime midnight = LocalDate.now(jst).plusDays(1).atStartOfDay(jst);
+        Duration ttl = Duration.between(ZonedDateTime.now(jst), midnight);
         redisTemplate.opsForValue().set("account_deletion_cancel:" + cancelToken, userId, ttl);
 
         // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
         log.info("アカウント削除依頼を受け付けました userId={}", userId);
-        sendAccountDeletionMail(userId, user.getEmail(), cancelToken, formattedExpiry);
+        sendAccountDeletionMail(userId, user.getEmail(), cancelToken);
     }
 
-    private void sendAccountDeletionMail(String userId, String to, String cancelToken, String formattedExpiry) {
+    private void sendAccountDeletionMail(String userId, String to, String cancelToken) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("【MoneyNote】アカウント削除のご確認");
             message.setText(
                     "アカウント削除の依頼を受け付けました。\n" +
                     "本日深夜0時にアカウントおよび全データが削除されます。\n\n" +
-                    "キャンセルする場合は以下のリンクにアクセスしてください（有効期限：" + formattedExpiry + "）\n\n" +
+                    "キャンセルする場合は以下のリンクにアクセスしてください（有効期限：本日中）\n\n" +
                     frontendUrl + "/account-deletion/cancel?token=" + cancelToken + "\n\n" +
                     "キャンセルしない場合、この操作は取り消せません。");
             mailSender.send(message);
