@@ -13,4 +13,4 @@
 | v1.2.0 | Step 19 | 環境2構築（環境1と同構成） | ✅ リリース済み |
 | v1.3.0 | Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | ✅ リリース済み |
 | v1.4.0 | Step 21 | 環境2を3層構成に移行 | ✅ リリース済み |
-| v1.5.0 | Step 22 | SES・Secrets Manager本格活用 | 未着手 |
+| v1.5.0 | Step 22 | SES・Secrets Manager本格活用 | ✅ リリース済み |

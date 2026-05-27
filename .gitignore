@@ -18,6 +18,7 @@ node_modules/
 .next/
 out/
 frontend/.swc/
+*.tsbuildinfo
 
 # IDE
 .idea/

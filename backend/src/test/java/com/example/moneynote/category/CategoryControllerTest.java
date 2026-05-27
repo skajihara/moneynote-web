@@ -310,7 +310,7 @@ class CategoryControllerTest {
                 .userId(userId)
                 .userName("テストユーザー")
                 .email(email)
-                .passwordHash(passwordEncoder.encode("Password1"))
+                .passwordHash(passwordEncoder.encode("Password1!"))
                 .build());
     }
 
@@ -325,7 +325,7 @@ class CategoryControllerTest {
                                 "userId", userId,
                                 "userName", "テストユーザー",
                                 "email", email,
-                                "password", "Password1"))))
+                                "password", "Password1!"))))
                 .andExpect(status().isCreated());
         String token = jwtTokenProvider.generateAccessToken(userId, "USER");
         String body = mockMvc.perform(get("/api/v1/ledgers")

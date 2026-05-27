@@ -32,14 +32,14 @@ describe('PasswordResetConfirmPage', () => {
     await userEvent.type(screen.getByLabelText('新しいパスワード'), 'Short1');
     await userEvent.click(screen.getByRole('button', { name: 'パスワードを設定する' }));
     await waitFor(() => {
-      expect(screen.getByText('パスワードは8文字以上で入力してください')).toBeInTheDocument();
+      expect(screen.getByText('8文字以上')).toBeInTheDocument();
     });
   });
 
   it('バリデーション: パスワードが一致しないとエラー', async () => {
     render(<PasswordResetConfirmPage />);
-    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'Password1');
-    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'Different1');
+    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'Password1!');
+    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'Different1!');
     await userEvent.click(screen.getByRole('button', { name: 'パスワードを設定する' }));
     await waitFor(() => {
       expect(screen.getByText('パスワードが一致しません')).toBeInTheDocument();
@@ -50,8 +50,8 @@ describe('PasswordResetConfirmPage', () => {
     mockConfirm.mockResolvedValueOnce({ data: null, error: null, timestamp: '' });
 
     render(<PasswordResetConfirmPage />);
-    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'NewPass123');
-    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'NewPass123');
+    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'NewPass1!');
+    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'NewPass1!');
     await userEvent.click(screen.getByRole('button', { name: 'パスワードを設定する' }));
 
     await waitFor(() => {
@@ -66,8 +66,8 @@ describe('PasswordResetConfirmPage', () => {
     );
 
     render(<PasswordResetConfirmPage />);
-    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'NewPass123');
-    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'NewPass123');
+    await userEvent.type(screen.getByLabelText('新しいパスワード'), 'NewPass1!');
+    await userEvent.type(screen.getByLabelText('新しいパスワード（確認）'), 'NewPass1!');
     await userEvent.click(screen.getByRole('button', { name: 'パスワードを設定する' }));
 
     await waitFor(() => {

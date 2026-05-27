@@ -75,7 +75,7 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "pwd_reset:req:*", "account_deletion_cancel:*"}) {
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*", "email_change:*", "email_change_user:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
@@ -93,7 +93,7 @@ class AuthControllerTest {
         createUser("header_user", "header@example.com");
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "header_user", "password", "Password1")))
+                        .content(json("userId", "header_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
@@ -132,7 +132,7 @@ class AuthControllerTest {
                         .content(json("userId", "test_user1",
                                       "userName", "テストユーザー",
                                       "email", "test1@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.error").doesNotExist());
@@ -149,7 +149,7 @@ class AuthControllerTest {
                         .content(json("userId", "dup_user",
                                       "userName", "重複ユーザー",
                                       "email", "other@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -163,7 +163,7 @@ class AuthControllerTest {
                         .content(json("userId", "user_b",
                                       "userName", "別ユーザー",
                                       "email", "shared@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -175,7 +175,7 @@ class AuthControllerTest {
                         .content(json("userId", "ab",                   // 2文字: 短すぎ
                                       "userName", "テスト",
                                       "email", "val@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -202,7 +202,7 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "login_user", "password", "Password1")))
+                        .content(json("userId", "login_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(header().exists("Set-Cookie"));
@@ -223,7 +223,7 @@ class AuthControllerTest {
     void login_nonexistentUser_returns401() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "ghost_user", "password", "Password1")))
+                        .content(json("userId", "ghost_user", "password", "Password1!")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("E401"));
     }
@@ -258,7 +258,7 @@ class AuthControllerTest {
         // ログインしてリフレッシュトークンを Cookie に取得
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "refresh_user", "password", "Password1")))
+                        .content(json("userId", "refresh_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -287,7 +287,7 @@ class AuthControllerTest {
 
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "access_as_refresh", "password", "Password1")))
+                        .content(json("userId", "access_as_refresh", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -315,7 +315,7 @@ class AuthControllerTest {
         // ログイン
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "logout_user", "password", "Password1")))
+                        .content(json("userId", "logout_user", "password", "Password1!")))
                 .andReturn();
 
         String accessToken = objectMapper
@@ -367,6 +367,9 @@ class AuthControllerTest {
                         .content(json("userId", "reset_user", "password", "NewPass1!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+
+        // 確認完了後に逆引きキーも削除されていること
+        assertThat(redisTemplate.opsForValue().get("password_reset_user:reset_user")).isNull();
     }
 
     @Test
@@ -411,6 +414,44 @@ class AuthControllerTest {
     }
 
     @Test
+    void passwordReset_secondRequestInvalidatesFirstToken() throws Exception {
+        // 再申請時に1回目のトークンが無効化されること
+        createUser("reissue_user", "reissue@example.com");
+
+        // 1回目の申請
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "reissue@example.com")))
+                .andExpect(status().isOk());
+
+        var keys1 = redisTemplate.keys("password_reset:*");
+        assertThat(keys1).isNotNull().hasSize(1);
+        String firstToken = keys1.iterator().next().replace("password_reset:", "");
+
+        // 2回目の申請（1回目のトークンが無効化される）
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "reissue@example.com")))
+                .andExpect(status().isOk());
+
+        // 1回目のトークンは Redis から削除されていること
+        assertThat(redisTemplate.opsForValue().get("password_reset:" + firstToken))
+                .as("1回目のトークンが無効化されていること").isNull();
+
+        // 2回目のトークンのみ有効であること
+        var keys2 = redisTemplate.keys("password_reset:*");
+        assertThat(keys2).isNotNull().hasSize(1);
+        String secondToken = keys2.iterator().next().replace("password_reset:", "");
+        assertThat(secondToken).isNotEqualTo(firstToken);
+
+        // 2回目のトークンでリセットできること
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", secondToken, "newPassword", "NewPass1!")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void passwordReset_rateLimitedAfter5Requests_returns429() throws Exception {
         // ユーザー単位で 1 時間 5 回の制限。存在しないメールではカウントされないため実ユーザーで確認する
         createUser("rate_limit_user", "ratelimit@example.com");
@@ -439,7 +480,7 @@ class AuthControllerTest {
         // 実際にログインして Cookie からリフレッシュトークンを取得する
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "token_type_user", "password", "Password1")))
+                        .content(json("userId", "token_type_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -453,6 +494,106 @@ class AuthControllerTest {
                         .get("/api/v1/ledgers")
                         .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // =========================================================================
+    // PUT /api/v1/users/me + POST /api/v1/auth/email-change/confirm
+    // =========================================================================
+
+    @Test
+    void emailChange_fullFlow() throws Exception {
+        createUser("ec_user", "original@example.com");
+        String token = jwtTokenProvider.generateAccessToken("ec_user", "USER");
+
+        // メールアドレス変更申請: email は即時反映されない
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "changed@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email", org.hamcrest.Matchers.is("original@example.com")));
+
+        // Redis からトークンを取得（email_change_user: を除外）
+        var keys = redisTemplate.keys("email_change:*");
+        assertThat(keys).isNotNull();
+        String changeToken = keys.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+
+        // 確認リンクをクリック
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", changeToken)))
+                .andExpect(status().isOk());
+
+        // メールアドレスが更新されていること
+        var updated = userRepository.findById("ec_user").orElseThrow();
+        assertThat(updated.getEmail()).isEqualTo("changed@example.com");
+
+        // 確認後に Redis キーが削除されていること
+        assertThat(redisTemplate.opsForValue().get("email_change_user:ec_user")).isNull();
+    }
+
+    @Test
+    void emailChange_invalidToken_returns404() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", "invalid-token-xyz")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("E404"));
+    }
+
+    @Test
+    void emailChange_secondRequestInvalidatesFirst() throws Exception {
+        createUser("ec_reissue", "ec_reissue@example.com");
+        String token = jwtTokenProvider.generateAccessToken("ec_reissue", "USER");
+
+        // 1回目の申請
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "first@example.com")))
+                .andExpect(status().isOk());
+
+        var keys1 = redisTemplate.keys("email_change:*");
+        assertThat(keys1).isNotNull();
+        String firstToken = keys1.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+
+        // 2回目の申請（1回目のトークンが無効化される）
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/users/me")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userName", "テストユーザー", "email", "second@example.com")))
+                .andExpect(status().isOk());
+
+        // 1回目のトークンは無効化されていること
+        assertThat(redisTemplate.opsForValue().get("email_change:" + firstToken))
+                .as("1回目のトークンが無効化されていること").isNull();
+
+        // 2回目のトークンのみ有効であること
+        var keys2 = redisTemplate.keys("email_change:*");
+        assertThat(keys2).isNotNull();
+        String secondToken = keys2.stream()
+                .filter(k -> !k.startsWith("email_change_user:"))
+                .findFirst().orElseThrow()
+                .replace("email_change:", "");
+        assertThat(secondToken).isNotEqualTo(firstToken);
+
+        // 2回目のトークンで変更確定できること
+        mockMvc.perform(post("/api/v1/auth/email-change/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", secondToken)))
+                .andExpect(status().isOk());
+
+        assertThat(userRepository.findById("ec_reissue").orElseThrow().getEmail())
+                .isEqualTo("second@example.com");
     }
 
     // =========================================================================
@@ -530,7 +671,7 @@ class AuthControllerTest {
                         .content(json("userId", userId,
                                       "userName", "テストユーザー",
                                       "email", email,
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isCreated());
     }
 

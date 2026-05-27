@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 実装中・feature/step22-ses-integration）
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）
 
 ---
 
@@ -29,19 +29,24 @@
 | Step 19 | 環境2構築（EC2 + Docker Compose） | 完了・main マージ済み（v1.2.0） |
 | Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | 完了・develop マージ済み（v1.3.0） |
 | Step 21 | 環境2を3層構成に移行（RDS・ElastiCache） | 完了・main マージ済み（v1.4.0） |
-| Step 22 | 既存メール機能の SES 連携 | 実装中（feature/step22-ses-integration） |
+| Step 22 | 既存メール機能の SES 連携 | 完了・main マージ済み（v1.5.0） |
 
 ---
 
 ## 現在の状態
 
-- Step 22 実装中（`feature/step22-ses-integration`）。テストグリーン確認済み。AWS 側（SES SMTP 認証情報・送信元アドレスの Secrets Manager 登録）完了後に deploy 可能
+- Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
   - `application-env1/2.yml`: SMTP 認証（username/password/starttls）と `app.mail.from` を追加
   - `application.yml`: `app.mail.from: ${MAIL_FROM:noreply@localhost}` のデフォルト値を追加（ローカル起動維持）
   - `ContactService` / `AuthService` / `UserService`: `fromAddress` フィールドを追加し `SimpleMailMessage.setFrom()` を呼び出し
   - `ContactServiceTest`: `ReflectionTestUtils.setField(contactService, "fromAddress", ...)` を追加
+  - パスワードリセット再申請時に旧トークンを無効化（Redis リバースマッピングパターン）
+  - メールアドレス変更に確認フロー追加（変更後アドレスに確認メール送信・30分 TTL・旧リンク無効化）
+  - アカウント削除キャンセルリンクの有効期限表示を日時形式（例: 2026/05/27 23:59:59）に変更
+  - ユーザー入力値の表示オーバーフロー修正（確認ダイアログ: `break-all`、一覧・ヘッダ: `truncate`）
+  - パスワードポリシーをアプリ全体で統一（8文字・英大・英小・数字・記号 `!@#$%^&*`）
 - Step 21 完了・main マージ済み（v1.4.0）
 - Step 21 の主な内容（`feature/step21-env2-3tier-migration`）:
   - Protected サブネット（SBN_11・SBN_12）を追加し EC2_02 を AMI 経由で移動
@@ -101,6 +106,10 @@
 | SES SMTP 認証情報は Secrets Manager `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address`（from_address）で管理 | `secrets-fetch.sh` の `get_secret_key` 関数でキー名指定取得。`moneynote/ses-smtp` は2キー入りのため `get_secret` では取得不可 |
 | `management.health.mail.enabled: false` のまま運用（env1/env2）。SES 接続確認後に `true` に変更 | SES 認証失敗時に `/actuator/health` が DOWN になり CI/CD が止まるリスクがある。接続テスト後に有効化する |
 | SES サンドボックスモードでは検証済みアドレス以外に送信不可 | パスワードリセット・アカウント削除メールはユーザーアドレスへ送信するため、サンドボックス解除申請（AWS Support）が必要 |
+| パスワードリセット再申請時は旧トークンを無効化（Redis `password_reset_user:{userId}` リバースマッピング） | 旧リンクをクリックしてもパスワードを変更できないようにするため。confirm 時にもリバースキーを削除する |
+| メールアドレス変更確認フロー: `updateProfile` でメール変更時は即時更新せず確認メールを送信し、`/auth/email-change/confirm` でトークン検証後に更新 | 任意アドレスへの乗っ取り防止。Redis に `email_change:{token}` と `email_change_user:{userId}` の2キーを 30 分 TTL で保持し、再申請時に旧トークンを無効化する |
+| `/email-change/confirm` は Next.js middleware の `PUBLIC_PATHS` に追加（認証不要） | 未ログイン状態でメールリンクをクリックした際に `/login` へリダイレクトされないようにするため |
+| アカウント削除キャンセルリンクの有効期限は当日の 23:59:59 JST（`LocalDate.now(ZoneId.of("Asia/Tokyo"))` で算出） | ユーザーが「本日中」より具体的な日時を把握できるようにするため。JVM の TimeZone に依存しないよう ZoneId を明示 |
 
 ---
 
