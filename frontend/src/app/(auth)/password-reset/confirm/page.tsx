@@ -14,9 +14,11 @@ const schema = z
   .object({
     newPassword: z
       .string()
-      .min(8, 'パスワードは8文字以上で入力してください')
-      .regex(/[a-zA-Z]/, 'パスワードには英字を1文字以上含めてください')
-      .regex(/[0-9]/, 'パスワードには数字を1文字以上含めてください'),
+      .min(8, '8文字以上')
+      .regex(/[A-Z]/, '英大文字を1文字以上含めてください')
+      .regex(/[a-z]/, '英小文字を1文字以上含めてください')
+      .regex(/\d/, '数字を1文字以上含めてください')
+      .regex(/[!@#$%^&*]/, '記号（!@#$%^&*）を1文字以上含めてください'),
     confirmPassword: z.string().min(1, '確認パスワードを入力してください'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -35,10 +37,21 @@ const PasswordResetConfirmForm = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+
+  const newPasswordValue = watch('newPassword') || '';
+
+  const passwordPolicies = [
+    { label: '8文字以上', ok: newPasswordValue.length >= 8 },
+    { label: '英大文字を含む', ok: /[A-Z]/.test(newPasswordValue) },
+    { label: '英小文字を含む', ok: /[a-z]/.test(newPasswordValue) },
+    { label: '数字を含む', ok: /\d/.test(newPasswordValue) },
+    { label: '記号（!@#$%^&*）を含む', ok: /[!@#$%^&*]/.test(newPasswordValue) },
+  ];
 
   const onSubmit = async (values: FormValues) => {
     if (!token) {
@@ -76,6 +89,13 @@ const PasswordResetConfirmForm = () => {
           {errors.newPassword && (
             <p className="mt-1 text-xs text-red-500">{errors.newPassword.message}</p>
           )}
+          <ul className="mt-2 space-y-0.5">
+            {passwordPolicies.map(({ label, ok }) => (
+              <li key={label} className={`text-xs flex items-center gap-1 ${ok ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+                {ok ? '✅' : '❌'} {label}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div>

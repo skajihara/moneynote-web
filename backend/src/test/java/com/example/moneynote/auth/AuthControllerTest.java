@@ -93,7 +93,7 @@ class AuthControllerTest {
         createUser("header_user", "header@example.com");
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "header_user", "password", "Password1")))
+                        .content(json("userId", "header_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
@@ -132,7 +132,7 @@ class AuthControllerTest {
                         .content(json("userId", "test_user1",
                                       "userName", "テストユーザー",
                                       "email", "test1@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.error").doesNotExist());
@@ -149,7 +149,7 @@ class AuthControllerTest {
                         .content(json("userId", "dup_user",
                                       "userName", "重複ユーザー",
                                       "email", "other@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -163,7 +163,7 @@ class AuthControllerTest {
                         .content(json("userId", "user_b",
                                       "userName", "別ユーザー",
                                       "email", "shared@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -175,7 +175,7 @@ class AuthControllerTest {
                         .content(json("userId", "ab",                   // 2文字: 短すぎ
                                       "userName", "テスト",
                                       "email", "val@example.com",
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
     }
@@ -202,7 +202,7 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "login_user", "password", "Password1")))
+                        .content(json("userId", "login_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
                 .andExpect(header().exists("Set-Cookie"));
@@ -223,7 +223,7 @@ class AuthControllerTest {
     void login_nonexistentUser_returns401() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "ghost_user", "password", "Password1")))
+                        .content(json("userId", "ghost_user", "password", "Password1!")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("E401"));
     }
@@ -258,7 +258,7 @@ class AuthControllerTest {
         // ログインしてリフレッシュトークンを Cookie に取得
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "refresh_user", "password", "Password1")))
+                        .content(json("userId", "refresh_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -287,7 +287,7 @@ class AuthControllerTest {
 
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "access_as_refresh", "password", "Password1")))
+                        .content(json("userId", "access_as_refresh", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -315,7 +315,7 @@ class AuthControllerTest {
         // ログイン
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "logout_user", "password", "Password1")))
+                        .content(json("userId", "logout_user", "password", "Password1!")))
                 .andReturn();
 
         String accessToken = objectMapper
@@ -439,7 +439,7 @@ class AuthControllerTest {
         // 実際にログインして Cookie からリフレッシュトークンを取得する
         var loginResult = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json("userId", "token_type_user", "password", "Password1")))
+                        .content(json("userId", "token_type_user", "password", "Password1!")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -530,7 +530,7 @@ class AuthControllerTest {
                         .content(json("userId", userId,
                                       "userName", "テストユーザー",
                                       "email", email,
-                                      "password", "Password1")))
+                                      "password", "Password1!")))
                 .andExpect(status().isCreated());
     }
 
