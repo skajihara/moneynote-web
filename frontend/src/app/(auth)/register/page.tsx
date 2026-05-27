@@ -68,10 +68,10 @@ const RegisterPage = () => {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-gray-700 mb-6">アカウント登録</h2>
+      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-6">アカウント登録</h2>
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <div>
-          <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="userId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             ユーザーID
           </label>
           <input
@@ -79,7 +79,7 @@ const RegisterPage = () => {
             type="text"
             autoComplete="username"
             {...register('userId')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.userId && (
             <p className="mt-1 text-xs text-red-500">{errors.userId.message}</p>
@@ -87,7 +87,7 @@ const RegisterPage = () => {
         </div>
 
         <div>
-          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             ユーザー名
           </label>
           <input
@@ -95,7 +95,7 @@ const RegisterPage = () => {
             type="text"
             autoComplete="name"
             {...register('userName')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.userName && (
             <p className="mt-1 text-xs text-red-500">{errors.userName.message}</p>
@@ -103,7 +103,7 @@ const RegisterPage = () => {
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             メールアドレス
           </label>
           <input
@@ -111,7 +111,7 @@ const RegisterPage = () => {
             type="email"
             autoComplete="email"
             {...register('email')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.email && (
             <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
@@ -119,7 +119,7 @@ const RegisterPage = () => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             パスワード
           </label>
           <input
@@ -127,7 +127,7 @@ const RegisterPage = () => {
             type="password"
             autoComplete="new-password"
             {...register('password')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.password && (
             <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
@@ -137,7 +137,7 @@ const RegisterPage = () => {
         <div>
           <label
             htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
           >
             パスワード（確認）
           </label>
@@ -146,7 +146,7 @@ const RegisterPage = () => {
             type="password"
             autoComplete="new-password"
             {...register('confirmPassword')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
           />
           {errors.confirmPassword && (
             <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
@@ -163,7 +163,7 @@ const RegisterPage = () => {
       </form>
 
       <div className="mt-6 text-center">
-        <Link href="/login" className="text-sm text-gray-500 hover:underline">
+        <Link href="/login" className="text-sm text-gray-500 dark:text-gray-400 hover:underline">
           すでにアカウントをお持ちの方はこちら
         </Link>
       </div>
