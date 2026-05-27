@@ -45,6 +45,9 @@ public class UserService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Value("${app.mail.from}")
+    private String fromAddress;
+
     @Transactional(readOnly = true)
     public UserProfileResponse getProfile(String userId) {
         User user = findUser(userId);
@@ -122,6 +125,7 @@ public class UserService {
     private void sendAccountDeletionMail(String userId, String to, String cancelToken) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("【MoneyNote】アカウント削除のご確認");
             message.setText(

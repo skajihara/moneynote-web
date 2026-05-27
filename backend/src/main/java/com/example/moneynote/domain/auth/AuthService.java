@@ -59,6 +59,9 @@ public class AuthService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Value("${app.mail.from}")
+    private String fromAddress;
+
     // -------------------------------------------------------------------------
     // register
     // -------------------------------------------------------------------------
@@ -247,6 +250,7 @@ public class AuthService {
     private void sendPasswordResetMail(String userId, String to, String token) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("【MoneyNote】パスワードリセットのご案内");
             message.setText(
