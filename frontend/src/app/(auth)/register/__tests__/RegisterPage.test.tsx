@@ -24,8 +24,8 @@ const fillForm = async (overrides: Record<string, string> = {}) => {
     userId: 'new_user1',
     userName: 'テストユーザー',
     email: 'test@example.com',
-    password: 'Password1!',
-    confirmPassword: 'Password1!',
+    password: 'Password1',
+    confirmPassword: 'Password1',
   };
   const values = { ...defaults, ...overrides };
   await userEvent.type(screen.getByLabelText('ユーザーID'), values.userId);
@@ -68,13 +68,13 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText('パスワード'), 'OnlyLetters');
     await userEvent.click(screen.getByRole('button', { name: 'アカウントを作成' }));
     await waitFor(() => {
-      expect(screen.getByText('数字を1文字以上含めてください')).toBeInTheDocument();
+      expect(screen.getByText('パスワードには数字を1文字以上含めてください')).toBeInTheDocument();
     });
   });
 
   it('バリデーション: パスワードと確認が一致しないとエラー', async () => {
     render(<RegisterPage />);
-    await fillForm({ confirmPassword: 'Different1!' });
+    await fillForm({ confirmPassword: 'Different1' });
     await userEvent.click(screen.getByRole('button', { name: 'アカウントを作成' }));
     await waitFor(() => {
       expect(screen.getByText('パスワードが一致しません')).toBeInTheDocument();

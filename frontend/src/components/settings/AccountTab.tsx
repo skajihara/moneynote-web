@@ -80,16 +80,10 @@ const AccountTab = () => {
 
   const confirmSaveProfile = async () => {
     if (!pendingProfileData) return;
-    const emailChanged = profile != null && pendingProfileData.email !== profile.email;
     try {
       const res = await updateProfile(pendingProfileData);
       setProfile(res.data);
-      profileForm.reset({ userName: res.data.userName, email: res.data.email });
-      if (emailChanged) {
-        addToast('success', `確認メールを ${pendingProfileData.email} に送信しました。メール内のリンクをクリックするとアドレスが変更されます。`);
-      } else {
-        addToast('success', 'プロフィールを更新しました');
-      }
+      addToast('success', 'プロフィールを更新しました');
     } catch (e) {
       const msg = e instanceof ApiClientError ? e.error.message : '更新に失敗しました';
       addToast('error', msg);
@@ -138,7 +132,7 @@ const AccountTab = () => {
       msgs.push(`ユーザー名を「${pendingProfileData.userName}」に変更します。`);
     }
     if (pendingProfileData.email !== profile.email) {
-      msgs.push(`「${pendingProfileData.email}」に確認メールを送信します。メール内のリンクをクリックするとアドレスが変更されます。`);
+      msgs.push(`メールアドレスを「${pendingProfileData.email}」に変更します。`);
     }
     return msgs;
   };
@@ -257,7 +251,7 @@ const AccountTab = () => {
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">変更の確認</h3>
             <ul className="text-sm text-gray-600 dark:text-gray-300 mb-4 space-y-1">
               {profileConfirmMessages().map((msg, i) => (
-                <li key={i} className="break-all">{msg}</li>
+                <li key={i}>{msg}</li>
               ))}
               <li className="text-gray-500">よろしいですか？</li>
             </ul>

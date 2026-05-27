@@ -40,7 +40,6 @@ class ContactServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(contactService, "adminAddress", "admin@example.com");
-        ReflectionTestUtils.setField(contactService, "fromAddress", "noreply@localhost");
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
 
         testUser = User.builder()
