@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 21 完了・main マージ済み）
+最終更新: 2026年5月（Step 22 実装中・feature/step22-ses-integration）
 
 ---
 
@@ -29,12 +29,20 @@
 | Step 19 | 環境2構築（EC2 + Docker Compose） | 完了・main マージ済み（v1.2.0） |
 | Step 20 | 環境1を3層構成に移行（RDS・ElastiCache） | 完了・develop マージ済み（v1.3.0） |
 | Step 21 | 環境2を3層構成に移行（RDS・ElastiCache） | 完了・main マージ済み（v1.4.0） |
+| Step 22 | 既存メール機能の SES 連携 | 実装中（feature/step22-ses-integration） |
 
 ---
 
 ## 現在の状態
 
-- Step 21 完了・main マージ済み（v1.4.0）。次は Step 22（SES・Secrets Manager 本格活用）
+- Step 22 実装中（`feature/step22-ses-integration`）。テストグリーン確認済み。AWS 側（SES SMTP 認証情報・送信元アドレスの Secrets Manager 登録）完了後に deploy 可能
+- Step 22 の主な内容:
+  - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
+  - `application-env1/2.yml`: SMTP 認証（username/password/starttls）と `app.mail.from` を追加
+  - `application.yml`: `app.mail.from: ${MAIL_FROM:noreply@localhost}` のデフォルト値を追加（ローカル起動維持）
+  - `ContactService` / `AuthService` / `UserService`: `fromAddress` フィールドを追加し `SimpleMailMessage.setFrom()` を呼び出し
+  - `ContactServiceTest`: `ReflectionTestUtils.setField(contactService, "fromAddress", ...)` を追加
+- Step 21 完了・main マージ済み（v1.4.0）
 - Step 21 の主な内容（`feature/step21-env2-3tier-migration`）:
   - Protected サブネット（SBN_11・SBN_12）を追加し EC2_02 を AMI 経由で移動
   - NAT Gateway は NGW_ka_moneynote_01 を env1・env2 で共用
@@ -90,6 +98,9 @@
 | env2 の NAT Gateway は NGW_ka_moneynote_01（env1）を共用。RTB_11・RTB_12 のデフォルトルートを NGW_01 に向ける | 1人1VPC制約でリソース節約。env2 の Protected サブネット（SBN_11・SBN_12）からの外部通信も NGW_01 経由 |
 | `docker compose up` は compose ファイルから削除されたコンテナを自動停止しない | Step 21 移行後に旧 db・redis コンテナが残存。`docker stop` / `docker rm` で手動削除が必要 |
 | env2 EC2 は env1 AMI から起動。AMI 作成時点のコードが古い場合は CI/CD の `git reset --hard` で更新される | AMI 作成タイミングによっては旧 docker-compose.env2.yml が含まれる。CI/CD 完了まで旧コンテナ構成で動く |
+| SES SMTP 認証情報は Secrets Manager `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address`（from_address）で管理 | `secrets-fetch.sh` の `get_secret_key` 関数でキー名指定取得。`moneynote/ses-smtp` は2キー入りのため `get_secret` では取得不可 |
+| `management.health.mail.enabled: false` のまま運用（env1/env2）。SES 接続確認後に `true` に変更 | SES 認証失敗時に `/actuator/health` が DOWN になり CI/CD が止まるリスクがある。接続テスト後に有効化する |
+| SES サンドボックスモードでは検証済みアドレス以外に送信不可 | パスワードリセット・アカウント削除メールはユーザーアドレスへ送信するため、サンドボックス解除申請（AWS Support）が必要 |
 
 ---
 

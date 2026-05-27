@@ -55,6 +55,7 @@ app:
       enabled: false
   mail:
     admin-address: ${ADMIN_EMAIL:admin@example.com}
+    from: ${MAIL_FROM:noreply@localhost}
 
 management:
   endpoints:

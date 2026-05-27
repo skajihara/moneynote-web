@@ -28,6 +28,15 @@ get_secret() {
     | python3 -c "import sys,json; print(list(json.load(sys.stdin).values())[0])"
 }
 
+get_secret_key() {
+  aws secretsmanager get-secret-value \
+    --region "${REGION}" \
+    --secret-id "$1" \
+    --query SecretString \
+    --output text \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['$2'])"
+}
+
 echo "Fetching secrets for ${ENV} from AWS Secrets Manager (region: ${REGION})..."
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -72,6 +81,11 @@ ADMIN_EMAIL=$(get_secret "moneynote/${ENV}/admin-email")
 
 REDIS_PASSWORD=$(get_secret "moneynote/${ENV}/redis-password")
 
+echo "Fetching SES SMTP credentials..."
+MAIL_USERNAME=$(get_secret_key "moneynote/ses-smtp" "username")
+MAIL_PASSWORD=$(get_secret_key "moneynote/ses-smtp" "password")
+MAIL_FROM=${ADMIN_EMAIL}
+
 # ── .env.{env} ファイルの生成 ──────────────────────────────────────────────
 if [[ "$ENV" == "env1" ]]; then
   # env1: RDS・ElastiCache 構成（TLS有効・AUTH有効）
@@ -96,8 +110,11 @@ DB_NAME=moneynote
 DB_USERNAME=moneynote
 REDIS_PORT=6379
 FRONTEND_URL=${FRONTEND_URL}
-MAIL_HOST=localhost
-MAIL_PORT=1025
+MAIL_HOST=email-smtp.ap-northeast-1.amazonaws.com
+MAIL_PORT=587
+MAIL_USERNAME=${MAIL_USERNAME}
+MAIL_PASSWORD=${MAIL_PASSWORD}
+MAIL_FROM=${MAIL_FROM}
 EOF
 elif [[ "$ENV" == "env2" ]]; then
   # env2: RDS・ElastiCache 構成（TLS有効・AUTH有効）
@@ -122,8 +139,11 @@ DB_NAME=moneynote
 DB_USERNAME=moneynote
 REDIS_PORT=6379
 FRONTEND_URL=${FRONTEND_URL}
-MAIL_HOST=localhost
-MAIL_PORT=1025
+MAIL_HOST=email-smtp.ap-northeast-1.amazonaws.com
+MAIL_PORT=587
+MAIL_USERNAME=${MAIL_USERNAME}
+MAIL_PASSWORD=${MAIL_PASSWORD}
+MAIL_FROM=${MAIL_FROM}
 EOF
 fi
 
