@@ -42,6 +42,7 @@ MoneyNote Web - モノレポ（`backend/` Spring Boot 3.x / Java 24、`frontend/
 **自律実行OK**: ファイル操作 / `./gradlew test` / `npm test` / `docker compose up -d --build` / `seed.ps1`
 **禁止**: テストなし実装 / any型（TypeScript）
 **人間のみ**: コミット・プッシュは人間が行う / マージはGitHub上でPRを作成して行う（テストがグリーンになってからマージすること）
+**PRルール**: 作業ブランチ → develop のPRを作成する。develop → main のPRは別途作成する。作業ブランチから直接 main へのPRは禁止
 **マニュアル更新**: 機能の追加・改修を行った場合は、変更した機能に対応する `docs/` 配下のマニュアルページ（GitHub Pages）を必ず更新する
 **エラー時**: 原因・影響範囲・修正方針を先に説明してから修正する
 **Gate 3後**: `docs/CURRENT_STATUS.md` を更新（完了Stepのステータス・現在の状態・技術的決定事項・注意点）してからコミットへ
