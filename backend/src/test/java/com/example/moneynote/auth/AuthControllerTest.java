@@ -75,7 +75,7 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "pwd_reset:req:*", "account_deletion_cancel:*"}) {
+        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
@@ -367,6 +367,9 @@ class AuthControllerTest {
                         .content(json("userId", "reset_user", "password", "NewPass1!")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+
+        // 確認完了後に逆引きキーも削除されていること
+        assertThat(redisTemplate.opsForValue().get("password_reset_user:reset_user")).isNull();
     }
 
     @Test
@@ -408,6 +411,44 @@ class AuthControllerTest {
                         .content(json("token", resetToken, "newPassword", "password")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
+    void passwordReset_secondRequestInvalidatesFirstToken() throws Exception {
+        // 再申請時に1回目のトークンが無効化されること
+        createUser("reissue_user", "reissue@example.com");
+
+        // 1回目の申請
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "reissue@example.com")))
+                .andExpect(status().isOk());
+
+        var keys1 = redisTemplate.keys("password_reset:*");
+        assertThat(keys1).isNotNull().hasSize(1);
+        String firstToken = keys1.iterator().next().replace("password_reset:", "");
+
+        // 2回目の申請（1回目のトークンが無効化される）
+        mockMvc.perform(post("/api/v1/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", "reissue@example.com")))
+                .andExpect(status().isOk());
+
+        // 1回目のトークンは Redis から削除されていること
+        assertThat(redisTemplate.opsForValue().get("password_reset:" + firstToken))
+                .as("1回目のトークンが無効化されていること").isNull();
+
+        // 2回目のトークンのみ有効であること
+        var keys2 = redisTemplate.keys("password_reset:*");
+        assertThat(keys2).isNotNull().hasSize(1);
+        String secondToken = keys2.iterator().next().replace("password_reset:", "");
+        assertThat(secondToken).isNotEqualTo(firstToken);
+
+        // 2回目のトークンでリセットできること
+        mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("token", secondToken, "newPassword", "NewPass1!")))
+                .andExpect(status().isOk());
     }
 
     @Test

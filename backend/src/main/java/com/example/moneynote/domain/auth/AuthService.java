@@ -241,8 +241,15 @@ public class AuthService {
             checkRateLimit(resetRateLimitKey, 5, Duration.ofHours(1), 3600);
             incrementCount(resetRateLimitKey, Duration.ofHours(1));
 
+            // セキュリティ: 再申請時に既存トークンを無効化（古いリンクの悪用防止）
+            String existingToken = redisTemplate.opsForValue().get(resetUserKey(user.getUserId()));
+            if (existingToken != null) {
+                redisTemplate.delete(resetKey(existingToken));
+            }
+
             String token = UUID.randomUUID().toString();
             redisTemplate.opsForValue().set(resetKey(token), user.getUserId(), RESET_TOKEN_TTL);
+            redisTemplate.opsForValue().set(resetUserKey(user.getUserId()), token, RESET_TOKEN_TTL);
             sendPasswordResetMail(user.getUserId(), user.getEmail(), token);
         });
     }
@@ -277,6 +284,7 @@ public class AuthService {
         userRepository.save(user);
 
         redisTemplate.delete(resetKey(token));
+        redisTemplate.delete(resetUserKey(userId));
     }
 
     // -------------------------------------------------------------------------
@@ -289,6 +297,10 @@ public class AuthService {
 
     private String resetKey(String token) {
         return "password_reset:" + token;
+    }
+
+    private String resetUserKey(String userId) {
+        return "password_reset_user:" + userId;
     }
 
     // -------------------------------------------------------------------------
