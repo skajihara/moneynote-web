@@ -143,7 +143,7 @@ const Header = () => {
         {manualPath && <HelpButton manualPath={manualPath} />}
 
         {userName && (
-          <span className="text-sm text-white/80">{userName}</span>
+          <span className="text-sm text-white/80 max-w-[10rem] truncate">{userName}</span>
         )}
         <button
           onClick={handleLogout}
