@@ -191,7 +191,7 @@ const BudgetEditDialog = ({ ledgerId, year, month, budget, onClose, onSaved }: E
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-5 w-full max-w-sm mx-4">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-1">予算を編集</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 break-all">
           {budget.categoryIcon ? `${budget.categoryIcon} ` : ''}{budget.categoryName}
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
