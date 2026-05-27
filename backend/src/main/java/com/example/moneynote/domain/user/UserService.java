@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Slf4j
@@ -113,16 +114,17 @@ public class UserService {
         // キャンセルトークンを Redis に保存（TTL = 当日 23:59:59 まで）
         String cancelToken = UUID.randomUUID().toString();
         ZoneId jst = ZoneId.of("Asia/Tokyo");
-        ZonedDateTime midnight = LocalDate.now(jst).plusDays(1).atStartOfDay(jst);
-        Duration ttl = Duration.between(ZonedDateTime.now(jst), midnight);
+        ZonedDateTime expiresAt = LocalDate.now(jst).atTime(23, 59, 59).atZone(jst);
+        Duration ttl = Duration.between(ZonedDateTime.now(jst), expiresAt);
+        String formattedExpiry = expiresAt.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
         redisTemplate.opsForValue().set("account_deletion_cancel:" + cancelToken, userId, ttl);
 
         // セキュリティ: ログに PII（メールアドレス）を出力しない。userId のみ記録する
         log.info("アカウント削除依頼を受け付けました userId={}", userId);
-        sendAccountDeletionMail(userId, user.getEmail(), cancelToken);
+        sendAccountDeletionMail(userId, user.getEmail(), cancelToken, formattedExpiry);
     }
 
-    private void sendAccountDeletionMail(String userId, String to, String cancelToken) {
+    private void sendAccountDeletionMail(String userId, String to, String cancelToken, String formattedExpiry) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromAddress);
@@ -131,7 +133,7 @@ public class UserService {
             message.setText(
                     "アカウント削除の依頼を受け付けました。\n" +
                     "本日深夜0時にアカウントおよび全データが削除されます。\n\n" +
-                    "キャンセルする場合は以下のリンクにアクセスしてください（有効期限：本日中）\n\n" +
+                    "キャンセルする場合は以下のリンクにアクセスしてください（有効期限：" + formattedExpiry + "）\n\n" +
                     frontendUrl + "/account-deletion/cancel?token=" + cancelToken + "\n\n" +
                     "キャンセルしない場合、この操作は取り消せません。");
             mailSender.send(message);

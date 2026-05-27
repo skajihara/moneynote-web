@@ -256,7 +256,7 @@ class UserControllerTest {
                                 "userId", "user3",
                                 "userName", "テストユーザー3",
                                 "email", "user3@example.com",
-                                "password", "Password3"))))
+                                "password", "Password3!"))))
                 .andExpect(status().isCreated());
         String token3 = jwtTokenProvider.generateAccessToken("user3", "USER");
 
