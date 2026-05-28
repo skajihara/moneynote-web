@@ -115,4 +115,55 @@ describe('LedgerMemberPanel', () => {
     await userEvent.click(deleteBtns[0]);
     await waitFor(() => expect(mockRemoveMember).toHaveBeenCalledTimes(1));
   });
+
+  it('削除ボタンで confirm がキャンセルされると removeMember が呼ばれない', async () => {
+    setupStore(true);
+    jest.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<LedgerMemberPanel ledgerId={TEST_LEDGER_ID} />);
+    await screen.findByText('管理者A');
+    const deleteBtns = screen.getAllByRole('button', { name: '削除' });
+    await userEvent.click(deleteBtns[0]);
+    expect(mockRemoveMember).not.toHaveBeenCalled();
+  });
+
+  it('招待フォーム送信で addMember が呼ばれる', async () => {
+    setupStore(true);
+    render(<LedgerMemberPanel ledgerId={TEST_LEDGER_ID} />);
+    await screen.findByText('メンバーを招待');
+    await userEvent.type(screen.getByPlaceholderText('招待するユーザーのIDを入力'), 'newuser1');
+    await userEvent.click(screen.getByRole('button', { name: '招待する' }));
+    await waitFor(() =>
+      expect(mockAddMember).toHaveBeenCalledWith(TEST_LEDGER_ID, expect.objectContaining({ userId: 'newuser1' }))
+    );
+  });
+
+  it('変更ボタンクリックで権限編集モードになる', async () => {
+    setupStore(true);
+    render(<LedgerMemberPanel ledgerId={TEST_LEDGER_ID} />);
+    await screen.findByText('管理者A');
+    const changeBtns = screen.getAllByRole('button', { name: '変更' });
+    await userEvent.click(changeBtns[0]);
+    expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '取消' })).toBeInTheDocument();
+  });
+
+  it('権限編集で取消ボタンを押すと編集モードが終了する', async () => {
+    setupStore(true);
+    render(<LedgerMemberPanel ledgerId={TEST_LEDGER_ID} />);
+    await screen.findByText('管理者A');
+    const changeBtns = screen.getAllByRole('button', { name: '変更' });
+    await userEvent.click(changeBtns[0]);
+    await userEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(screen.queryByRole('button', { name: '保存' })).not.toBeInTheDocument();
+  });
+
+  it('権限編集で保存ボタンを押すと updateMember が呼ばれる', async () => {
+    setupStore(true);
+    render(<LedgerMemberPanel ledgerId={TEST_LEDGER_ID} />);
+    await screen.findByText('管理者A');
+    const changeBtns = screen.getAllByRole('button', { name: '変更' });
+    await userEvent.click(changeBtns[0]);
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => expect(mockUpdateMember).toHaveBeenCalledTimes(1));
+  });
 });

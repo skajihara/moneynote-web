@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-004 作業中
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-004 マージ済み・TD-001 作業中
 
 ---
 
@@ -35,7 +35,8 @@
 
 ## 現在の状態
 
-- TD-004 作業中（`feature/issue-36-sliding-window-rate-limit`）。テストグリーン確認済み。PRを作成してマージ待ち
+- TD-001 作業中（`feature/issue-29-frontend-test-coverage`）。テストグリーン・カバレッジ 80% 達成（95.58% Stmts / 83.11% Branch / 80.25% Funcs）。PR作成待ち
+- TD-004 マージ済み（develop）
 - Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
@@ -116,6 +117,7 @@
 | `spring.mail.host` / `spring.mail.port` は `application.yml` で `${MAIL_HOST:mailhog}` / `${MAIL_PORT:1025}` として環境変数化（デフォルト: mailhog/1025） | ハードコードでは Docker 外での起動時に上書き不可。env1/env2 は MAIL_HOST/MAIL_PORT 環境変数で上書きされるため profile 側の host/port 重複オーバーライドを削除（TD-003 対応） |
 | ログインレート制限のキーは `loginAttempt:{ip}`（旧: `login:fail:{ip}`）。パスワードリセットは `pwd_reset:req:{userId}` のまま | TD-004 でスライディングウィンドウに移行。テストの `setUp()` で `loginAttempt:*` をクリアすること |
 | `AiRateLimiter` / `AuthService` のレート制限は Redis Sorted Set（ZADD + ZREMRANGEBYSCORE + ZCARD）でスライディングウィンドウを実装 | 固定ウィンドウはウィンドウ境界付近でバースト攻撃（2N リクエスト）が可能。スライディングウィンドウで防ぐ（TD-004 対応） |
+| フロントエンドテストカバレッジ: 95.58% Stmts / 83.11% Branch / 80.25% Funcs（2026年5月時点） | TD-001 対応。`lib/api/` 全ファイルに単体テスト追加（apiClient モック）、`themeStore`・`periodUtils`・`BudgetPanel`・`LedgerMemberPanel`・`TransactionEditForm`・`LedgerCreateModal` のテストを追加・拡充 |
 
 ---
 

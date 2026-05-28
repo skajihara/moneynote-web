@@ -1,5 +1,5 @@
 # TODO.md - 将来エンハンス・改善管理
-最終更新: 2026年5月（T-015・TD-002 クローズ）
+最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ）
 
 ---
 
@@ -33,10 +33,7 @@
 
 ## 技術的負債
 
-| ID | Issue | 内容 | 優先度 |
-|---|---|---|---|
-| TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | フロントエンドのテストカバレッジが低い画面がある | 中 |
-| TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | 中 |
+（未対応の技術的負債なし）
 
 ---
 
@@ -85,3 +82,5 @@
 | T-015 | [#15](https://github.com/skajihara/moneynote-web/issues/15) | インフラ | SES・Secrets Manager本格活用 | feature/step22-ses-integration |
 | TD-002 | [#30](https://github.com/skajihara/moneynote-web/issues/30) | 技術的負債 | Docker ビルドキャッシュ最適化（Gradle・npm・Next.js） | feature/issue-30-docker-build-cache |
 | TD-003 | [#31](https://github.com/skajihara/moneynote-web/issues/31) | 技術的負債 | application.yml・application-env1/env2.yml 整合性確認・修正 | feature/issue-31-yml-consistency |
+| TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | 技術的負債 | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | feature/issue-36-sliding-window-rate-limit |
+| TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | 技術的負債 | フロントエンドのテストカバレッジを80%以上に改善 | feature/issue-29-frontend-test-coverage |

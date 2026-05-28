@@ -7,6 +7,9 @@ import type { Transaction } from '@/types/transaction';
 
 jest.mock('@/lib/api/ledger');
 jest.mock('@/lib/api/transaction');
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
 
 const mockGetCategories = jest.mocked(ledgerApi.getCategories);
 const mockCreateTransaction = jest.mocked(transactionApi.createTransaction);
@@ -123,5 +126,95 @@ describe('TransactionEditForm 編集', () => {
       />
     );
     expect(await screen.findByRole('button', { name: '削除' })).toBeInTheDocument();
+  });
+});
+
+describe('TransactionEditForm フォーム送信', () => {
+  it('新規作成フォームを送信すると createTransaction が呼ばれる', async () => {
+    const handleSuccess = jest.fn();
+    render(<TransactionEditForm ledgerId="ldg_1" onSuccess={handleSuccess} onCancel={jest.fn()} />);
+    await screen.findByText('食費');
+
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'cat_food');
+    await userEvent.clear(screen.getByPlaceholderText('0'));
+    await userEvent.type(screen.getByPlaceholderText('0'), '1500');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(mockCreateTransaction).toHaveBeenCalledTimes(1));
+    expect(handleSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('編集フォームを送信すると updateTransaction が呼ばれる', async () => {
+    const handleSuccess = jest.fn();
+    render(
+      <TransactionEditForm
+        ledgerId="ldg_1"
+        transaction={makeTx({ categoryId: 'cat_comm', categoryName: '通信費', isFixedOrigin: false })}
+        onSuccess={handleSuccess}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('明細を編集');
+
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+
+    await waitFor(() => expect(mockUpdateTransaction).toHaveBeenCalledTimes(1));
+    expect(handleSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('収入ボタンクリックでカテゴリ一覧が収入カテゴリに切り替わる', async () => {
+    render(<TransactionEditForm ledgerId="ldg_1" onSuccess={jest.fn()} onCancel={jest.fn()} />);
+    await screen.findByText('食費');
+    await userEvent.click(screen.getByRole('button', { name: '収入' }));
+    expect(await screen.findByText('給与')).toBeInTheDocument();
+  });
+
+  it('固定費由来でない通常明細の削除で deleteTransaction が呼ばれる', async () => {
+    const mockDeleteTransaction = jest.mocked(
+      (await import('@/lib/api/transaction')).deleteTransaction
+    );
+    mockDeleteTransaction.mockResolvedValue({ data: null, error: null, timestamp: '' });
+
+    const handleSuccess = jest.fn();
+    render(
+      <TransactionEditForm
+        ledgerId="ldg_1"
+        transaction={makeTx({ isFixedOrigin: false })}
+        onSuccess={handleSuccess}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByRole('button', { name: '削除' });
+    await userEvent.click(screen.getByRole('button', { name: '削除' }));
+
+    await waitFor(() => expect(mockDeleteTransaction).toHaveBeenCalledTimes(1));
+  });
+
+  it('固定費由来の明細を編集するとスコープダイアログが開く', async () => {
+    render(
+      <TransactionEditForm
+        ledgerId="ldg_1"
+        transaction={makeTx({ isFixedOrigin: true, fixedTransactionId: 'fix_1' })}
+        onSuccess={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('明細を編集');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    expect(await screen.findByText(/固定費から自動生成/)).toBeInTheDocument();
+  });
+
+  it('固定費由来の明細を削除するとスコープダイアログが開く', async () => {
+    render(
+      <TransactionEditForm
+        ledgerId="ldg_1"
+        transaction={makeTx({ isFixedOrigin: true, fixedTransactionId: 'fix_1' })}
+        onSuccess={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByRole('button', { name: '削除' });
+    await userEvent.click(screen.getByRole('button', { name: '削除' }));
+    expect(await screen.findByText(/固定費から自動生成/)).toBeInTheDocument();
   });
 });
