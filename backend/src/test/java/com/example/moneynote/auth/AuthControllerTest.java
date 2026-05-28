@@ -25,6 +25,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,7 +76,7 @@ class AuthControllerTest {
         // FK 制約を CASCADE で全テーブルをリセット
         jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
         // Redis のレート制限・リセットトークンをクリア
-        for (String pattern : new String[]{"login:fail:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*", "email_change:*", "email_change_user:*"}) {
+        for (String pattern : new String[]{"loginAttempt:*", "refresh:*", "password_reset:*", "password_reset_user:*", "pwd_reset:req:*", "account_deletion_cancel:*", "email_change:*", "email_change_user:*"}) {
             var keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
@@ -245,6 +246,25 @@ class AuthControllerTest {
                         .content(json("userId", "lock_user", "password", "WrongPass9")))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.error.code").value("E429"));
+    }
+
+    @Test
+    void login_slidingWindow_expiredEntriesDoNotContribute() throws Exception {
+        // スライディングウィンドウ: ウィンドウ外の古いエントリはカウントに含まれないことを確認
+        createUser("sliding_user", "sliding@example.com");
+
+        // ウィンドウ外（16分前）の失敗エントリを5件直接 Redis に書き込む
+        long pastScore = System.currentTimeMillis() - Duration.ofMinutes(16).toMillis();
+        String attemptKey = "loginAttempt:127.0.0.1";
+        for (int i = 0; i < 5; i++) {
+            redisTemplate.opsForZSet().add(attemptKey, pastScore + "-entry" + i, pastScore);
+        }
+
+        // 古いエントリはウィンドウ外のため除外され、ロックされていない → 正しいパスワードでログイン成功
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("userId", "sliding_user", "password", "Password1!")))
+                .andExpect(status().isOk());
     }
 
     // =========================================================================

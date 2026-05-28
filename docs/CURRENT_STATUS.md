@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-004 作業中
 
 ---
 
@@ -35,6 +35,7 @@
 
 ## 現在の状態
 
+- TD-004 作業中（`feature/issue-36-sliding-window-rate-limit`）。テストグリーン確認済み。PRを作成してマージ待ち
 - Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
@@ -113,6 +114,8 @@
 | `backend/Dockerfile`: `COPY build.gradle settings.gradle ./` → `gradle dependencies` → `COPY . .` → `gradle bootJar` の順に分離し、`--mount=type=cache,target=/root/.gradle` で Gradle キャッシュを永続化 | ソース変更時に依存関係の再ダウンロードを防ぐ。BuildKit のキャッシュマウントにより Docker ビルドを繰り返しても `~/.gradle` キャッシュが保持される（TD-002 対応） |
 | `frontend/Dockerfile`: `npm ci` に `--mount=type=cache,target=/root/.npm`、`npm run build` に `--mount=type=cache,target=/app/.next/cache` を追加 | npm キャッシュと Next.js インクリメンタルコンパイルキャッシュをビルド間で永続化。`package*.json` の分離は既存済み（TD-002 対応） |
 | `spring.mail.host` / `spring.mail.port` は `application.yml` で `${MAIL_HOST:mailhog}` / `${MAIL_PORT:1025}` として環境変数化（デフォルト: mailhog/1025） | ハードコードでは Docker 外での起動時に上書き不可。env1/env2 は MAIL_HOST/MAIL_PORT 環境変数で上書きされるため profile 側の host/port 重複オーバーライドを削除（TD-003 対応） |
+| ログインレート制限のキーは `loginAttempt:{ip}`（旧: `login:fail:{ip}`）。パスワードリセットは `pwd_reset:req:{userId}` のまま | TD-004 でスライディングウィンドウに移行。テストの `setUp()` で `loginAttempt:*` をクリアすること |
+| `AiRateLimiter` / `AuthService` のレート制限は Redis Sorted Set（ZADD + ZREMRANGEBYSCORE + ZCARD）でスライディングウィンドウを実装 | 固定ウィンドウはウィンドウ境界付近でバースト攻撃（2N リクエスト）が可能。スライディングウィンドウで防ぐ（TD-004 対応） |
 
 ---
 
