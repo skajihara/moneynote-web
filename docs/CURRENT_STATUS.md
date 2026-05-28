@@ -58,7 +58,7 @@
   - `scripts/secrets-fetch.sh`: env2 で RDS/ElastiCache エンドポイントを AWS CLI で動的取得
   - `application-env2.yml`: `spring.data.redis.ssl.enabled: true`（ElastiCache TLS 対応）
   - GitHub Secret `EC2_INSTANCE_ID_ENV2` を新 EC2 のインスタンス ID に更新
-- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）・v1.3.0（Step 20）・v1.4.0（Step 21）
+- リリース済み: v1.0.0（Step 17）・v1.1.0（Step 18）・v1.2.0（Step 19）・v1.3.0（Step 20）・v1.4.0（Step 21）・v1.5.0（Step 22）
 
 ---
 
