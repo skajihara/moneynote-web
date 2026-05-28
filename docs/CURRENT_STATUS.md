@@ -110,6 +110,7 @@
 | メールアドレス変更確認フロー: `updateProfile` でメール変更時は即時更新せず確認メールを送信し、`/auth/email-change/confirm` でトークン検証後に更新 | 任意アドレスへの乗っ取り防止。Redis に `email_change:{token}` と `email_change_user:{userId}` の2キーを 30 分 TTL で保持し、再申請時に旧トークンを無効化する |
 | `/email-change/confirm` は Next.js middleware の `PUBLIC_PATHS` に追加（認証不要） | 未ログイン状態でメールリンクをクリックした際に `/login` へリダイレクトされないようにするため |
 | アカウント削除キャンセルリンクの有効期限は当日の 23:59:59 JST（`LocalDate.now(ZoneId.of("Asia/Tokyo"))` で算出） | ユーザーが「本日中」より具体的な日時を把握できるようにするため。JVM の TimeZone に依存しないよう ZoneId を明示 |
+| `spring.mail.host` / `spring.mail.port` は `application.yml` で `${MAIL_HOST:mailhog}` / `${MAIL_PORT:1025}` として環境変数化（デフォルト: mailhog/1025） | ハードコードでは Docker 外での起動時に上書き不可。env1/env2 は MAIL_HOST/MAIL_PORT 環境変数で上書きされるため profile 側の host/port 重複オーバーライドを削除（TD-003 対応） |
 
 ---
 
