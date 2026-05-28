@@ -172,6 +172,109 @@ describe('BudgetPanel', () => {
       expect(screen.getByText('予算余剰・超過（直近6ヶ月）')).toBeInTheDocument();
     });
   });
+
+  it('翌月ボタンで月が進む', async () => {
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await screen.findByText('この月の予算がまだ設定されていません');
+    const today = new Date();
+    const expectedYear =
+      today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+    const expectedMonth =
+      today.getMonth() === 11 ? 1 : today.getMonth() + 2;
+    await userEvent.click(screen.getByRole('button', { name: '翌月' }));
+    expect(
+      await screen.findByText(`${expectedYear}年${expectedMonth}月`)
+    ).toBeInTheDocument();
+  });
+
+  it('予算追加モーダルでフォーム送信すると upsertBudget が呼ばれる', async () => {
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await screen.findByText('この月の予算がまだ設定されていません');
+    await userEvent.click(screen.getByRole('button', { name: '+ 予算を追加' }));
+    await screen.findByText('予算を追加');
+    await userEvent.selectOptions(
+      screen.getByRole('combobox'),
+      'cat_food'
+    );
+    await userEvent.type(screen.getByPlaceholderText('0'), '10000');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => expect(mockUpsertBudget).toHaveBeenCalledTimes(1));
+  });
+
+  it('予算行クリックで編集ダイアログが開く', async () => {
+    mockGetBudgets.mockResolvedValue({ data: [makeBudget()], error: null, timestamp: '' });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
+    const budgetButtons = screen.getAllByRole('button').filter(
+      (btn) => btn.textContent?.includes('食費')
+    );
+    await userEvent.click(budgetButtons[0]);
+    expect(screen.getByText('予算を編集')).toBeInTheDocument();
+  });
+
+  it('編集ダイアログで更新ボタン押下すると upsertBudget が呼ばれる', async () => {
+    mockGetBudgets.mockResolvedValue({ data: [makeBudget()], error: null, timestamp: '' });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
+    const budgetButtons = screen.getAllByRole('button').filter(
+      (btn) => btn.textContent?.includes('食費')
+    );
+    await userEvent.click(budgetButtons[0]);
+    await screen.findByText('予算を編集');
+    await userEvent.click(screen.getByRole('button', { name: '更新' }));
+    await waitFor(() => expect(mockUpsertBudget).toHaveBeenCalledTimes(1));
+  });
+
+  it('編集ダイアログで削除ボタン押下すると deleteBudget が呼ばれる', async () => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+    mockGetBudgets.mockResolvedValue({ data: [makeBudget()], error: null, timestamp: '' });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
+    const budgetButtons = screen.getAllByRole('button').filter(
+      (btn) => btn.textContent?.includes('食費')
+    );
+    await userEvent.click(budgetButtons[0]);
+    await screen.findByText('予算を編集');
+    await userEvent.click(screen.getByRole('button', { name: 'この予算を削除' }));
+    await waitFor(() => expect(mockDeleteBudget).toHaveBeenCalledTimes(1));
+  });
+
+  it('12月から翌月で1月に変わる', async () => {
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await screen.findByText('この月の予算がまだ設定されていません');
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const diff = 12 - currentMonth;
+    for (let i = 0; i < diff; i++) {
+      await userEvent.click(screen.getByRole('button', { name: '翌月' }));
+    }
+    if (diff >= 0) {
+      await screen.findByText(`${today.getFullYear()}年12月`);
+      await userEvent.click(screen.getByRole('button', { name: '翌月' }));
+      expect(await screen.findByText(`${today.getFullYear() + 1}年1月`)).toBeInTheDocument();
+    }
+  });
+
+  it('ヒートマップにデータがある場合にカテゴリ名が表示される', async () => {
+    mockGetBudgetHeatmap.mockResolvedValue({
+      data: [{
+        yearMonth: '2026-05',
+        budgets: [{ categoryName: '食費', percentage: 80 }],
+      }],
+      error: null,
+      timestamp: '',
+    });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
+  });
 });
 
 describe('BudgetPage', () => {
