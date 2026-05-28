@@ -44,6 +44,21 @@ Settings → Secrets and variables → Actions → New repository secret
 
 ---
 
+## 初期データのログイン情報
+
+`seed.ps1`（Windows）または `seed.sh`（Linux/EC2）を実行すると以下のアカウントが作成される。
+
+| ユーザーID | パスワード | 備考 |
+|---|---|---|
+| `admin` | `Admin1234!` | システム管理者（`/admin` アクセス可） |
+| `user_normal` | `Password123!` | 正常系ユーザー |
+| `user_over_budget` | `Password123!` | 予算超過ユーザー |
+| `user_no_data` | `Password123!` | データなしユーザー |
+| `user_minus_balance` | `Password123!` | 残高マイナスユーザー |
+| `user_other` | `Password123!` | 別ユーザー（アクセス禁止確認用） |
+
+---
+
 ## ドキュメント最新化ルール
 
 機能追加・変更・バグ修正のたびに以下を更新すること:
