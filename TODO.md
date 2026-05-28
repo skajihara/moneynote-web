@@ -1,5 +1,5 @@
 # TODO.md - 将来エンハンス・改善管理
-最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ）
+最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ・T-040〜T-043 追加）
 
 ---
 
@@ -17,6 +17,10 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
+| T-040 | [#98](https://github.com/skajihara/moneynote-web/issues/98) | UI/UX | 予算一覧で削除済みカテゴリを「削除済み」として表示 | BudgetResponse に categoryDeleted フラグを追加し、フロントエンドの予算行に「削除済み」バッジを表示する |
+| T-041 | [#99](https://github.com/skajihara/moneynote-web/issues/99) | 機能 | お問い合わせ送信時に送信者へ自動返信メールを送る | ContactService で SES 送信を追加し、件名・本文を引用した受付完了メールを送信者に送る |
+| T-042 | [#100](https://github.com/skajihara/moneynote-web/issues/100) | UI/UX | 大きい金額入力時のアプリ全体の表示崩れ調査・対応 | ダッシュボード・明細・予算・レポート等で極端な金額入力時の表示崩れを調査し CSS またはバリデーションで対応 |
+| T-043 | [#101](https://github.com/skajihara/moneynote-web/issues/101) | UI/UX | バリデーションエラーの詳細をユーザーに分かりやすく伝える | Zod エラーメッセージの見直し、またはマニュアルへの入力制約一覧の追加 |
 | T-039 | [#58](https://github.com/skajihara/moneynote-web/issues/58) | インフラ | AWS ロギング・モニタリング基盤の構築（CloudWatch + Grafana） | 構造化ログ（JSON）+ CloudWatch Agent + Micrometer によるメトリクス収集・Grafana ダッシュボード・CloudWatch Alarms → Slack 通知 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
