@@ -154,8 +154,15 @@ transport=(5000 6000 7000 8000 9000 10000 12000 10000 9000 8000 7000 6000 5000)
 # ─── Step 0: DB リセット ─────────────────────────────────────
 step_print "Step0: DB リセット中..."
 if [ "$ENV" = "env1" ] || [ "$ENV" = "env2" ]; then
-    echo "  リモート環境のため Docker リセットをスキップします（コンテナは CI/CD が管理）"
-    ok "DB リセットスキップ（リモート環境）"
+    echo "  DB 接続情報を読み込んでいます..."
+    H=$(grep DB_HOST ".env.${ENV}" | cut -d= -f2)
+    P=$(grep DB_PASSWORD ".env.${ENV}" | cut -d= -f2)
+    echo "  RDS スキーマを削除・再作成しています..."
+    PGPASSWORD="$P" psql -h "$H" -U moneynote moneynote \
+        -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    echo "  バックエンドを再起動します（Flyway でスキーマ再作成）..."
+    $DC_CMD restart backend
+    ok "DB リセット完了（RDS）"
 else
     echo "  ${DC_CMD} down -v ..."
     $DC_CMD down -v 2>&1 | tail -3 || true
