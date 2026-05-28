@@ -134,17 +134,17 @@ public class AuthService {
     // -------------------------------------------------------------------------
 
     public TokenResponse login(LoginRequest request, String ipAddress) {
-        String failKey = "login:fail:" + ipAddress;
-        checkRateLimit(failKey);
+        String attemptKey = "loginAttempt:" + ipAddress;
+        checkSlidingWindowLimit(attemptKey, MAX_LOGIN_FAILURES, LOCK_DURATION, 900);
 
         User user = userRepository.findById(request.getUserId())
                 .orElseGet(() -> {
-                    incrementFailCount(failKey);
+                    recordSlidingWindowHit(attemptKey, LOCK_DURATION);
                     throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
                 });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            incrementFailCount(failKey);
+            recordSlidingWindowHit(attemptKey, LOCK_DURATION);
             throw new UnauthorizedException("ユーザーIDまたはパスワードが正しくありません");
         }
 
@@ -154,7 +154,7 @@ public class AuthService {
         }
 
         // 成功 → 失敗カウントをリセット
-        redisTemplate.delete(failKey);
+        redisTemplate.delete(attemptKey);
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId());
@@ -170,29 +170,31 @@ public class AuthService {
         return redisTemplate.opsForValue().get(refreshKey(userId));
     }
 
-    private void checkRateLimit(String failKey) {
-        checkRateLimit(failKey, MAX_LOGIN_FAILURES, LOCK_DURATION, 900);
-    }
-
-    private void checkRateLimit(String key, int maxCount, Duration window, int retryAfterSeconds) {
-        String countStr = redisTemplate.opsForValue().get(key);
-        int count = countStr == null ? 0 : Integer.parseInt(countStr);
-        if (count >= maxCount) {
-            throw new RateLimitException("リクエスト上限に達しました。しばらく後に再試行してください", retryAfterSeconds);
+    private void checkSlidingWindowLimit(String key, int maxCount, Duration window, int retryAfterSeconds) {
+        try {
+            long now = System.currentTimeMillis();
+            long windowStart = now - window.toMillis();
+            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
+            Long count = redisTemplate.opsForZSet().zCard(key);
+            if (count != null && count >= maxCount) {
+                throw new RateLimitException("リクエスト上限に達しました。しばらく後に再試行してください", retryAfterSeconds);
+            }
+        } catch (RateLimitException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("AuthService: Redis unavailable, skipping rate limit check for key={}", key, e);
         }
     }
 
-    private void incrementFailCount(String failKey) {
-        Long count = redisTemplate.opsForValue().increment(failKey);
-        if (count != null && count == 1) {
-            redisTemplate.expire(failKey, LOCK_DURATION);
-        }
-    }
-
-    private void incrementCount(String key, Duration window) {
-        Long count = redisTemplate.opsForValue().increment(key);
-        if (count != null && count == 1) {
+    private void recordSlidingWindowHit(String key, Duration window) {
+        try {
+            long now = System.currentTimeMillis();
+            // Include short random suffix to avoid collision when multiple requests arrive at the same millisecond
+            String member = now + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            redisTemplate.opsForZSet().add(key, member, now);
             redisTemplate.expire(key, window);
+        } catch (Exception e) {
+            log.warn("AuthService: Redis unavailable, could not record rate limit hit for key={}", key, e);
         }
     }
 
@@ -239,8 +241,8 @@ public class AuthService {
         userRepository.findByEmail(email).ifPresent(user -> {
             // セキュリティ: ユーザー単位で 1 時間 5 回のレート制限（メール爆撃対策）
             String resetRateLimitKey = "pwd_reset:req:" + user.getUserId();
-            checkRateLimit(resetRateLimitKey, 5, Duration.ofHours(1), 3600);
-            incrementCount(resetRateLimitKey, Duration.ofHours(1));
+            checkSlidingWindowLimit(resetRateLimitKey, 5, Duration.ofHours(1), 3600);
+            recordSlidingWindowHit(resetRateLimitKey, Duration.ofHours(1));
 
             // セキュリティ: 再申請時に既存トークンを無効化（古いリンクの悪用防止）
             String existingToken = redisTemplate.opsForValue().get(resetUserKey(user.getUserId()));
