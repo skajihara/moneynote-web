@@ -35,8 +35,7 @@
 
 ## 現在の状態
 
-- TD-001 作業中（`feature/issue-29-frontend-test-coverage`）。テストグリーン・カバレッジ 80% 達成（95.58% Stmts / 83.11% Branch / 80.25% Funcs）。PR作成待ち
-- TD-004 マージ済み（develop）
+- TD-001~TD-004 完了 PRマージ済み
 - Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
