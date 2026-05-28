@@ -7,10 +7,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.UUID;
 
 /**
  * AI エンドポイント用のユーザー単位レート制限。
- * Redis カウンターで固定ウィンドウを実装する。
+ * Redis Sorted Set でスライディングウィンドウを実装し、ウィンドウ境界でのバースト攻撃を防ぐ。
  * Fail-Open 設計: Redis が利用不能な場合はレート制限をスルーしてリクエストを通す。
  */
 @Slf4j
@@ -28,15 +29,22 @@ public class AiRateLimiter {
 
     private void checkLimit(String key, int maxCount, Duration window, int retryAfterSeconds) {
         try {
-            Long count = redisTemplate.opsForValue().increment(key);
-            if (count != null && count == 1) {
-                redisTemplate.expire(key, window);
-            }
-            if (count != null && count > maxCount) {
+            long now = System.currentTimeMillis();
+            long windowStart = now - window.toMillis();
+            // Remove entries outside the sliding window
+            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
+            // Count requests currently in the window
+            Long count = redisTemplate.opsForZSet().zCard(key);
+            if (count != null && count >= maxCount) {
                 throw new RateLimitException(
                         "AIリクエストの上限に達しました。しばらくお待ちください",
                         retryAfterSeconds);
             }
+            // Record current request; suffix prevents collision when multiple requests arrive at the same millisecond
+            String member = now + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+            redisTemplate.opsForZSet().add(key, member, now);
+            // TTL prevents memory leak if the key is no longer actively used
+            redisTemplate.expire(key, window.plusSeconds(60));
         } catch (RateLimitException e) {
             throw e;
         } catch (Exception e) {

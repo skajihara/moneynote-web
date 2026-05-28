@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-004 マージ済み・TD-001 作業中
 
 ---
 
@@ -35,7 +35,8 @@
 
 ## 現在の状態
 
-- Step 22 完了・main マージ済み（v1.5.0）
+- TD-001~TD-004 完了 PRマージ済み
+- Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更
   - `application-env1/2.yml`: SMTP 認証（username/password/starttls）と `app.mail.from` を追加
@@ -110,6 +111,12 @@
 | メールアドレス変更確認フロー: `updateProfile` でメール変更時は即時更新せず確認メールを送信し、`/auth/email-change/confirm` でトークン検証後に更新 | 任意アドレスへの乗っ取り防止。Redis に `email_change:{token}` と `email_change_user:{userId}` の2キーを 30 分 TTL で保持し、再申請時に旧トークンを無効化する |
 | `/email-change/confirm` は Next.js middleware の `PUBLIC_PATHS` に追加（認証不要） | 未ログイン状態でメールリンクをクリックした際に `/login` へリダイレクトされないようにするため |
 | アカウント削除キャンセルリンクの有効期限は当日の 23:59:59 JST（`LocalDate.now(ZoneId.of("Asia/Tokyo"))` で算出） | ユーザーが「本日中」より具体的な日時を把握できるようにするため。JVM の TimeZone に依存しないよう ZoneId を明示 |
+| `backend/Dockerfile`: `COPY build.gradle settings.gradle ./` → `gradle dependencies` → `COPY . .` → `gradle bootJar` の順に分離し、`--mount=type=cache,target=/root/.gradle` で Gradle キャッシュを永続化 | ソース変更時に依存関係の再ダウンロードを防ぐ。BuildKit のキャッシュマウントにより Docker ビルドを繰り返しても `~/.gradle` キャッシュが保持される（TD-002 対応） |
+| `frontend/Dockerfile`: `npm ci` に `--mount=type=cache,target=/root/.npm`、`npm run build` に `--mount=type=cache,target=/app/.next/cache` を追加 | npm キャッシュと Next.js インクリメンタルコンパイルキャッシュをビルド間で永続化。`package*.json` の分離は既存済み（TD-002 対応） |
+| `spring.mail.host` / `spring.mail.port` は `application.yml` で `${MAIL_HOST:mailhog}` / `${MAIL_PORT:1025}` として環境変数化（デフォルト: mailhog/1025） | ハードコードでは Docker 外での起動時に上書き不可。env1/env2 は MAIL_HOST/MAIL_PORT 環境変数で上書きされるため profile 側の host/port 重複オーバーライドを削除（TD-003 対応） |
+| ログインレート制限のキーは `loginAttempt:{ip}`（旧: `login:fail:{ip}`）。パスワードリセットは `pwd_reset:req:{userId}` のまま | TD-004 でスライディングウィンドウに移行。テストの `setUp()` で `loginAttempt:*` をクリアすること |
+| `AiRateLimiter` / `AuthService` のレート制限は Redis Sorted Set（ZADD + ZREMRANGEBYSCORE + ZCARD）でスライディングウィンドウを実装 | 固定ウィンドウはウィンドウ境界付近でバースト攻撃（2N リクエスト）が可能。スライディングウィンドウで防ぐ（TD-004 対応） |
+| フロントエンドテストカバレッジ: 95.58% Stmts / 83.11% Branch / 80.25% Funcs（2026年5月時点） | TD-001 対応。`lib/api/` 全ファイルに単体テスト追加（apiClient モック）、`themeStore`・`periodUtils`・`BudgetPanel`・`LedgerMemberPanel`・`TransactionEditForm`・`LedgerCreateModal` のテストを追加・拡充 |
 
 ---
 
