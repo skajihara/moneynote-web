@@ -201,11 +201,11 @@ register_and_login() {
     echo "$resp" | jq -r '.data.accessToken // ""'
 }
 
-token_normal=$(register_and_login "user_normal"        "正常系ユーザー"             "normal@example.com"     "Password123"); ok "user_normal"
-token_over=$(  register_and_login "user_over_budget"   "予算超過ユーザー"           "overbudget@example.com" "Password123"); ok "user_over_budget"
-token_nodata=$(register_and_login "user_no_data"       "データなしユーザー"         "nodata@example.com"     "Password123"); ok "user_no_data"
-token_minus=$( register_and_login "user_minus_balance" "残高マイナスユーザー"       "minus@example.com"      "Password123"); ok "user_minus_balance"
-token_other=$( register_and_login "user_other"         "別ユーザー（アクセス禁止）" "other@example.com"      "Password123"); ok "user_other"
+token_normal=$(register_and_login "user_normal"        "正常系ユーザー"             "normal@example.com"     "Password123!"); ok "user_normal"
+token_over=$(  register_and_login "user_over_budget"   "予算超過ユーザー"           "overbudget@example.com" "Password123!"); ok "user_over_budget"
+token_nodata=$(register_and_login "user_no_data"       "データなしユーザー"         "nodata@example.com"     "Password123!"); ok "user_no_data"
+token_minus=$( register_and_login "user_minus_balance" "残高マイナスユーザー"       "minus@example.com"      "Password123!"); ok "user_minus_balance"
+token_other=$( register_and_login "user_other"         "別ユーザー（アクセス禁止）" "other@example.com"      "Password123!"); ok "user_other"
 
 # ─── Step 3: 帳簿の更新・追加 ───────────────────────────────
 step_print "Step3: 帳簿の更新・追加中..."
@@ -449,11 +449,11 @@ echo "=== シードデータの投入が完了しました ==="
 echo "=================================================="
 echo "■ ログイン情報:"
 echo "  システム管理者:       admin              / Admin1234!  (SYSTEM_ADMIN・管理者画面 /admin にアクセス可能)"
-echo "  正常系ユーザー:       user_normal        / Password123"
-echo "  予算超過ユーザー:     user_over_budget   / Password123"
-echo "  データなしユーザー:   user_no_data       / Password123"
-echo "  残高マイナスユーザー: user_minus_balance / Password123"
-echo "  別ユーザー:           user_other         / Password123"
+echo "  正常系ユーザー:       user_normal        / Password123!"
+echo "  予算超過ユーザー:     user_over_budget   / Password123!"
+echo "  データなしユーザー:   user_no_data       / Password123!"
+echo "  残高マイナスユーザー: user_minus_balance / Password123!"
+echo "  別ユーザー:           user_other         / Password123!"
 echo ""
 echo "■ データ確認SQL:"
 echo "  $DC_CMD exec db psql -U moneynote -d moneynote -c \"SELECT user_id, user_name FROM users;\""
