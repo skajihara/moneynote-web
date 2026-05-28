@@ -112,6 +112,7 @@
 | アカウント削除キャンセルリンクの有効期限は当日の 23:59:59 JST（`LocalDate.now(ZoneId.of("Asia/Tokyo"))` で算出） | ユーザーが「本日中」より具体的な日時を把握できるようにするため。JVM の TimeZone に依存しないよう ZoneId を明示 |
 | `backend/Dockerfile`: `COPY build.gradle settings.gradle ./` → `gradle dependencies` → `COPY . .` → `gradle bootJar` の順に分離し、`--mount=type=cache,target=/root/.gradle` で Gradle キャッシュを永続化 | ソース変更時に依存関係の再ダウンロードを防ぐ。BuildKit のキャッシュマウントにより Docker ビルドを繰り返しても `~/.gradle` キャッシュが保持される（TD-002 対応） |
 | `frontend/Dockerfile`: `npm ci` に `--mount=type=cache,target=/root/.npm`、`npm run build` に `--mount=type=cache,target=/app/.next/cache` を追加 | npm キャッシュと Next.js インクリメンタルコンパイルキャッシュをビルド間で永続化。`package*.json` の分離は既存済み（TD-002 対応） |
+| `spring.mail.host` / `spring.mail.port` は `application.yml` で `${MAIL_HOST:mailhog}` / `${MAIL_PORT:1025}` として環境変数化（デフォルト: mailhog/1025） | ハードコードでは Docker 外での起動時に上書き不可。env1/env2 は MAIL_HOST/MAIL_PORT 環境変数で上書きされるため profile 側の host/port 重複オーバーライドを削除（TD-003 対応） |
 
 ---
 
