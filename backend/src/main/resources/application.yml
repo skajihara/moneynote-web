@@ -17,8 +17,8 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
   mail:
-    host: mailhog
-    port: 1025
+    host: ${MAIL_HOST:mailhog}
+    port: ${MAIL_PORT:1025}
   ai:
     anthropic:
       api-key: ${CLAUDE_API_KEY}
