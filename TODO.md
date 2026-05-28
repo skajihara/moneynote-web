@@ -1,6 +1,6 @@
 # TODO.md - 将来エンハンス・改善管理
 
-最終更新: 2026年5月（T-015 クローズ）
+最終更新: 2026年5月（T-015・TD-002 クローズ）
 
 ---
 
@@ -37,7 +37,6 @@
 | ID | Issue | 内容 | 優先度 |
 |---|---|---|---|
 | TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | フロントエンドのテストカバレッジが低い画面がある | 中 |
-| TD-002 | [#30](https://github.com/skajihara/moneynote-web/issues/30) | Docker ビルドが毎回時間がかかる（Gradle キャッシュの最適化余地あり） | 低 |
 | TD-003 | [#31](https://github.com/skajihara/moneynote-web/issues/31) | application.yml・application-env1.yml・application-env2.yml の整合性確認が必要 | 高 |
 | TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | 中 |
 
@@ -86,3 +85,4 @@
 | T-031 | [#34](https://github.com/skajihara/moneynote-web/issues/34) | インフラ | 本番 CD パイプラインで COOKIE_SECURE=true を設定 | application-env1/env2.yml のハードコードで対応済み |
 | T-035 | [#39](https://github.com/skajihara/moneynote-web/issues/39) | インフラ | 環境2を3層構成（RDS・ElastiCache）に移行 | feature/step21-env2-3tier-migration |
 | T-015 | [#15](https://github.com/skajihara/moneynote-web/issues/15) | インフラ | SES・Secrets Manager本格活用 | feature/step22-ses-integration |
+| TD-002 | [#30](https://github.com/skajihara/moneynote-web/issues/30) | 技術的負債 | Docker ビルドキャッシュ最適化（Gradle・npm・Next.js） | feature/issue-30-docker-build-cache |
