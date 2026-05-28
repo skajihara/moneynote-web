@@ -28,8 +28,8 @@ public class RegisterRequest {
 
     @NotBlank(message = "パスワードは必須です")
     @Pattern(
-        regexp = "^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$",
-        message = "パスワードは8文字以上で、英字と数字を各1文字以上含めてください"
+        regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*]).{8,}$",
+        message = "パスワードは大文字・小文字・数字・記号(!@#$%^&*)をそれぞれ含む8文字以上で入力してください"
     )
     private String password;
 }
