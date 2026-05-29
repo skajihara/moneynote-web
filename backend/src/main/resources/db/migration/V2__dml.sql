@@ -2,7 +2,7 @@
 -- V2__dml.sql  初期データ（統合版）
 -- ============================================================
 
--- システム管理者ユーザー（初期パスワードは別途管理。本番環境では起動後に必ず変更すること）
+-- システム管理者ユーザー（パスワード: admin1234）
 INSERT INTO users (user_id, user_name, email, password_hash, role, is_active)
 VALUES (
     'admin',
