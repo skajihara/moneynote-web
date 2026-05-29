@@ -59,6 +59,34 @@ beforeEach(() => {
   });
 });
 
+describe('AccountTab - プロフィールフォームバリデーション', () => {
+  it('ユーザー名が空のとき具体的なエラーメッセージが表示される', async () => {
+    render(<AccountTab />);
+    // userName フィールドはプロフィール読み込み後に値がセットされる
+    await waitFor(() => expect(screen.getByDisplayValue('テスト')).toBeInTheDocument());
+    const userNameInput = screen.getByDisplayValue('テスト');
+    await userEvent.clear(userNameInput);
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() => {
+      expect(screen.getByText('ユーザー名を入力してください')).toBeInTheDocument();
+    });
+  });
+
+  it('現在のパスワードが空のとき具体的なエラーメッセージが表示される', async () => {
+    render(<AccountTab />);
+    await userEvent.click(screen.getByRole('button', { name: '変更' }));
+    await waitFor(() => {
+      expect(screen.getByText('現在のパスワードを入力してください')).toBeInTheDocument();
+    });
+  });
+
+  it('ユーザー名フィールドにヒントテキストが表示されている', async () => {
+    render(<AccountTab />);
+    await waitFor(() => expect(screen.getByDisplayValue('テスト')).toBeInTheDocument());
+    expect(screen.getByText('50文字以内で入力してください')).toBeInTheDocument();
+  });
+});
+
 describe('AccountTab - アカウント削除ダイアログ', () => {
   it('削除ボタンクリックでダイアログが開く', async () => {
     render(<AccountTab />);
