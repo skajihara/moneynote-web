@@ -1,5 +1,5 @@
 # TODO.md - 将来エンハンス・改善管理
-最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ・T-040〜T-043 追加・T-040〜T-043 クローズ）
+最終更新: 2026年5月（T-040〜T-043 クローズ・T-044〜T-046・TD-005〜TD-007 追加：リポジトリ公開前監査より）
 
 ---
 
@@ -17,6 +17,9 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
+| T-044 | [#106](https://github.com/skajihara/moneynote-web/issues/106) | セキュリティ | 本番環境で Swagger UI が認証なしで外部公開されている | ALB セキュリティグループでの IP 制限、または本番環境での Swagger 無効化を検討する（監査指摘） |
+| T-045 | [#107](https://github.com/skajihara/moneynote-web/issues/107) | バグ | AiService.analyze() で accessValidator.validate() が2回呼び出されている | 1回目を削除し2回目取得の Ledger を再利用。不要な DB 往復を除去する（監査指摘） |
+| T-046 | [#108](https://github.com/skajihara/moneynote-web/issues/108) | リファクタ | 大型コンポーネントの分割（ReportsContent 387行 / AdminPage 394行 / TransactionEditForm 277行） | 各コンポーネントをタブ・セクション単位のサブコンポーネントに分割する（監査指摘） |
 | T-039 | [#58](https://github.com/skajihara/moneynote-web/issues/58) | インフラ | AWS ロギング・モニタリング基盤の構築（CloudWatch + Grafana） | 構造化ログ（JSON）+ CloudWatch Agent + Micrometer によるメトリクス収集・Grafana ダッシュボード・CloudWatch Alarms → Slack 通知 |
 | T-023 | [#23](https://github.com/skajihara/moneynote-web/issues/23) | UI/UX | 多言語対応（英語） | next-intl を使った i18n 対応。言語設定をアカウント設定に追加 |
 | T-024 | [#24](https://github.com/skajihara/moneynote-web/issues/24) | 機能 | PWA 対応 | オフライン閲覧・ホーム画面追加対応 |
@@ -33,7 +36,11 @@
 
 ## 技術的負債
 
-（未対応の技術的負債なし）
+| ID | Issue | カテゴリ | 機能・内容 | 概要 |
+|---|---|---|---|---|
+| TD-005 | [#109](https://github.com/skajihara/moneynote-web/issues/109) | リファクタ | 予算ステータス計算ロジックを3 Service から共通ユーティリティに集約 | BudgetService・DashboardService・AiService に重複する消化率計算・OVER/WARNING/NORMAL 判定を `BudgetStatusCalculator` に集約（監査指摘） |
+| TD-006 | [#110](https://github.com/skajihara/moneynote-web/issues/110) | リファクタ | 日付センチネル値の不整合・共通定数化 | CsvService（2999年）と TransactionService（9999年）の MAX_DATE 不整合を `DateConstants` で統一（監査指摘） |
+| TD-007 | [#111](https://github.com/skajihara/moneynote-web/issues/111) | リファクタ | コードクリーンアップ（単字変数・マジックナンバー・Tailwind重複クラス） | 単字変数リネーム・AI スコア閾値定数化・Tailwind クラス重複削除・`buildBreakdown` メソッド分割（監査指摘） |
 
 ---
 

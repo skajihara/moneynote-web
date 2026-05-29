@@ -94,20 +94,23 @@
 
 ### 残存対応リスト（要別途判断）
 
-1. **[中] 本番環境で Swagger UI が認証なし公開** (`application-env1/env2.yml`)  
+1. **[中] 本番環境で Swagger UI が認証なし公開** → [#106](https://github.com/skajihara/moneynote-web/issues/106) T-044  
    `CURRENT_STATUS.md` に意図的設計として記載済み。ALB セキュリティグループでの IP 制限を推奨。
 
-2. **[中] `AiService.analyze()` で `accessValidator.validate()` が2回呼び出される**  
+2. **[中] `AiService.analyze()` で `accessValidator.validate()` が2回呼び出される** → [#107](https://github.com/skajihara/moneynote-web/issues/107) T-045  
    不要な DB 往復。テストを含む修正が必要なため別 Issue として対応。
 
-3. **[中] `ReportsContent` コンポーネント 387行 / `AdminPage` 394行 / `TransactionEditForm` 277行**  
+3. **[中] `ReportsContent` 387行 / `AdminPage` 394行 / `TransactionEditForm` 277行** → [#108](https://github.com/skajihara/moneynote-web/issues/108) T-046  
    リファクタリングは別 Issue として計画的に対応。
 
-4. **[低] 予算ステータス計算ロジックが3 Service に重複**  
+4. **[低] 予算ステータス計算ロジックが3 Service に重複** → [#109](https://github.com/skajihara/moneynote-web/issues/109) TD-005  
    `BudgetService`, `DashboardService`, `AiService`。共通ユーティリティ化は別 Issue として対応。
 
-5. **[低] 日付センチネル値の不整合**（`CsvService`: 2999年 vs `TransactionService`: 9999年）  
+5. **[低] 日付センチネル値の不整合**（`CsvService`: 2999年 vs `TransactionService`: 9999年）→ [#110](https://github.com/skajihara/moneynote-web/issues/110) TD-006  
    共通定数化は別 Issue として対応。
+
+6. **[低] コードクリーンアップ**（単字変数・マジックナンバー・Tailwind重複クラス）→ [#111](https://github.com/skajihara/moneynote-web/issues/111) TD-007  
+   まとめて対応。
 
 ### クレデンシャル追加調査結果（MCP含む）
 
