@@ -26,10 +26,10 @@ const fmt = (n: number) =>
 
 const getPastMonths = (n: number): { year: number; month: number }[] => {
   const result = [];
-  const d = new Date();
+  const today = new Date();
   for (let i = n - 1; i >= 0; i--) {
-    const t = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    result.push({ year: t.getFullYear(), month: t.getMonth() + 1 });
+    const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    result.push({ year: targetDate.getFullYear(), month: targetDate.getMonth() + 1 });
   }
   return result;
 };

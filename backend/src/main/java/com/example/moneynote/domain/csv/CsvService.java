@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.csv;
 
 import com.example.moneynote.common.exception.ValidationException;
+import com.example.moneynote.common.util.DateConstants;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
 import com.example.moneynote.domain.category.Category;
@@ -61,8 +62,8 @@ public class CsvService {
 
         ledgerAccessValidator.validate(ledgerId, userId);
 
-        LocalDate from = startDate != null ? startDate : LocalDate.of(1900, 1, 1);
-        LocalDate to   = endDate   != null ? endDate   : LocalDate.of(2999, 12, 31);
+        LocalDate from = startDate != null ? startDate : DateConstants.MIN_DATE;
+        LocalDate to   = endDate   != null ? endDate   : DateConstants.MAX_DATE;
 
         List<Transaction> transactions = (categoryIds != null && !categoryIds.isEmpty())
                 ? transactionRepository.findForExportWithCategories(ledgerId, from, to, categoryIds)

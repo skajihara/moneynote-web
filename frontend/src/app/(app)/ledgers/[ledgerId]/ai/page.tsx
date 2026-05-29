@@ -133,7 +133,7 @@ const ScoreCard = ({ score }: { score: AiScore }) => {
               <ScoreBar score={val} />
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-8 text-right">{val}/25</span>
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 leading-relaxed pl-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed pl-0.5">
               {SCORE_DESCRIPTIONS[label].summary}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 font-mono leading-relaxed pl-0.5">
@@ -160,9 +160,9 @@ const predictNext = (values: number[]): number | null => {
   const sumX2 = values.reduce((s, _, i) => s + i * i, 0);
   const denom = n * sumX2 - sumX * sumX;
   if (denom === 0) return values[n - 1];
-  const m = (n * sumXY - sumX * sumY) / denom;
-  const b = (sumY - m * sumX) / n;
-  return Math.round(m * n + b);
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return Math.round(slope * n + intercept);
 };
 
 type TrendPoint = {
@@ -235,7 +235,7 @@ const TrendAnalysis = ({ summary }: { summary: AiSummary }) => {
   return (
     <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-4">
       <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200">トレンド分析</h2>
-      <p className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-500 leading-relaxed">{CHART_DESCRIPTIONS[period]}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">{CHART_DESCRIPTIONS[period]}</p>
 
       {/* カテゴリ別増減バッジ */}
       {categoryChanges.length > 0 && (
