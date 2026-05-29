@@ -161,6 +161,34 @@ class BudgetControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void getBudgets_categoryDeleted_true_when_category_is_inactive() throws Exception {
+        createBudget(expCatId, 2026, 4, 30000);
+
+        // カテゴリを論理削除する
+        Category cat = categoryRepository.findById(expCatId).orElseThrow();
+        cat.setActive(false);
+        categoryRepository.save(cat);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].categoryDeleted").value(true));
+    }
+
+    @Test
+    void getBudgets_categoryDeleted_false_when_category_is_active() throws Exception {
+        createBudget(expCatId, 2026, 4, 30000);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].categoryDeleted").value(false));
+    }
+
     // =========================================================================
     // POST /budgets (upsert)
     // =========================================================================

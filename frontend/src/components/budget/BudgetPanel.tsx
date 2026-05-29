@@ -253,8 +253,13 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
       className="w-full text-left px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
     >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-gray-100">
           {b.categoryIcon ? `${b.categoryIcon} ` : ''}{b.categoryName}
+          {b.categoryDeleted && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 font-normal">
+              カテゴリが削除されました
+            </span>
+          )}
         </span>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
           isOver ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : b.status === 'WARNING' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
