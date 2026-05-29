@@ -43,8 +43,13 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 
 if [[ "$ENV" == "env1" ]]; then
-  FRONTEND_URL=https://alb-ka-moneynote-01-567525932.ap-northeast-1.elb.amazonaws.com
-  # Step 20以降: RDS・ElastiCacheのエンドポイントをAWS CLIで動的取得する
+  echo "Fetching ALB DNS (alb-ka-moneynote-01)..."
+  ALB_DNS=$(aws elbv2 describe-load-balancers \
+    --region "${REGION}" \
+    --names "alb-ka-moneynote-01" \
+    --query 'LoadBalancers[0].DNSName' \
+    --output text)
+  FRONTEND_URL=https://${ALB_DNS}
   echo "Fetching RDS endpoint (rds-ka-moneynote-01)..."
   DB_HOST=$(aws rds describe-db-instances \
     --region "${REGION}" \
@@ -58,8 +63,13 @@ if [[ "$ENV" == "env1" ]]; then
     --query 'ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address' \
     --output text)
 elif [[ "$ENV" == "env2" ]]; then
-  FRONTEND_URL=https://alb-ka-moneynote-02-1066046470.ap-northeast-1.elb.amazonaws.com
-  # Step 21以降: RDS・ElastiCacheのエンドポイントをAWS CLIで動的取得する
+  echo "Fetching ALB DNS (alb-ka-moneynote-02)..."
+  ALB_DNS=$(aws elbv2 describe-load-balancers \
+    --region "${REGION}" \
+    --names "alb-ka-moneynote-02" \
+    --query 'LoadBalancers[0].DNSName' \
+    --output text)
+  FRONTEND_URL=https://${ALB_DNS}
   echo "Fetching RDS endpoint (RDS-ka-moneynote-02)..."
   DB_HOST=$(aws rds describe-db-instances \
     --region "${REGION}" \

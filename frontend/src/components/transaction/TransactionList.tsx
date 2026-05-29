@@ -18,12 +18,12 @@ const formatDate = (dateStr: string) => {
 /** 日付グループを生成して返す */
 function groupByDate(transactions: Transaction[]) {
   const map = new Map<string, Transaction[]>();
-  for (const t of transactions) {
-    const existing = map.get(t.transactionDate);
+  for (const tx of transactions) {
+    const existing = map.get(tx.transactionDate);
     if (existing) {
-      existing.push(t);
+      existing.push(tx);
     } else {
-      map.set(t.transactionDate, [t]);
+      map.set(tx.transactionDate, [tx]);
     }
   }
   return Array.from(map.entries()).sort(([a], [b]) => (a < b ? 1 : -1));
