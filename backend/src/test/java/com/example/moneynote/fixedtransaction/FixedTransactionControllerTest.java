@@ -213,6 +213,17 @@ class FixedTransactionControllerTest {
     }
 
     @Test
+    void createFixedTransaction_amountExceedsMax_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fixedReq(
+                                "家賃", "EXPENSE", expCatId, 1000000000, 1,
+                                "2026-01-01", "2036-01-01"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void createFixedTransaction_otherUser_returns403() throws Exception {
         mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/fixed-transactions")
                         .header("Authorization", "Bearer " + token2)

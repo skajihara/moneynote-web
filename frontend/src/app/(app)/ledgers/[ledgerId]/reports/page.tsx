@@ -166,9 +166,9 @@ const CategoryRow = ({ item, index, selected, onClick }: CategoryRowProps) => {
       }`}
     >
       <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-      <span className="flex-1 text-sm text-gray-800 dark:text-gray-100">{item.categoryName}</span>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{fmt(item.amount)}</span>
-      <span className="text-xs text-gray-400 dark:text-gray-500 w-12 text-right">{item.percentage.toFixed(1)}%</span>
+      <span className="flex-1 min-w-0 truncate text-sm text-gray-800 dark:text-gray-100">{item.categoryName}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-200 shrink-0">{fmt(item.amount)}</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500 w-12 text-right shrink-0">{item.percentage.toFixed(1)}%</span>
     </button>
   );
 };

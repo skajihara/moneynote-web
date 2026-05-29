@@ -166,6 +166,25 @@ describe('FixedTransactionForm', () => {
     expect(screen.queryByText('引落日（毎月何日）')).not.toBeInTheDocument();
   });
 
+  it('金額が999,999,999を超えるとバリデーションエラーが出る', async () => {
+    render(
+      <FixedTransactionForm
+        ledgerId="ldg_1"
+        onSaved={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
+    await screen.findByText('食費');
+    await userEvent.type(screen.getByPlaceholderText('家賃、電気代...'), '電気代');
+    await userEvent.clear(screen.getByPlaceholderText('0'));
+    await userEvent.type(screen.getByPlaceholderText('0'), '1000000000');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() =>
+      expect(screen.getByText('金額は999,999,999円以下で入力してください')).toBeInTheDocument()
+    );
+    expect(mockCreateFixed).not.toHaveBeenCalled();
+  });
+
   it('編集時に既存の intervalType が選択される', async () => {
     render(
       <FixedTransactionForm

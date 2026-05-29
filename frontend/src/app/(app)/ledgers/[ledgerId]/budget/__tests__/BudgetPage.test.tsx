@@ -277,6 +277,21 @@ describe('BudgetPanel', () => {
     });
   });
 
+  it('金額が999,999,999を超えるとバリデーションエラーが出る', async () => {
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await screen.findByText('この月の予算がまだ設定されていません');
+    await userEvent.click(screen.getByRole('button', { name: '+ 予算を追加' }));
+    await screen.findByText('予算を追加');
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'cat_food');
+    await userEvent.clear(screen.getByPlaceholderText('0'));
+    await userEvent.type(screen.getByPlaceholderText('0'), '1000000000');
+    await userEvent.click(screen.getByRole('button', { name: '保存' }));
+    await waitFor(() =>
+      expect(screen.getByText('金額は999,999,999円以下で入力してください')).toBeInTheDocument()
+    );
+    expect(mockUpsertBudget).not.toHaveBeenCalled();
+  });
+
   it('categoryDeleted が true の予算行に「削除済み」バッジが表示される', async () => {
     mockGetBudgets.mockResolvedValue({
       data: [makeBudget({ categoryDeleted: true })],

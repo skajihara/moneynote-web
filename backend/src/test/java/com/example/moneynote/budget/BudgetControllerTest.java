@@ -242,6 +242,19 @@ class BudgetControllerTest {
     }
 
     @Test
+    void upsertBudget_amountExceedsMax_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "categoryId", expCatId,
+                                "year", 2026, "month", 4,
+                                "amount", 1000000000))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
     void upsertBudget_otherUser_returns403() throws Exception {
         mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/budgets")
                         .header("Authorization", "Bearer " + token2)
