@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-001〜TD-004 完了・T-040 作業中
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-001〜TD-004 完了・T-040 完了・T-041 作業中
 
 ---
 
@@ -35,7 +35,8 @@
 
 ## 現在の状態
 
-- T-040 作業中（`feature/issue-98-budget-deleted-category`）。バックエンド・フロントエンド実装完了、テストグリーン
+- T-041 作業中（`feature/issue-99-contact-auto-reply`）。ContactService に自動返信メール実装完了、テストグリーン
+- T-040 完了（`feature/issue-98-budget-deleted-category`）。PR #102 作成済み
 - TD-001〜TD-004 完了 PRマージ済み
 - Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
