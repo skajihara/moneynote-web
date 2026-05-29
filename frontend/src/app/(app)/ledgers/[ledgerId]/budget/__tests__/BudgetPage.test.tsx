@@ -63,6 +63,7 @@ const makeBudget = (overrides: Partial<Budget> = {}): Budget => ({
   categoryId: 'cat_food',
   categoryName: '食費',
   categoryIcon: null,
+  categoryDeleted: false,
   budgetAmount: 30000,
   actualAmount: 20000,
   percentage: 66.7,
@@ -274,6 +275,29 @@ describe('BudgetPanel', () => {
     await waitFor(() => {
       expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
     });
+  });
+
+  it('categoryDeleted が true の予算行に「削除済み」バッジが表示される', async () => {
+    mockGetBudgets.mockResolvedValue({
+      data: [makeBudget({ categoryDeleted: true })],
+      error: null,
+      timestamp: '',
+    });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    expect(await screen.findByText('カテゴリが削除されました')).toBeInTheDocument();
+  });
+
+  it('categoryDeleted が false の予算行に「削除済み」バッジが表示されない', async () => {
+    mockGetBudgets.mockResolvedValue({
+      data: [makeBudget({ categoryDeleted: false })],
+      error: null,
+      timestamp: '',
+    });
+    render(<BudgetPanel ledgerId="ldg_1" />);
+    await waitFor(() => {
+      expect(screen.getAllByText('食費').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText('カテゴリが削除されました')).not.toBeInTheDocument();
   });
 });
 

@@ -198,6 +198,7 @@ public class BudgetService {
                 budget.getCategory().getCategoryId(),
                 budget.getCategory().getCategoryName(),
                 budget.getCategory().getIcon(),
+                !budget.getCategory().isActive(),
                 budgetAmt,
                 actual,
                 pct,

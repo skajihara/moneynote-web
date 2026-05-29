@@ -7,6 +7,7 @@ public record BudgetResponse(
         String categoryId,
         String categoryName,
         String categoryIcon,
+        boolean categoryDeleted,
         BigDecimal budgetAmount,
         BigDecimal actualAmount,
         double percentage,
