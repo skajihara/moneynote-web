@@ -75,6 +75,7 @@ const TransactionEditForm = ({
   });
 
   const currentType = watch('transactionType');
+  const memoValue = watch('memo') ?? '';
 
   // カテゴリ一覧を種別に応じて取得（state 更新のみ）
   useEffect(() => {
@@ -217,6 +218,7 @@ const TransactionEditForm = ({
               placeholder="0"
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">1〜999,999,999円</p>
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
             )}
@@ -243,7 +245,10 @@ const TransactionEditForm = ({
 
           {/* メモ */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">メモ（任意）</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">メモ（任意）</label>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{memoValue.length}/500</span>
+            </div>
             <textarea
               {...register('memo')}
               rows={2}

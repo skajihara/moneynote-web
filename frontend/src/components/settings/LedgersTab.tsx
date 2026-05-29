@@ -47,16 +47,16 @@ export type SubTab = 'info' | 'categories' | 'members' | 'delete';
 // ─── schemas ───────────────────────────────────────────────────────────────
 
 const ledgerSchema = z.object({
-  ledgerName: z.string().min(1, '必須').max(100),
+  ledgerName: z.string().min(1, '帳簿名を入力してください').max(100, '帳簿名は100文字以内で入力してください'),
   initialBalance: z.coerce.number().default(0),
-  startDayOfMonth: z.coerce.number().min(1).max(28).default(1),
-  startMonthOfYear: z.coerce.number().min(1).max(12).default(1),
-  themeColor: z.string().max(30).default('#4A90D9'),
+  startDayOfMonth: z.coerce.number().min(1, '1〜28の範囲で入力してください').max(28, '1〜28の範囲で入力してください').default(1),
+  startMonthOfYear: z.coerce.number().min(1, '1〜12の範囲で入力してください').max(12, '1〜12の範囲で入力してください').default(1),
+  themeColor: z.string().max(30, 'テーマカラーが長すぎます').default('#4A90D9'),
 });
 type LedgerForm = z.infer<typeof ledgerSchema>;
 
 const categorySchema = z.object({
-  categoryName: z.string().min(1, '必須').max(50),
+  categoryName: z.string().min(1, 'カテゴリ名を入力してください').max(50, 'カテゴリ名は50文字以内で入力してください'),
   categoryType: z.enum(['INCOME', 'EXPENSE']),
 });
 type CategoryForm = z.infer<typeof categorySchema>;
@@ -254,16 +254,21 @@ const CategorySection = ({ ledgerId, type, label }: CategorySectionProps) => {
       </DndContext>
 
       {showAdd && (
-        <form onSubmit={onSubmit} className="flex gap-2 mt-2">
-          <input
-            {...form.register('categoryName')}
-            placeholder="カテゴリ名"
-            className="flex-1 border border-[var(--theme-color)] rounded-md px-2 py-1 text-sm focus:outline-none dark:bg-gray-700 dark:text-gray-100"
-            autoFocus
-          />
-          <button type="submit" className="text-xs btn-theme px-3 py-1 rounded">追加</button>
-          <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-gray-400 dark:text-gray-500 px-2">×</button>
-        </form>
+        <div className="mt-2">
+          <form onSubmit={onSubmit} className="flex gap-2">
+            <input
+              {...form.register('categoryName')}
+              placeholder="カテゴリ名（50文字以内）"
+              className="flex-1 border border-[var(--theme-color)] rounded-md px-2 py-1 text-sm focus:outline-none dark:bg-gray-700 dark:text-gray-100"
+              autoFocus
+            />
+            <button type="submit" className="text-xs btn-theme px-3 py-1 rounded">追加</button>
+            <button type="button" onClick={() => setShowAdd(false)} className="text-xs text-gray-400 dark:text-gray-500 px-2">×</button>
+          </form>
+          {form.formState.errors.categoryName && (
+            <p className="text-red-500 text-xs mt-1">{form.formState.errors.categoryName.message}</p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -366,6 +371,7 @@ const LedgerSettingsView = ({ ledger, onBack, onUpdated, onDeleted, initialSubTa
                 {...form.register('ledgerName')}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
               />
+              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">100文字以内で入力してください</p>
               {form.formState.errors.ledgerName && (
                 <p className="text-red-500 text-xs mt-1">{form.formState.errors.ledgerName.message}</p>
               )}

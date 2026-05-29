@@ -36,6 +36,7 @@ const ContactPage = () => {
     defaultValues: { subject: '', body: '' },
   });
 
+  const subjectValue = watch('subject');
   const bodyValue = watch('body');
 
   const onSubmit = async (values: FormValues) => {
@@ -60,9 +61,12 @@ const ContactPage = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         {/* 件名 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            件名
-          </label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              件名
+            </label>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{subjectValue.length} / 100</span>
+          </div>
           <input
             {...register('subject')}
             type="text"
