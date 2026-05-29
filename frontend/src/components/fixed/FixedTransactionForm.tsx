@@ -32,12 +32,13 @@ const schema = z.object({
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
   dayOfMonth: z
-    .number({ invalid_type_error: '日付を入力してください' })
+    .number({ invalid_type_error: '引落日を入力してください' })
     .int()
-    .min(1, '1以上の値を入力してください')
-    .max(28, '28以下の値を入力してください'),
+    .min(1, '引落日は1〜28の範囲で入力してください')
+    .max(28, '引落日は1〜28の範囲で入力してください'),
   intervalType: z.enum([
     'DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY',
     'BIMONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL',
@@ -94,6 +95,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
   const currentType = watch('transactionType');
   const currentInterval = watch('intervalType');
+  const memoValue = watch('memo') ?? '';
   const showDayOfMonth = USES_DAY_OF_MONTH.includes(currentInterval);
 
   useEffect(() => {
@@ -147,6 +149,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
           placeholder="家賃、電気代..."
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">100文字以内</p>
         {errors.fixedName && (
           <p className="text-red-500 text-xs mt-1">{errors.fixedName.message}</p>
         )}
@@ -202,6 +205,7 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
           placeholder="0"
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
         />
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">1〜999,999,999円</p>
         {errors.amount && (
           <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
         )}
@@ -274,7 +278,10 @@ const FixedTransactionForm = ({ ledgerId, editing, beforeSaveConfirm, onSaved, o
 
       {/* メモ */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">メモ（任意）</label>
+        <div className="flex justify-between items-center mb-1">
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">メモ（任意）</label>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{memoValue.length}/500</span>
+        </div>
         <textarea
           {...register('memo')}
           rows={2}

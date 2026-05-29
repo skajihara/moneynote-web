@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.ai;
 
 import com.example.moneynote.common.ratelimit.AiRateLimiter;
+import com.example.moneynote.common.util.BudgetStatusCalculator;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
@@ -49,6 +50,12 @@ public class AiService {
 
     @Value("${ai.mock:false}")
     private boolean mockMode;
+
+    // スコア計算の閾値定数（各スコアは 0〜25 の範囲）
+    private static final double BUDGET_SCORE_UPPER_PCT  = 120.0; // これ以上の消化率でスコア 0
+    private static final double BUDGET_SCORE_RANGE      = 40.0;  // 80%〜120% の範囲でスコアが変動
+    private static final double SAVINGS_RATE_FULL_SCORE = 20.0;  // 貯蓄率 20% 以上でスコア最大
+    private static final double STABILITY_CV_THRESHOLD  = 0.5;   // 変動係数がこれ以上でスコア 0
 
     // =========================================================================
     // GET /ai/summary - Claude API を呼ばずに集計データのみ返す
@@ -190,65 +197,69 @@ public class AiService {
         BigDecimal totalIncome  = sumType(monthTx, TransactionType.INCOME);
         BigDecimal totalExpense = sumType(monthTx, TransactionType.EXPENSE);
         BigDecimal netBalance   = totalIncome.subtract(totalExpense);
+        return new ScoreBreakdownDto(
+                calcBalanceScore(totalIncome, netBalance),
+                calcBudgetScore(monthTx, budgets, ym, startDay),
+                calcSavingsScore(totalIncome, totalExpense, netBalance),
+                calcStabilityScore(threeMoTx, ym, startDay)
+        );
+    }
 
-        // 1) 収支バランス (0〜25)
-        int balanceScore;
+    /** 1) 収支バランス (0〜25): 黒字なら25、赤字は赤字率に応じて減点 */
+    private int calcBalanceScore(BigDecimal totalIncome, BigDecimal netBalance) {
         if (totalIncome.compareTo(BigDecimal.ZERO) == 0) {
-            balanceScore = netBalance.compareTo(BigDecimal.ZERO) >= 0 ? 25 : 0;
-        } else if (netBalance.compareTo(BigDecimal.ZERO) >= 0) {
-            balanceScore = 25;
-        } else {
-            double ratio = netBalance.divide(totalIncome, 4, RoundingMode.HALF_UP).doubleValue();
-            balanceScore = (int) Math.max(0, 25 * (1.0 + ratio));
+            return netBalance.compareTo(BigDecimal.ZERO) >= 0 ? 25 : 0;
         }
+        if (netBalance.compareTo(BigDecimal.ZERO) >= 0) return 25;
+        double ratio = netBalance.divide(totalIncome, 4, RoundingMode.HALF_UP).doubleValue();
+        return (int) Math.max(0, 25 * (1.0 + ratio));
+    }
 
-        // 2) 予算達成率 (0〜25)
-        int budgetScore;
-        if (budgets.isEmpty()) {
-            budgetScore = 25;
-        } else {
-            LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
-                    ym.getYear(), ym.getMonthValue(), startDay);
-            LocalDate from = period.from();
-            LocalDate to   = period.to();
-            Map<String, BigDecimal> expByCat = new LinkedHashMap<>();
-            for (Transaction t : monthTx) {
-                if (t.getTransactionType() == TransactionType.EXPENSE
-                        && t.getCategory() != null
-                        && !t.getTransactionDate().isBefore(from)
-                        && !t.getTransactionDate().isAfter(to)) {
-                    expByCat.merge(t.getCategory().getCategoryId(), t.getAmount(), BigDecimal::add);
-                }
+    /** 2) 予算達成率 (0〜25): 予算未登録なら25、消化率 80%〜120% の範囲でスコアが変動 */
+    private int calcBudgetScore(List<Transaction> monthTx, List<Budget> budgets,
+                                YearMonth ym, int startDay) {
+        if (budgets.isEmpty()) return 25;
+        LocalDateRange period = LedgerPeriodCalculator.getMonthPeriod(
+                ym.getYear(), ym.getMonthValue(), startDay);
+        LocalDate from = period.from();
+        LocalDate to   = period.to();
+        Map<String, BigDecimal> expByCat = new LinkedHashMap<>();
+        for (Transaction t : monthTx) {
+            if (t.getTransactionType() == TransactionType.EXPENSE
+                    && t.getCategory() != null
+                    && !t.getTransactionDate().isBefore(from)
+                    && !t.getTransactionDate().isAfter(to)) {
+                expByCat.merge(t.getCategory().getCategoryId(), t.getAmount(), BigDecimal::add);
             }
-            double avgPct = budgets.stream().mapToDouble(b -> {
-                BigDecimal actual = expByCat.getOrDefault(b.getCategory().getCategoryId(), BigDecimal.ZERO);
-                if (b.getAmount().compareTo(BigDecimal.ZERO) == 0) return 0.0;
-                return actual.multiply(BigDecimal.valueOf(100))
-                             .divide(b.getAmount(), 2, RoundingMode.HALF_UP)
-                             .doubleValue();
-            }).average().orElse(0.0);
-            budgetScore = (int) Math.max(0, Math.min(25, 25 * (120.0 - avgPct) / 40.0));
         }
+        double avgPct = budgets.stream().mapToDouble(b -> {
+            BigDecimal actual = expByCat.getOrDefault(b.getCategory().getCategoryId(), BigDecimal.ZERO);
+            return BudgetStatusCalculator.calcUsageRate(b.getAmount(), actual);
+        }).average().orElse(0.0);
+        return (int) Math.max(0, Math.min(25,
+                25 * (BUDGET_SCORE_UPPER_PCT - avgPct) / BUDGET_SCORE_RANGE));
+    }
 
-        // 3) 貯蓄率 (0〜25)
-        int savingsScore;
+    /** 3) 貯蓄率 (0〜25): 収入に対する貯蓄率が 20% 以上でスコア最大 */
+    private int calcSavingsScore(BigDecimal totalIncome, BigDecimal totalExpense,
+                                 BigDecimal netBalance) {
         if (totalIncome.compareTo(BigDecimal.ZERO) == 0) {
-            savingsScore = totalExpense.compareTo(BigDecimal.ZERO) == 0 ? 12 : 0;
-        } else {
-            double savingsRate = netBalance.multiply(BigDecimal.valueOf(100))
-                    .divide(totalIncome, 4, RoundingMode.HALF_UP).doubleValue();
-            savingsScore = savingsRate >= 20.0 ? 25
-                    : savingsRate <= 0.0 ? 0
-                    : (int) (savingsRate / 20.0 * 25);
+            return totalExpense.compareTo(BigDecimal.ZERO) == 0 ? 12 : 0;
         }
+        double savingsRate = netBalance.multiply(BigDecimal.valueOf(100))
+                .divide(totalIncome, 4, RoundingMode.HALF_UP).doubleValue();
+        if (savingsRate >= SAVINGS_RATE_FULL_SCORE) return 25;
+        if (savingsRate <= 0.0) return 0;
+        return (int) (savingsRate / SAVINGS_RATE_FULL_SCORE * 25);
+    }
 
-        // 4) 支出安定度 (0〜25): 3ヶ月の月別支出の変動係数（月度開始日を考慮）
-        int stabilityScore;
+    /** 4) 支出安定度 (0〜25): 3ヶ月の月別支出の変動係数（月度開始日を考慮） */
+    private int calcStabilityScore(List<Transaction> threeMoTx, YearMonth ym, int startDay) {
         List<BigDecimal> monthlyExpenses = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            YearMonth m = ym.minusMonths(2 - i);
+            YearMonth targetYm = ym.minusMonths(2 - i);
             LocalDateRange mRange = LedgerPeriodCalculator.getMonthPeriod(
-                    m.getYear(), m.getMonthValue(), startDay);
+                    targetYm.getYear(), targetYm.getMonthValue(), startDay);
             LocalDate mFrom = mRange.from();
             LocalDate mTo   = mRange.to();
             BigDecimal exp = threeMoTx.stream()
@@ -264,16 +275,14 @@ public class AiService {
         double mean = monthlyExpenses.stream()
                 .mapToDouble(BigDecimal::doubleValue).average().orElse(0.0);
         if (mean == 0.0 || nonZeroMonths < 2) {
-            stabilityScore = nonZeroMonths == 0 ? 25 : 12;
-        } else {
-            double variance = monthlyExpenses.stream()
-                    .mapToDouble(e -> Math.pow(e.doubleValue() - mean, 2))
-                    .average().orElse(0.0);
-            double cv = Math.sqrt(variance) / mean;
-            stabilityScore = (int) Math.max(0, Math.min(25, 25 * (0.5 - cv) / 0.5));
+            return nonZeroMonths == 0 ? 25 : 12;
         }
-
-        return new ScoreBreakdownDto(balanceScore, budgetScore, savingsScore, stabilityScore);
+        double variance = monthlyExpenses.stream()
+                .mapToDouble(e -> Math.pow(e.doubleValue() - mean, 2))
+                .average().orElse(0.0);
+        double cv = Math.sqrt(variance) / mean;
+        return (int) Math.max(0, Math.min(25,
+                25 * (STABILITY_CV_THRESHOLD - cv) / STABILITY_CV_THRESHOLD));
     }
 
     private String scoreToGrade(int score) {
@@ -291,7 +300,7 @@ public class AiService {
     public AiAnalyzeResponse analyze(
             String ledgerId, PeriodType period, AdviceType adviceType, String userId) {
 
-        accessValidator.validate(ledgerId, userId);
+        Ledger ledger = accessValidator.validate(ledgerId, userId);
 
         // ---------- キャッシュ確認 ----------
         Optional<AiAdviceCache> cached = aiAdviceCacheRepository
@@ -317,7 +326,6 @@ public class AiService {
         // ---------- キャッシュ保存 ----------
         LocalDateTime now      = LocalDateTime.now();
         LocalDateTime expiresAt = now.plusHours(24);
-        Ledger ledger = accessValidator.validate(ledgerId, userId);
 
         AiAdviceCache cache = AiAdviceCache.builder()
                 .cacheId(IdGenerator.generateUnique("aic_", aiAdviceCacheRepository::existsById))

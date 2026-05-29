@@ -161,6 +161,34 @@ class BudgetControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void getBudgets_categoryDeleted_true_when_category_is_inactive() throws Exception {
+        createBudget(expCatId, 2026, 4, 30000);
+
+        // カテゴリを論理削除する
+        Category cat = categoryRepository.findById(expCatId).orElseThrow();
+        cat.setActive(false);
+        categoryRepository.save(cat);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].categoryDeleted").value(true));
+    }
+
+    @Test
+    void getBudgets_categoryDeleted_false_when_category_is_active() throws Exception {
+        createBudget(expCatId, 2026, 4, 30000);
+
+        mockMvc.perform(get("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .param("year", "2026").param("month", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].categoryDeleted").value(false));
+    }
+
     // =========================================================================
     // POST /budgets (upsert)
     // =========================================================================
@@ -211,6 +239,19 @@ class BudgetControllerTest {
                                 "year", 2026, "month", 4,
                                 "amount", 50000))))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void upsertBudget_amountExceedsMax_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/budgets")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "categoryId", expCatId,
+                                "year", 2026, "month", 4,
+                                "amount", 1000000000))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.example.moneynote.domain.budget;
 import com.example.moneynote.common.exception.AccessDeniedException;
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.ValidationException;
+import com.example.moneynote.common.util.BudgetStatusCalculator;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
@@ -145,11 +146,8 @@ public class BudgetService {
             List<BudgetHeatmapItemDto> items = budgets.stream().map(b -> {
                 BigDecimal actual = actualMap.getOrDefault(
                         b.getCategory().getCategoryId(), BigDecimal.ZERO);
-                double pct = b.getAmount().compareTo(BigDecimal.ZERO) == 0 ? 0.0
-                        : actual.multiply(BigDecimal.valueOf(100))
-                                .divide(b.getAmount(), 2, RoundingMode.HALF_UP)
-                                .doubleValue();
-                String status = pct >= 100.0 ? "OVER" : pct >= 80.0 ? "WARNING" : "NORMAL";
+                double pct = BudgetStatusCalculator.calcUsageRate(b.getAmount(), actual);
+                String status = BudgetStatusCalculator.calcStatus(pct);
                 return new BudgetHeatmapItemDto(
                         b.getCategory().getCategoryId(),
                         b.getCategory().getCategoryName(),
@@ -177,19 +175,8 @@ public class BudgetService {
 
     private BudgetResponse toResponse(Budget budget, BigDecimal actual) {
         BigDecimal budgetAmt = budget.getAmount();
-        double pct = budgetAmt.compareTo(BigDecimal.ZERO) == 0 ? 0.0
-                : actual.multiply(BigDecimal.valueOf(100))
-                        .divide(budgetAmt, 2, RoundingMode.HALF_UP)
-                        .doubleValue();
-
-        String status;
-        if (pct >= 100.0) {
-            status = "OVER";
-        } else if (pct >= 80.0) {
-            status = "WARNING";
-        } else {
-            status = "NORMAL";
-        }
+        double pct = BudgetStatusCalculator.calcUsageRate(budgetAmt, actual);
+        String status = BudgetStatusCalculator.calcStatus(pct);
 
         BigDecimal remaining = budgetAmt.subtract(actual);
 
@@ -198,6 +185,7 @@ public class BudgetService {
                 budget.getCategory().getCategoryId(),
                 budget.getCategory().getCategoryName(),
                 budget.getCategory().getIcon(),
+                !budget.getCategory().isActive(),
                 budgetAmt,
                 actual,
                 pct,

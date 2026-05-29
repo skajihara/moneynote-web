@@ -2,6 +2,7 @@ package com.example.moneynote.domain.transaction;
 
 import com.example.moneynote.common.exception.ResourceNotFoundException;
 import com.example.moneynote.common.exception.ValidationException;
+import com.example.moneynote.common.util.DateConstants;
 import com.example.moneynote.common.util.IdGenerator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
@@ -239,9 +240,9 @@ public class TransactionService {
         // Hibernate 6 は LocalDate 型パラメータに null を渡すと型解決できないため
         // null の代わりにセンチネル値を渡して BETWEEN で範囲を表現する
         LocalDate from = (startDate != null && !startDate.isBlank())
-                ? LocalDate.parse(startDate) : LocalDate.of(1900, 1, 1);
+                ? LocalDate.parse(startDate) : DateConstants.MIN_DATE;
         LocalDate to   = (endDate != null && !endDate.isBlank())
-                ? LocalDate.parse(endDate) : LocalDate.of(9999, 12, 31);
+                ? LocalDate.parse(endDate) : DateConstants.MAX_DATE;
         String kw    = (keyword == null || keyword.isBlank()) ? "" : keyword.trim();
         String catId = (categoryId == null || categoryId.isBlank()) ? "" : categoryId;
 

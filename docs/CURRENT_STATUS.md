@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-004 マージ済み・TD-001 作業中
+最終更新: 2026年5月（Step 22 完了・main マージ済み v1.5.0）、TD-001〜TD-004 完了・T-040〜T-043 完了
 
 ---
 
@@ -35,7 +35,12 @@
 
 ## 現在の状態
 
-- TD-001~TD-004 完了 PRマージ済み
+- リポジトリ公開前監査完了（`fix/pre-release-audit-cleanup`）。高深刻度2件・中深刻度1件・低深刻度1件を修正済み。詳細は `docs/audit-report.md` を参照
+- T-043 完了（`feature/issue-101-validation-messages`）。FE Zod エラーメッセージ改善・ヒントテキスト追加・テストグリーン
+- T-042 完了（`feature/issue-100-amount-overflow`）。PR #104 作成済み
+- T-041 完了（`feature/issue-99-contact-auto-reply`）。PR #103 作成済み
+- T-040 完了（`feature/issue-98-budget-deleted-category`）。PR #102 作成済み
+- TD-001〜TD-004 完了 PRマージ済み
 - Step 22 完了（`feature/step22-ses-integration`）。main マージ済み（v1.5.0）
 - Step 22 の主な内容:
   - `scripts/secrets-fetch.sh`: `get_secret_key` 関数を追加し `moneynote/ses-smtp`（username/password）・`moneynote/ses-from-address` を取得。`MAIL_HOST=localhost` を `email-smtp.ap-northeast-1.amazonaws.com:587` に変更

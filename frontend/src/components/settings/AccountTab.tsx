@@ -19,22 +19,22 @@ import { logout as logoutApi } from '@/lib/api/auth';
 // ─── schemas ───────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
-  userName: z.string().min(1, '必須').max(50, '50文字以内で入力してください'),
-  email: z.string().email('メールアドレスの形式が正しくありません').max(255),
+  userName: z.string().min(1, 'ユーザー名を入力してください').max(50, 'ユーザー名は50文字以内で入力してください'),
+  email: z.string().email('メールアドレスの形式が正しくありません').max(255, 'メールアドレスは255文字以内で入力してください'),
 });
 type ProfileForm = z.infer<typeof profileSchema>;
 
 const passwordSchema = z
   .object({
-    currentPassword: z.string().min(1, '必須'),
+    currentPassword: z.string().min(1, '現在のパスワードを入力してください'),
     newPassword: z
       .string()
-      .min(8, '8文字以上')
+      .min(8, '8文字以上で入力してください')
       .regex(/[A-Z]/, '英大文字を1文字以上含めてください')
       .regex(/[a-z]/, '英小文字を1文字以上含めてください')
       .regex(/\d/, '数字を1文字以上含めてください')
       .regex(/[!@#$%^&*]/, '記号（!@#$%^&*）を1文字以上含めてください'),
-    confirmPassword: z.string().min(1, '必須'),
+    confirmPassword: z.string().min(1, '確認パスワードを入力してください'),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
     message: '新しいパスワードが一致しません',
@@ -155,6 +155,7 @@ const AccountTab = () => {
               {...profileForm.register('userName')}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-color)] dark:bg-gray-700 dark:text-gray-100"
             />
+            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">50文字以内で入力してください</p>
             {profileForm.formState.errors.userName && (
               <p className="text-red-500 text-xs mt-1">{profileForm.formState.errors.userName.message}</p>
             )}

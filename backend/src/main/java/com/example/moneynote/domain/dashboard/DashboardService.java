@@ -1,5 +1,6 @@
 package com.example.moneynote.domain.dashboard;
 
+import com.example.moneynote.common.util.BudgetStatusCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator;
 import com.example.moneynote.common.util.LedgerPeriodCalculator.LocalDateRange;
 import com.example.moneynote.common.validator.LedgerAccessValidator;
@@ -122,20 +123,8 @@ public class DashboardService {
         for (Budget b : budgets) {
             BigDecimal actual = expenseByCat.getOrDefault(
                     b.getCategory().getCategoryId(), BigDecimal.ZERO);
-            double pct = b.getAmount().compareTo(BigDecimal.ZERO) == 0
-                    ? 0.0
-                    : actual.multiply(BigDecimal.valueOf(100))
-                             .divide(b.getAmount(), 2, RoundingMode.HALF_UP)
-                             .doubleValue();
-
-            String status;
-            if (pct >= 100.0) {
-                status = "OVER";
-            } else if (pct >= 80.0) {
-                status = "WARNING";
-            } else {
-                status = "NORMAL";
-            }
+            double pct = BudgetStatusCalculator.calcUsageRate(b.getAmount(), actual);
+            String status = BudgetStatusCalculator.calcStatus(pct);
 
             budgetStatus.add(new BudgetStatusDto(
                     b.getCategory().getCategoryId(),

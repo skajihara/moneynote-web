@@ -26,10 +26,10 @@ const fmt = (n: number) =>
 
 const getPastMonths = (n: number): { year: number; month: number }[] => {
   const result = [];
-  const d = new Date();
+  const today = new Date();
   for (let i = n - 1; i >= 0; i--) {
-    const t = new Date(d.getFullYear(), d.getMonth() - i, 1);
-    result.push({ year: t.getFullYear(), month: t.getMonth() + 1 });
+    const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    result.push({ year: targetDate.getFullYear(), month: targetDate.getMonth() + 1 });
   }
   return result;
 };
@@ -40,7 +40,8 @@ const schema = z.object({
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -106,6 +107,7 @@ const BudgetAddModal = ({ ledgerId, year, month, categories, onClose, onSaved }:
               placeholder="0"
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">1〜999,999,999円</p>
             {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
           </div>
           <div className="flex gap-2 pt-1">
@@ -144,7 +146,8 @@ type EditDialogProps = {
 const editSchema = z.object({
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
 });
 type EditFormValues = z.infer<typeof editSchema>;
 
@@ -203,6 +206,7 @@ const BudgetEditDialog = ({ ledgerId, year, month, budget, onClose, onSaved }: E
               min="1"
               className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">1〜999,999,999円</p>
             {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
           </div>
           <div className="flex gap-2 pt-1">
@@ -253,8 +257,13 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
       className="w-full text-left px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
     >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-gray-100">
           {b.categoryIcon ? `${b.categoryIcon} ` : ''}{b.categoryName}
+          {b.categoryDeleted && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 font-normal">
+              カテゴリが削除されました
+            </span>
+          )}
         </span>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
           isOver ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : b.status === 'WARNING' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -266,13 +275,13 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
         <div className={`flex-1 rounded-full h-1.5 overflow-hidden ${isOver ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
           <div className={`h-1.5 rounded-full ${barColor} ${isOver ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
         </div>
-        <span className={`text-xs w-12 text-right font-medium ${isOver ? 'text-red-500' : 'text-gray-500'}`}>
+        <span className={`text-xs shrink-0 text-right font-medium ${isOver ? 'text-red-500' : 'text-gray-500'}`}>
           {b.percentage.toFixed(1)}%
         </span>
       </div>
-      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>実績: <span className="text-red-500 font-medium">{fmt(b.actualAmount)}</span></span>
-        <span>
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 gap-2">
+        <span className="min-w-0 truncate">実績: <span className="text-red-500 font-medium">{fmt(b.actualAmount)}</span></span>
+        <span className="shrink-0 text-right">
           {isOver
             ? <span className="text-red-500 font-medium">{fmt(overAmount)} 超過</span>
             : <>残り: <span className="text-green-600 font-medium">{fmt(b.remainingAmount)}</span></>}

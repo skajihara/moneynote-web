@@ -5,6 +5,7 @@ export type Budget = {
   categoryId: string;
   categoryName: string;
   categoryIcon: string | null;
+  categoryDeleted: boolean;
   budgetAmount: number;
   actualAmount: number;
   percentage: number;
