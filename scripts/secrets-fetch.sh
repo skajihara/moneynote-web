@@ -43,10 +43,10 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_REGISTRY=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 
 if [[ "$ENV" == "env1" ]]; then
-  echo "Fetching ALB DNS (alb-ka-moneynote-01)..."
+  echo "Fetching ALB DNS (ALB-ka-moneynote-01)..."
   ALB_DNS=$(aws elbv2 describe-load-balancers \
     --region "${REGION}" \
-    --names "alb-ka-moneynote-01" \
+    --names "ALB-ka-moneynote-01" \
     --query 'LoadBalancers[0].DNSName' \
     --output text)
   FRONTEND_URL=https://${ALB_DNS}
@@ -63,10 +63,10 @@ if [[ "$ENV" == "env1" ]]; then
     --query 'ReplicationGroups[0].NodeGroups[0].PrimaryEndpoint.Address' \
     --output text)
 elif [[ "$ENV" == "env2" ]]; then
-  echo "Fetching ALB DNS (alb-ka-moneynote-02)..."
+  echo "Fetching ALB DNS (ALB-ka-moneynote-02)..."
   ALB_DNS=$(aws elbv2 describe-load-balancers \
     --region "${REGION}" \
-    --names "alb-ka-moneynote-02" \
+    --names "ALB-ka-moneynote-02" \
     --query 'LoadBalancers[0].DNSName' \
     --output text)
   FRONTEND_URL=https://${ALB_DNS}
