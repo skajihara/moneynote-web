@@ -198,6 +198,20 @@ class TransactionControllerTest {
     }
 
     @Test
+    void createTransaction_amountExceedsMax_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/transactions")
+                        .header("Authorization", "Bearer " + token1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "transactionType", "EXPENSE",
+                                "amount", 1000000000,
+                                "transactionDate", "2026-04-10",
+                                "categoryId", expCategoryId))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("E400"));
+    }
+
+    @Test
     void createTransaction_categoryTypeMismatch_returns400() throws Exception {
         // EXPENSE 明細に INCOME カテゴリを指定
         mockMvc.perform(post("/api/v1/ledgers/" + ledgerId1 + "/transactions")

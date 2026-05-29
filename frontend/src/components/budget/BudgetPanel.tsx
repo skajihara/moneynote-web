@@ -40,7 +40,8 @@ const schema = z.object({
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -144,7 +145,8 @@ type EditDialogProps = {
 const editSchema = z.object({
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
 });
 type EditFormValues = z.infer<typeof editSchema>;
 
@@ -271,13 +273,13 @@ const BudgetRow = ({ budget: b, onClick }: BudgetRowProps) => {
         <div className={`flex-1 rounded-full h-1.5 overflow-hidden ${isOver ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
           <div className={`h-1.5 rounded-full ${barColor} ${isOver ? 'animate-pulse' : ''}`} style={{ width: `${pct}%` }} />
         </div>
-        <span className={`text-xs w-12 text-right font-medium ${isOver ? 'text-red-500' : 'text-gray-500'}`}>
+        <span className={`text-xs shrink-0 text-right font-medium ${isOver ? 'text-red-500' : 'text-gray-500'}`}>
           {b.percentage.toFixed(1)}%
         </span>
       </div>
-      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>実績: <span className="text-red-500 font-medium">{fmt(b.actualAmount)}</span></span>
-        <span>
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 gap-2">
+        <span className="min-w-0 truncate">実績: <span className="text-red-500 font-medium">{fmt(b.actualAmount)}</span></span>
+        <span className="shrink-0 text-right">
           {isOver
             ? <span className="text-red-500 font-medium">{fmt(overAmount)} 超過</span>
             : <>残り: <span className="text-green-600 font-medium">{fmt(b.remainingAmount)}</span></>}

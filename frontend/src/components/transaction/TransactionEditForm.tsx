@@ -21,7 +21,8 @@ const schema = z.object({
   transactionDate: z.string().min(1, '日付を入力してください'),
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
   memo: z.string().max(500, 'メモは500文字以内で入力してください').optional(),
 });

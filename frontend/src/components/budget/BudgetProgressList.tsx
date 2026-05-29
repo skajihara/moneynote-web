@@ -39,10 +39,10 @@ const BudgetProgressList = ({ budgetStatus }: Props) => {
         return (
           <div key={item.categoryId} className="px-4 py-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 min-w-0 truncate">
                 {item.categoryIcon ? `${item.categoryIcon} ` : ''}{item.categoryName}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 ml-2">
                 {fmt(item.actualAmount)} / {fmt(item.budgetAmount)}
               </span>
             </div>
@@ -55,7 +55,7 @@ const BudgetProgressList = ({ budgetStatus }: Props) => {
                 />
               </div>
               <span
-                className={`text-xs font-medium w-14 text-right ${
+                className={`text-xs font-medium shrink-0 text-right ${
                   item.status === 'OVER' ? 'text-red-600' :
                   item.status === 'WARNING' ? 'text-yellow-600' : ''
                 }`}

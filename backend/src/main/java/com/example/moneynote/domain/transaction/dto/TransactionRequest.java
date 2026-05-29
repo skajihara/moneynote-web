@@ -1,6 +1,7 @@
 package com.example.moneynote.domain.transaction.dto;
 
 import com.example.moneynote.domain.transaction.TransactionType;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,7 @@ public record TransactionRequest(
 
         @NotNull(message = "金額は必須です")
         @DecimalMin(value = "0.01", message = "金額は0より大きい値を入力してください")
+        @DecimalMax(value = "999999999", message = "金額は999,999,999円以下で入力してください")
         BigDecimal amount,
 
         @NotNull(message = "日付は必須です")

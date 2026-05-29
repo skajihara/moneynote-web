@@ -32,7 +32,8 @@ const schema = z.object({
   categoryId: z.string().min(1, 'カテゴリを選択してください'),
   amount: z
     .number({ invalid_type_error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
+    .positive('金額は0より大きい値を入力してください')
+    .max(999999999, '金額は999,999,999円以下で入力してください'),
   dayOfMonth: z
     .number({ invalid_type_error: '日付を入力してください' })
     .int()
