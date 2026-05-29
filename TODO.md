@@ -1,5 +1,5 @@
 # TODO.md - 将来エンハンス・改善管理
-最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ・T-040〜T-043 追加・T-040 クローズ）
+最終更新: 2026年5月（T-015・TD-002 クローズ・TD-001・TD-004 クローズ・T-040〜T-043 追加・T-040 クローズ・T-041 クローズ）
 
 ---
 
@@ -17,7 +17,6 @@
 
 | ID | Issue | カテゴリ | 機能・内容 | 概要 |
 |---|---|---|---|---|
-| T-041 | [#99](https://github.com/skajihara/moneynote-web/issues/99) | 機能 | お問い合わせ送信時に送信者へ自動返信メールを送る | ContactService で SES 送信を追加し、件名・本文を引用した受付完了メールを送信者に送る |
 | T-042 | [#100](https://github.com/skajihara/moneynote-web/issues/100) | UI/UX | 大きい金額入力時のアプリ全体の表示崩れ調査・対応 | ダッシュボード・明細・予算・レポート等で極端な金額入力時の表示崩れを調査し CSS またはバリデーションで対応 |
 | T-043 | [#101](https://github.com/skajihara/moneynote-web/issues/101) | UI/UX | バリデーションエラーの詳細をユーザーに分かりやすく伝える | Zod エラーメッセージの見直し、またはマニュアルへの入力制約一覧の追加 |
 | T-039 | [#58](https://github.com/skajihara/moneynote-web/issues/58) | インフラ | AWS ロギング・モニタリング基盤の構築（CloudWatch + Grafana） | 構造化ログ（JSON）+ CloudWatch Agent + Micrometer によるメトリクス収集・Grafana ダッシュボード・CloudWatch Alarms → Slack 通知 |
@@ -88,3 +87,4 @@
 | TD-004 | [#36](https://github.com/skajihara/moneynote-web/issues/36) | 技術的負債 | Redis レート制限を固定ウィンドウからスライディングウィンドウへ変更（バースト対策） | feature/issue-36-sliding-window-rate-limit |
 | TD-001 | [#29](https://github.com/skajihara/moneynote-web/issues/29) | 技術的負債 | フロントエンドのテストカバレッジを80%以上に改善 | feature/issue-29-frontend-test-coverage |
 | T-040 | [#98](https://github.com/skajihara/moneynote-web/issues/98) | UI/UX | 予算一覧で削除済みカテゴリを「カテゴリが削除されました」バッジで表示 | feature/issue-98-budget-deleted-category |
+| T-041 | [#99](https://github.com/skajihara/moneynote-web/issues/99) | 機能 | お問い合わせ送信時に送信者へ自動返信メールを送る | feature/issue-99-contact-auto-reply |

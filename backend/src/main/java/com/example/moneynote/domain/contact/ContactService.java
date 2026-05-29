@@ -46,6 +46,13 @@ public class ContactService {
 
         sendMail(user, request);
 
+        try {
+            sendAutoReply(user, request);
+        } catch (Exception e) {
+            // 自動返信の失敗はログに記録するが、問い合わせ本体の処理は妨げない
+            log.error("自動返信メールの送信に失敗しました userId={}", userId, e);
+        }
+
         // セキュリティ: ログに body の内容を出力しない
         log.info("お問い合わせを受け付けました userId={}", userId);
     }
@@ -88,6 +95,30 @@ public class ContactService {
         message.setTo(adminAddress);
         message.setSubject("【MoneyNote お問い合わせ】" + request.getSubject());
         message.setReplyTo(user.getEmail());
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    private void sendAutoReply(User user, ContactRequest request) {
+        String body = String.format(
+                "%s 様%n%n" +
+                "この度はお問い合わせいただきありがとうございます。%n" +
+                "以下の内容でお問い合わせを受け付けました。%n%n" +
+                "──────────────────────%n" +
+                "件名：%s%n%n" +
+                "%s%n" +
+                "──────────────────────%n%n" +
+                "内容を確認の上、通常3〜5営業日以内にご連絡いたします。%n" +
+                "このメールは自動送信です。このメールへの返信はできません。",
+                user.getUserName(),
+                request.getSubject(),
+                request.getBody()
+        );
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(user.getEmail());
+        message.setSubject("【MoneyNote】お問い合わせを受け付けました");
         message.setText(body);
         mailSender.send(message);
     }
