@@ -14,7 +14,7 @@ Web ブラウザから使える家計簿管理アプリ。
 | フロントエンド | Next.js 14 (App Router) / TypeScript / Tailwind CSS / Zustand / Recharts |
 | インフラ（ローカル） | Docker Compose / nginx (HTTPS) / Mailhog |
 | インフラ（AWS） | AWS EC2 / ALB / RDS (PostgreSQL 16) / ElastiCache (Redis 7) / ECR / Secrets Manager |
-| CI/CD | GitHub Actions（テスト → ECR ビルド → SSM デプロイ） |
+| CI/CD | GitHub Actions（テスト → ECR ビルド → SSM デプロイ） ※現在はテストのみ有効 |
 | テスト | JUnit5 / Testcontainers / MockMvc / Jest / React Testing Library |
 
 ---
@@ -121,6 +121,16 @@ develop ← 開発統合ブランチ
 ## スクリーンショット
 
 <!-- TODO: ダッシュボード、収支明細、レポート画面のスクリーンショットをここに追加 -->
+
+---
+
+## AWS インフラについて
+
+> **[2026年5月] AWS インフラは削除済みです。**
+>
+> ポートフォリオ公開にあたりコスト最適化のため、EC2・RDS・ElastiCache・ALB 等の AWS リソースを削除しました。
+> インフラ設計・構築・CI/CD パイプラインの実装内容は [docs/aws-design/](docs/aws-design/) に記録しています。
+> ローカル環境での動作確認は上記「ローカル環境構築」の手順で可能です。
 
 ---
 
