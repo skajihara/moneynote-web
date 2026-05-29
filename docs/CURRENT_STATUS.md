@@ -35,7 +35,8 @@
 
 ## 現在の状態
 
-- T-043 作業中（`feature/issue-101-validation-messages`）。FE Zod エラーメッセージ改善・ヒントテキスト追加・テストグリーン
+- リポジトリ公開前監査完了（`fix/pre-release-audit-cleanup`）。高深刻度2件・中深刻度1件・低深刻度1件を修正済み。詳細は `docs/audit-report.md` を参照
+- T-043 完了（`feature/issue-101-validation-messages`）。FE Zod エラーメッセージ改善・ヒントテキスト追加・テストグリーン
 - T-042 完了（`feature/issue-100-amount-overflow`）。PR #104 作成済み
 - T-041 完了（`feature/issue-99-contact-auto-reply`）。PR #103 作成済み
 - T-040 完了（`feature/issue-98-budget-deleted-category`）。PR #102 作成済み
