@@ -28,7 +28,7 @@
 │     （Inline Chat）  Diff プレビューで確認してから適用│
 │                                                     │
 │  ③ サイドバーチャット  Ctrl+Alt+I で会話しながら調査  │
-│     （Copilot Chat） @workspace / #file で文脈付与  │
+│     （Copilot Chat） #file で文脈付与              │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -48,6 +48,8 @@
 1. ステータスバーの Copilot アイコンをクリック → `Sign in to GitHub`
 2. ブラウザが開くのでデバイスコードを入力して認可
 3. VS Code に戻ると自動認証される
+
+> **アイコンの場所（VSCode 1.99+）**: アクティビティバー（左サイドバー）ではなく、**タイトルバーのプロジェクト名の横**に表示される。`Ctrl+Alt+I` でも開ける。
 
 **プランについて**
 
@@ -96,6 +98,8 @@ code .
 
 **コツ1: コメントを先に書く（コメントドリブン）**
 
+> `//` コメントは補完のトリガーになるが、`/** */` Javadoc 形式はドキュメント構造として扱われるため補完が出にくい。意図を伝えるには `//` を使うこと。
+
 ```java
 // 帳簿IDと日付範囲で明細一覧を取得し、カテゴリ別に集計する
 public Map<String, BigDecimal> summarizeByCategory(  // ← ここで Tab
@@ -123,39 +127,44 @@ List<Category> find(String id, String type)
 
 #### 開き方
 
-`Ctrl+Alt+I`（Windows）または左サイドバーの Copilot アイコン
+`Ctrl+Alt+I`（Windows）またはタイトルバーのプロジェクト名横の Copilot アイコン
 
 #### 3つのモード
 
 | モード | 説明 | いつ使う |
 |--------|------|---------|
 | **Ask** | 質問・調査のみ（コード変更しない） | 構造を理解したい、設計を聞きたい |
-| **Edit** | コード生成・編集を提案 | 実装を進めたい |
-| **Agent** | 複数ファイルを自律的に探索・編集 | 複雑なタスク全体を任せたい |
+| **Plan** | 実装計画を先に提示してから編集 | 変更範囲を確認してから進めたい |
+| **Agent** | 複数ファイルを自律的に探索・編集 | 実装・リファクタリング全般 |
+
+> VSCode 1.99 以降、Edit モードは廃止され Agent モードに統合された。
 
 #### コンテキスト変数：@変数（スコープ指定）
 
 | 変数 | 意味 | 使いどころ |
 |------|------|-----------|
-| `@workspace` | プロジェクト全体のファイル構造・コード | アーキテクチャ質問、横断的な調査 |
 | `@vscode` | VSCode 設定・拡張機能 | 設定の変更、拡張機能の使い方 |
 | `@terminal` | ターミナルの直近出力 | ビルドエラー・テスト失敗の解析 |
 
+> Agent モード自体がワークスペース全体を自動スキャンするため、何も指定しなくてよい。
+
 #### コンテキスト変数：#参照（特定コード）
 
-| 記法 | 意味 |
-|------|------|
-| `#file パス` | ファイル全体を含める |
-| `#editor` | 今開いているファイル全体 |
-| `#selection` | 現在の選択範囲 |
-| `#terminalOutput` | ターミナルの出力 |
-| `#codebase` | コードベース検索（限定的） |
+| 記法 | 意味 | 使いどころ |
+|------|------|-----------|
+| `#file パス` | ファイル全体を含める | 特定ファイルについて質問・実装依頼 |
+| `#editor` | 今開いているファイル全体 | 開いているファイルをそのまま渡す |
+| `#selection` | 現在の選択範囲 | 選択コードを対象に指示する |
+| `#terminalOutput` | ターミナルの出力 | ビルドエラー・テスト失敗の解析 |
+| `#codebase` | コードベース全体をセマンティック検索 | Ask モードでプロジェクト横断的に調査 |
+
+> **`#codebase` と Agent の使い分け**: 変更したくないが横断調査したい → Ask + `#codebase`。実装・編集も含む → Agent モード（自動スキャン）。
 
 #### MoneyNote Web での活用例
 
 ```
 # プロジェクト構造を把握する
-@workspace このプロジェクトのバックエンドレイヤー構成を説明してください
+このプロジェクトのバックエンドレイヤー構成を説明してください（Ask モード）
 
 # ファイルを指定して質問
 #file backend/src/main/java/com/example/moneynote/domain/ledger/LedgerService.java
@@ -171,7 +180,7 @@ Controller と Service の責務分担は適切ですか？
 このテスト失敗の原因と修正方法を教えてください
 
 # 実装を依頼する（プロジェクトルールを添えると精度UP）
-@workspace #file:TransactionService.java
+#file backend/src/main/java/.../TransactionService.java
 このサービスに帳簿ID・カテゴリID・日付範囲で絞り込む findByFilters メソッドを追加して。
 JPQL を使い、ResourceNotFoundException を使うこと。
 ```
@@ -479,7 +488,7 @@ export type CreateBudgetRequest = z.infer<typeof createBudgetRequestSchema>;
 
 1 回の指示で複数ファイルにまたがる変更を生成する機能。
 
-**開き方**: `Ctrl+Shift+M` または Chat パネル上部の「Edits」タブ
+**開き方**: チャット入力欄左下のモード切り替えで「Agent」を選択
 
 **手順**:
 1. 変更したいファイルを「Add Files」でリストに追加
@@ -500,6 +509,12 @@ export type CreateBudgetRequest = z.infer<typeof createBudgetRequestSchema>;
 - 変更量が多いほど精度が落ちる → **小さく分けて実行**するのが現実的
 - テストファイルには自動で反映されないことが多い → 別途 `/test` で生成
 - 生成結果は必ずレビューしてから適用（無条件の Accept All は禁物）
+- Agent モードはワークスペース全体を自動スキャンするため不要なファイルが混入しやすい → 余分なコンテキストは無視して実行して問題ない（指示したファイルが優先される）
+
+**Diff プレビューを必ず表示させる設定（重要）**:
+
+`設定（Ctrl+,）` → `Chat › Editing: Auto Accept Delay` → **`0`** に設定する。  
+`0` は「無効」= 自動承認しない = 手動で Accept / Discard を選択するまで待つ。
 
 ---
 
@@ -518,15 +533,36 @@ export type CreateBudgetRequest = z.infer<typeof createBudgetRequestSchema>;
 
 Copilot Chat の入力欄付近にモデルセレクターが表示される（バージョン・プランにより異なる）。
 
-| モデル | 特徴 | 向いているタスク |
-|--------|------|----------------|
-| **GPT-4o** (OpenAI) | バランス型。デフォルト | 汎用的なコード生成・質問 |
-| **Claude Sonnet** (Anthropic) | 長文コンテキスト・推論に強い | 大きなファイル解析、設計相談 |
-| **o3 mini** (OpenAI) | 複雑な推論特化 | アルゴリズム・数学的ロジック |
-| **Gemini** (Google) | コード補完に強み | インライン補完向け |
+| モデル | 特徴 | 備考 |
+|--------|------|------|
+| **Auto** | タスクに応じて自動選択 | デフォルト推奨 |
+| **Claude Haiku 4.5** (Anthropic) | 軽量・高速 | Pro プランで利用可 |
+| **Claude Sonnet 4.6** (Anthropic) | 長文コンテキスト・推論に強い | アップグレード必要 |
+| **GPT-5.4** (OpenAI) | 高性能 | アップグレード必要 |
+| **GPT-4.1** | バランス型 | Pro プランで利用可 |
+| **GPT-5 mini** | 軽量・高速 | Pro プランで利用可 |
 
-> Claude Code ユーザーへ: Copilot 上でも Anthropic Claude が選択できるが、
-> モデル切り替えの柔軟性（Haiku / Sonnet / Opus）は Claude Code の方が高い。
+> 利用できるモデルはプランによって異なる。Claude Sonnet 4.6・GPT-5.4 は上位プランが必要。
+> Claude Code ユーザーへ: Haiku 4.5 が使えるのは嬉しいポイントだが、Sonnet / Opus の選択肢は Claude Code の方が柔軟。
+
+---
+
+### コードベースセマンティックインデックス（Agent モードの精度向上）
+
+プロジェクト全体を事前にインデックス化しておくと、Agent モードの回答精度が大幅に上がる。  
+**大規模プロジェクトでは最初に一度だけ実行しておくことを強く推奨。**
+
+**構築手順**: `Ctrl+Shift+P` → `Chat: コードベース セマンティック インデックスの構築`
+
+構築後は雑な指示でも関連ファイルを正確に特定して実装してくれるようになる：
+
+```
+# インデックスなし → 関連ファイルを見つけられないことがある
+CategoryService にカテゴリ数を返すメソッドを追加して
+
+# インデックスあり → accessValidator・Repository・命名規則まで踏まえた実装が出る
+CategoryService にカテゴリ数を返すメソッドを追加して
+```
 
 ---
 
@@ -567,7 +603,7 @@ frontend/src/lib/validations/ 配下の Zod スキーマのエラーメッセー
 | MCP サーバー連携 | ◎ | ✗ | Copilot には MCP なし |
 | コミット・プッシュ | ✗（人間のみ） | ✗ | 両者とも手動 |
 | スケジュール実行 | ○ | ✗ | Claude Code のみ |
-| コードベース全体検索 | ◎（Serena） | △（@workspace） | Serena の方が精度高い |
+| コードベース全体検索 | ◎（Serena） | △（Agent + セマンティックインデックス） | Serena の方が精度高い |
 | GitHub PR/Issue 連携 | △（MCP 経由） | ◎（ネイティブ） | Copilot の方が統合度高い |
 | ターミナル統合 | △ | ○ | Copilot は @terminal で解析可 |
 | プロジェクト指示ファイル | CLAUDE.md | copilot-instructions.md | 両方に書くのが理想 |
@@ -612,7 +648,7 @@ Copilot Chat
 
 | 操作 | Windows |
 |------|---------|
-| Copilot Chat（サイドバー）を開く | `Ctrl+Alt+I` |
+| Copilot Chat を開く | `Ctrl+Alt+I`（またはタイトルバー横の Copilot アイコン）|
 | インラインチャットを開く | `Ctrl+I` |
 | 補完を確定 | `Tab` |
 | 次の補完候補 | `Alt+]` |
@@ -632,8 +668,9 @@ Copilot Chat
 | 落とし穴 | 対策 |
 |---------|------|
 | Copilot が的外れな補完を出す | `Escape` で消してコメントを追加してから再入力 |
-| @workspace の回答が浅い | `#file` で具体的なファイルを指定して補完する |
-| 生成テストがコンパイルエラーになる | `@workspace` で既存テストのパターンを確認してから再生成 |
+| 回答がプロジェクトの文脈からズレる | `#file` で具体的なファイルを指定して補完する |
+| Spring Data JPA のメソッド名がコンパイルエラーになる | Copilot は命名規則から推測して生成するが Repository に定義があるとは限らない。生成されたメソッド名が Repository に存在するか必ず確認する |
+| 生成テストがコンパイルエラーになる | `#file` で既存テストのパターンを確認してから再生成 |
 | 複数ファイル編集で一部反映されない | Edits は小さい単位に分ける。未反映ファイルは手動で適用 |
 | Copilot が DB スキーマを知らない | `#file` で Flyway マイグレーションファイルを参照させる |
 | セキュリティ問題のあるコードが生成される | 生成コードは必ずレビュー。BCrypt 強度 12・JWT クレーム検証等と照合する |
